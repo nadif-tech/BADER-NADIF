@@ -2,13 +2,16 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from io import BytesIO
 
 st.set_page_config(page_title="Gage R&R – MSP", layout="wide")
 
 st.title("📊 Analyse du Système de Mesure – Gage R&R")
 st.markdown("**Méthode des étendues et des moyennes (AIAG)**")
 
-# Paramètres
+# =========================
+# PARAMÈTRES
+# =========================
 c1, c2, c3 = st.columns(3)
 with c1:
     n_parts = st.number_input("Nombre de pièces", 2, 50, 5)
@@ -17,19 +20,76 @@ with c2:
 with c3:
     n_trials = st.number_input("Nombre de répétitions", 2, 10, 2)
 
-# Tableau de mesures
-st.subheader("📥 Tableau de saisie des mesures")
-
 columns = [f"Op{op+1}_Essai{t+1}" for op in range(n_operators) for t in range(n_trials)]
-df = pd.DataFrame(np.zeros((n_parts, len(columns))), columns=columns)
+
+# =========================
+# IMPORT DES DONNÉES
+# =========================
+st.subheader("📤 Importer des données")
+
+uploaded_file = st.file_uploader(
+    "Importer un fichier CSV ou Excel",
+    type=["csv", "xlsx"]
+)
+
+if uploaded_file:
+    if uploaded_file.name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+    else:
+        df = pd.read_excel(uploaded_file)
+
+    st.success("✅ Données importées avec succès")
+else:
+    df = pd.DataFrame(np.zeros((n_parts, len(columns))), columns=columns)
+
+# =========================
+# TABLEAU DE SAISIE
+# =========================
+st.subheader("📥 Tableau de saisie des mesures")
 df = st.data_editor(df, use_container_width=True)
 
-# Constantes AIAG
+# =========================
+# EXPORT TABLEAU
+# =========================
+st.subheader("📁 Exporter les données")
+
+def export_csv(data):
+    return data.to_csv(index=False).encode("utf-8")
+
+def export_excel(data):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        data.to_excel(writer, index=False, sheet_name="Mesures")
+    return output.getvalue()
+
+c_exp1, c_exp2 = st.columns(2)
+
+with c_exp1:
+    st.download_button(
+        "⬇️ Export CSV",
+        export_csv(df),
+        "mesures_gage_rr.csv",
+        "text/csv"
+    )
+
+with c_exp2:
+    st.download_button(
+        "⬇️ Export Excel",
+        export_excel(df),
+        "mesures_gage_rr.xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+# =========================
+# CONSTANTES AIAG
+# =========================
 K1 = {2: 0.886, 3: 0.590, 4: 0.485}
 K2 = {2: 0.707, 3: 0.523, 4: 0.446}
 K3 = 0.590
 
-# Calcul
+# =========================
+# CALCUL GAGE R&R
+# =========================
 if st.button("🔢 Calculer Gage R&R"):
     ranges = []
     operator_means = []
@@ -54,7 +114,11 @@ if st.button("🔢 Calculer Gage R&R"):
     TV = np.sqrt(GRR**2 + PV**2)
     GRR_percent = (GRR / TV) * 100
 
+    # =========================
+    # RÉSULTATS
+    # =========================
     st.subheader("📈 Résultats")
+
     r1, r2, r3 = st.columns(3)
     r1.metric("Répétabilité (EV)", f"{EV:.4f}")
     r2.metric("Reproductibilité (AV)", f"{AV:.4f}")
@@ -72,6 +136,24 @@ if st.button("🔢 Calculer Gage R&R"):
     else:
         st.error("❌ Système de mesure non acceptable")
 
+    # =========================
+    # EXPORT DES RÉSULTATS
+    # =========================
+    results_df = pd.DataFrame({
+        "Indicateur": ["EV", "AV", "GRR", "PV", "TV", "% GRR"],
+        "Valeur": [EV, AV, GRR, PV, TV, GRR_percent]
+    })
+
+    st.download_button(
+        "⬇️ Export Résultats Excel",
+        export_excel(results_df),
+        "resultats_gage_rr.xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    # =========================
+    # GRAPHIQUES
+    # =========================
     st.subheader("📊 Graphiques MSP")
 
     fig1, ax1 = plt.subplots()
