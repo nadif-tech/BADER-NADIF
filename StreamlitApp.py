@@ -6,6 +6,24 @@ from io import BytesIO
 import math
 
 # =====================================================
+# TABLE DES VALEURS d2 (AIAG)
+# =====================================================
+# Table d2 pour le calcul de la variation des pièces
+# g = nombre de sous-groupes (pièces), m = taille du sous-groupe (mesures par pièce)
+D2_TABLE = {
+    2: 1.41, 3: 1.91, 4: 2.24, 5: 2.48, 6: 2.67,
+    7: 2.83, 8: 2.96, 9: 3.08, 10: 3.18, 11: 3.27,
+    12: 3.35, 13: 3.42, 14: 3.49, 15: 3.55
+}
+
+# =====================================================
+# CONSTANTES K (AIAG)
+# =====================================================
+K1 = {2: 0.8862, 3: 0.5908, 4: 0.4857}
+K2 = {2: 0.7071, 3: 0.5231, 4: 0.4467}
+K3 = 0.5231  # Pour 2 opérateurs
+
+# =====================================================
 # CONFIGURATION PAGE
 # =====================================================
 st.set_page_config(
@@ -21,49 +39,78 @@ st.set_page_config(
 with st.sidebar:
     st.title("ℹ️ Guide Gage R&R")
     
-    st.markdown("### Formules utilisées")
+    st.markdown("### 📐 Formules de calcul")
     
-    with st.expander("📐 Formules de calcul", expanded=False):
+    with st.expander("Formules principales", expanded=True):
         st.markdown("""
-        **Répétabilité (EV - Equipment Variation):**
+        **1. Répétabilité (EV - Equipment Variation):**
         ```
+        EV = R̄ × K₁
         R̄ = (ΣR_i)/n_parts
-        EV = R̄ × K1
         ```
         
-        **Reproductibilité (AV - Appraiser Variation):**
+        **2. Reproductibilité (AV - Appraiser Variation):**
         ```
-        X_diff = X̄_max - X̄_min
-        AV = √[(X_diff × K2)² - (EV²/(n_parts × n_trials))]
-        ```
-        
-        **Variation pièces (PV - Part Variation):**
-        ```
-        R_p = X̄_part_max - X̄_part_min
-        PV = R_p × K3
+        AV = √[(X̄_diff × K₂)² - (EV²/(n_parts × n_trials))]
+        X̄_diff = max(X̄_op) - min(X̄_op)
         ```
         
-        **Variation totale (TV - Total Variation):**
+        **3. Variation pièces (PV - Part Variation):**
         ```
-        GRR = √(EV² + AV²)
-        TV = √(GRR² + PV²)
-        %GRR = (GRR/TV) × 100%
+        PV = R_p × K₃
+        R_p = max(X̄_part) - min(X̄_part)
+        ```
+        
+        **4. Gage R&R et Variation totale:**
+        ```
+        R&R = √(EV² + AV²)
+        V_T = √(R&R² + PV²)
+        %R&R = (R&R / V_T) × 100%
         ```
         """)
     
     with st.expander("🎯 Constantes AIAG", expanded=False):
         st.markdown("""
-        **K1 (pour EV):**
-        - 2 essais: 0.886
-        - 3 essais: 0.590
-        - 4 essais: 0.485
+        **K₁ (pour EV - Répétabilité):**
+        ```
+        n_trials = 2 → K₁ = 0.8862
+        n_trials = 3 → K₁ = 0.5908
+        n_trials = 4 → K₁ = 0.4857
+        ```
         
-        **K2 (pour AV):**
-        - 2 opérateurs: 0.707
-        - 3 opérateurs: 0.523
-        - 4 opérateurs: 0.446
+        **K₂ (pour AV - Reproductibilité):**
+        ```
+        n_operators = 2 → K₂ = 0.7071
+        n_operators = 3 → K₂ = 0.5231
+        n_operators = 4 → K₂ = 0.4467
+        ```
         
-        **K3 (pour PV):** 0.590
+        **K₃ (pour PV - Variation pièces):**
+        ```
+        K₃ = 0.5231 (pour 2 opérateurs)
+        ```
+        """)
+    
+    with st.expander("📊 Table des valeurs d₂", expanded=False):
+        st.markdown("""
+        | m  | d₂    |
+        |----|-------|
+        | 2  | 1.41  |
+        | 3  | 1.91  |
+        | 4  | 2.24  |
+        | 5  | 2.48  |
+        | 6  | 2.67  |
+        | 7  | 2.83  |
+        | 8  | 2.96  |
+        | 9  | 3.08  |
+        | 10 | 3.18  |
+        | 11 | 3.27  |
+        | 12 | 3.35  |
+        | 13 | 3.42  |
+        | 14 | 3.49  |
+        | 15 | 3.55  |
+        
+        *m = nombre de mesures par pièce*
         """)
     
     with st.expander("📈 Critères d'acceptation", expanded=False):
@@ -73,35 +120,45 @@ with st.sidebar:
         - ⚠️ **10% - 30%** : Acceptable sous conditions
         - ❌ **> 30%** : Système inacceptable
         
-        **Autres normes:**
-        - VDA 5: < 20%
-        - ISO/TS 16949: < 30%
+        **Selon VDA 5:**
+        - ✅ **< 20%** : Système acceptable
+        
+        **Selon ISO/TS 16949:**
+        - ✅ **< 30%** : Système acceptable
         """)
     
     st.divider()
     
     st.markdown("### ⚙️ Paramètres avancés")
     
-    # Choix des constantes
-    use_aiag_constants = st.checkbox("Utiliser les constantes AIAG", value=True)
-    
-    if not use_aiag_constants:
-        k1_custom = st.number_input("K1 personnalisé", value=0.886, format="%.3f")
-        k2_custom = st.number_input("K2 personnalisé", value=0.523, format="%.3f")
-        k3_custom = st.number_input("K3 personnalisé", value=0.590, format="%.3f")
-    else:
-        k1_custom = k2_custom = k3_custom = None
+    # Choix de la méthode de calcul
+    method = st.radio(
+        "Méthode de calcul",
+        ["AIAG standard", "Avec d₂"],
+        help="AIAG: utilise K1,K2,K3 constants. Avec d₂: utilise la table d2 pour PV"
+    )
     
     # Tolérance optionnelle
-    tol_spec = st.number_input("Tolérance spécifiée (optionnel)", 
-                              value=0.0, 
-                              help="Pour calculer %GRR/Tolérance")
+    tol_spec = st.number_input(
+        "Tolérance spécifiée (optionnel)", 
+        value=0.0,
+        help="Pour calculer %R&R/Tolérance"
+    )
+    
+    # Niveau de confiance
+    confidence = st.slider(
+        "Niveau de confiance (%)",
+        min_value=90,
+        max_value=99,
+        value=95,
+        help="Pour les calculs statistiques"
+    )
 
 # =====================================================
 # HEADER PRINCIPAL
 # =====================================================
 st.title("📊 Gage R&R - Analyse du Système de Mesure")
-st.markdown("**Méthode des étendues et des moyennes (selon AIAG)**")
+st.markdown("**Méthode des étendues et des moyennes selon AIAG**")
 
 # =====================================================
 # IMPORT DES DONNÉES
@@ -139,34 +196,38 @@ if upload_option == "📁 Importer un fichier":
             
             # Afficher les colonnes détectées
             st.success(f"✅ Fichier importé : {df.shape[0]} pièces, {df.shape[1]} colonnes")
-            st.info(f"📋 Colonnes détectées : {list(df.columns)}")
             
-            # Demander à l'utilisateur de spécifier la structure
-            st.subheader("🔧 Configuration de la structure des données")
+            # Configuration de la structure
+            st.subheader("🔧 Configuration de la structure")
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                n_parts_input = st.number_input("Nombre de pièces", 
-                                               min_value=2, 
-                                               max_value=df.shape[0], 
-                                               value=df.shape[0])
+                n_parts = st.number_input(
+                    "Nombre de pièces", 
+                    min_value=2, 
+                    max_value=df.shape[0], 
+                    value=df.shape[0]
+                )
             with col2:
-                n_operators_input = st.number_input("Nombre d'opérateurs", 
-                                                   min_value=1, 
-                                                   max_value=df.shape[1], 
-                                                   value=min(3, df.shape[1]))
+                n_operators = st.number_input(
+                    "Nombre d'opérateurs", 
+                    min_value=1, 
+                    max_value=df.shape[1], 
+                    value=min(3, df.shape[1])
+                )
             with col3:
-                n_trials_input = st.number_input("Nombre de répétitions", 
-                                                min_value=1, 
-                                                max_value=df.shape[1], 
-                                                value=min(2, df.shape[1]))
+                n_trials = st.number_input(
+                    "Nombre de répétitions", 
+                    min_value=1, 
+                    max_value=df.shape[1], 
+                    value=min(2, df.shape[1])
+                )
             
-            if n_operators_input * n_trials_input != df.shape[1]:
-                st.warning(f"⚠️ Attention : {n_operators_input} opérateurs × {n_trials_input} essais = {n_operators_input * n_trials_input} colonnes, mais {df.shape[1]} colonnes détectées")
-            
-            n_parts = n_parts_input
-            n_operators = n_operators_input
-            n_trials = n_trials_input
+            # Ajuster le dataframe si nécessaire
+            if n_parts < df.shape[0]:
+                df = df.iloc[:n_parts, :]
+            if n_operators * n_trials < df.shape[1]:
+                df = df.iloc[:, :n_operators * n_trials]
             
         except Exception as e:
             st.error(f"❌ Erreur lors de l'import: {str(e)}")
@@ -174,38 +235,38 @@ if upload_option == "📁 Importer un fichier":
 elif upload_option == "✍️ Saisie manuelle":
     cols = st.columns(3)
     with cols[0]:
-        n_parts = st.number_input("Nombre de pièces", min_value=2, max_value=50, value=5)
+        n_parts = st.number_input("Nombre de pièces", min_value=2, max_value=50, value=10)
     with cols[1]:
         n_operators = st.number_input("Nombre d'opérateurs", min_value=2, max_value=10, value=3)
     with cols[2]:
-        n_trials = st.number_input("Nombre de répétitions", min_value=2, max_value=10, value=2)
+        n_trials = st.number_input("Nombre de répétitions", min_value=2, max_value=10, value=3)
     
     total_cols = n_operators * n_trials
     
-    # Création d'un DataFrame vide avec noms de colonnes
+    # Création d'un DataFrame vide
     col_names = [f"Op{o+1}_T{t+1}" for o in range(n_operators) for t in range(n_trials)]
-    df = pd.DataFrame(np.zeros((n_parts, total_cols)), columns=col_names)
+    df = pd.DataFrame(np.random.randn(n_parts, total_cols) * 0.5 + 100, columns=col_names)
     
     st.info("⚠️ Modifiez les valeurs dans le tableau ci-dessous")
 
 else:  # Générer des données test
     cols = st.columns(3)
     with cols[0]:
-        n_parts = st.number_input("Pièces (test)", min_value=5, max_value=20, value=10)
+        n_parts = st.number_input("Pièces (test)", min_value=5, max_value=30, value=10)
     with cols[1]:
         n_operators = st.number_input("Opérateurs (test)", min_value=2, max_value=5, value=3)
     with cols[2]:
         n_trials = st.number_input("Essais (test)", min_value=2, max_value=5, value=3)
     
-    # Génération de données réalistes avec variation
+    # Génération de données réalistes
     np.random.seed(42)
-    base_values = np.random.normal(100, 5, n_parts)  # Valeurs réelles des pièces
+    base_values = np.random.normal(100, 10, n_parts)  # Valeurs réelles des pièces
     
     data = {}
     for op in range(n_operators):
-        op_bias = np.random.normal(0, 0.5)  # Biais par opérateur
+        op_bias = np.random.normal(0, 1)  # Biais par opérateur
         for t in range(n_trials):
-            noise = np.random.normal(0, 0.2, n_parts)  # Bruit de mesure
+            noise = np.random.normal(0, 0.5, n_parts)  # Bruit de mesure
             col_name = f"Op{op+1}_T{t+1}"
             data[col_name] = base_values + op_bias + noise
     
@@ -218,34 +279,32 @@ else:  # Générer des données test
 if df is not None:
     st.subheader("📥 Données de mesure")
     
-    # Si on a importé un fichier, permettre de renommer les colonnes
-    if upload_option == "📁 Importer un fichier" and df is not None:
-        st.info("🔄 Vous pouvez renommer les colonnes pour qu'elles suivent le format 'OpX_TY'")
+    # Redimensionner le dataframe si nécessaire
+    if 'n_parts' in locals() and 'n_operators' in locals() and 'n_trials' in locals():
+        total_cols_needed = n_operators * n_trials
         
-        # Afficher le mapping actuel des colonnes
-        st.write("**Mapping actuel des colonnes :**")
-        current_cols = list(df.columns)
+        # S'assurer que nous avons le bon nombre de colonnes
+        if len(df.columns) > total_cols_needed:
+            df = df.iloc[:, :total_cols_needed]
+        elif len(df.columns) < total_cols_needed:
+            # Ajouter des colonnes manquantes
+            missing_cols = total_cols_needed - len(df.columns)
+            for i in range(missing_cols):
+                df[f'Col_{len(df.columns)+1}'] = 0.0
         
-        # Créer un formulaire pour renommer les colonnes
-        new_col_names = []
-        col_mapping = {}
-        
-        for i, col in enumerate(current_cols):
-            # Suggérer un nom basé sur la position
-            op_num = (i // n_trials) + 1
-            trial_num = (i % n_trials) + 1
-            suggested_name = f"Op{op_num}_T{trial_num}"
-            
-            new_name = st.text_input(f"Colonne {i+1} ('{col}') →", 
-                                    value=suggested_name,
-                                    key=f"rename_{i}")
-            new_col_names.append(new_name)
-            col_mapping[col] = new_name
-        
-        if st.button("🔄 Appliquer les nouveaux noms de colonnes"):
-            df = df.rename(columns=col_mapping)
-            st.success("✅ Noms de colonnes mis à jour")
-            st.rerun()
+        # Redimensionner les lignes
+        if len(df) > n_parts:
+            df = df.iloc[:n_parts, :]
+        elif len(df) < n_parts:
+            # Ajouter des lignes manquantes
+            missing_rows = n_parts - len(df)
+            new_rows = pd.DataFrame(np.zeros((missing_rows, len(df.columns))), columns=df.columns)
+            df = pd.concat([df, new_rows], ignore_index=True)
+    
+    # Renommer les colonnes pour un format standard
+    if not df.columns[0].startswith('Op'):
+        col_names = [f"Op{(i//n_trials)+1}_T{(i%n_trials)+1}" for i in range(len(df.columns))]
+        df.columns = col_names
     
     # Édition des données
     st.write("**Tableau des mesures :**")
@@ -253,47 +312,18 @@ if df is not None:
         df,
         use_container_width=True,
         height=400,
-        num_rows="dynamic",
+        num_rows="fixed",
         column_config={
             col: st.column_config.NumberColumn(
                 col,
                 help=f"Mesure {col}",
-                format="%.4f",
-                min_value=-10000.0,
-                max_value=10000.0
+                format="%.3f",
+                step=0.001
             ) for col in df.columns
         }
     )
     
-    df = edited_df  # Mettre à jour avec les données éditées
-    
-    # S'assurer que toutes les colonnes sont numériques
-    for col in df.columns:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-    
-    # Remplacer les NaN par 0 pour éviter les erreurs
-    df = df.fillna(0)
-    
-    # Vérifier que nous avons les paramètres nécessaires
-    if n_operators == 0 or n_trials == 0:
-        st.error("❌ Veuillez spécifier le nombre d'opérateurs et d'essais")
-        st.stop()
-    
-    # =====================================================
-    # CONSTANTES AIAG
-    # =====================================================
-    if use_aiag_constants:
-        K1 = {2: 0.886, 3: 0.590, 4: 0.485}
-        K2 = {2: 0.707, 3: 0.523, 4: 0.446}
-        K3 = 0.590
-        
-        k1_val = K1.get(n_trials, 0.886)
-        k2_val = K2.get(n_operators, 0.707)
-        k3_val = K3
-    else:
-        k1_val = k1_custom
-        k2_val = k2_custom
-        k3_val = k3_custom
+    df = edited_df
     
     # =====================================================
     # CALCUL GAGE R&R
@@ -301,437 +331,418 @@ if df is not None:
     if st.button("🚀 Calculer l'analyse Gage R&R", type="primary", use_container_width=True):
         
         try:
-            # Initialisation des tableaux
-            ranges_per_part = []
-            operator_means = []
-            all_measurements = []
+            # S'assurer que les données sont numériques
+            df = df.apply(pd.to_numeric, errors='coerce')
+            df = df.fillna(0)
             
-            # Vérifier que nous avons assez de colonnes
-            total_cols_needed = n_operators * n_trials
-            if len(df.columns) < total_cols_needed:
-                st.error(f"❌ Pas assez de colonnes. Besoin de {total_cols_needed} colonnes, mais seulement {len(df.columns)} disponibles.")
+            # Vérifier les paramètres
+            if n_parts < 2 or n_operators < 2 or n_trials < 2:
+                st.error("❌ Paramètres insuffisants. Minimum: 2 pièces, 2 opérateurs, 2 essais")
                 st.stop()
             
-            # Afficher la structure détectée
-            st.info(f"🔍 Structure détectée : {n_operators} opérateurs × {n_trials} essais = {total_cols_needed} colonnes")
+            # =====================================================
+            # 1. ORGANISATION DES DONNÉES
+            # =====================================================
+            st.subheader("🔍 Organisation des données")
             
-            # Organiser les colonnes par opérateur
-            # D'abord, vérifier quelles colonnes nous avons
-            available_cols = list(df.columns)
-            st.write(f"Colonnes disponibles : {available_cols}")
+            # Regrouper les colonnes par opérateur
+            op_data = []
+            op_ranges = []
+            op_means_by_part = []
+            all_measurements = []
             
-            # Essayer différentes stratégies pour organiser les colonnes
-            op_cols_list = []
-            
-            # Stratégie 1 : Si les colonnes sont nommées OpX_TY
-            op_pattern_cols = {}
-            for col in available_cols:
-                if 'op' in col.lower() and ('t' in col.lower() or 'essai' in col.lower() or 'trial' in col.lower()):
-                    # Essayer d'extraire le numéro d'opérateur
-                    import re
-                    op_match = re.search(r'op\s*(\d+)', col.lower())
-                    trial_match = re.search(r't\s*(\d+)|essai\s*(\d+)|trial\s*(\d+)', col.lower())
-                    
-                    if op_match and trial_match:
-                        op_num = int(op_match.group(1))
-                        trial_num = int(trial_match.group(1) or trial_match.group(2) or trial_match.group(3))
-                        
-                        if op_num not in op_pattern_cols:
-                            op_pattern_cols[op_num] = {}
-                        op_pattern_cols[op_num][trial_num] = col
-            
-            if op_pattern_cols:
-                # Nous avons des colonnes avec le bon format
-                for op_num in sorted(op_pattern_cols.keys()):
-                    if op_num <= n_operators:
-                        op_trials = op_pattern_cols[op_num]
-                        # Prendre les n_trials premiers essais
-                        trial_cols = [op_trials.get(t, None) for t in range(1, n_trials + 1)]
-                        trial_cols = [c for c in trial_cols if c is not None]
-                        if trial_cols:
-                            op_cols_list.append(trial_cols)
-            
-            # Stratégie 2 : Si nous n'avons pas trouvé de pattern, diviser équitablement
-            if not op_cols_list and len(available_cols) >= total_cols_needed:
-                st.info("⚙️ Organisation automatique des colonnes par opérateur")
-                # Diviser les colonnes en n_operators groupes de n_trials
-                for op_idx in range(n_operators):
-                    start_idx = op_idx * n_trials
-                    end_idx = start_idx + n_trials
-                    op_cols = available_cols[start_idx:end_idx]
-                    op_cols_list.append(op_cols)
-            
-            # Si nous n'avons toujours pas d'organisation, demander à l'utilisateur
-            if not op_cols_list:
-                st.error("❌ Impossible d'organiser automatiquement les colonnes.")
-                st.info("Veuillez renommer vos colonnes avec le format 'OpX_TY' ou spécifier manuellement.")
+            for op in range(n_operators):
+                # Sélectionner les colonnes pour cet opérateur
+                op_cols = [f"Op{op+1}_T{t+1}" for t in range(n_trials)]
                 
-                # Créer une interface pour spécifier manuellement
-                st.subheader("🔧 Spécification manuelle des colonnes par opérateur")
-                
-                op_cols_list = []
-                for op_idx in range(n_operators):
-                    with st.expander(f"Opérateur {op_idx + 1}", expanded=op_idx == 0):
-                        selected_cols = st.multiselect(
-                            f"Sélectionnez les {n_trials} colonnes pour l'opérateur {op_idx + 1}",
-                            options=available_cols,
-                            default=available_cols[op_idx*n_trials:min((op_idx+1)*n_trials, len(available_cols))],
-                            key=f"op_{op_idx}_cols"
-                        )
-                        if len(selected_cols) != n_trials:
-                            st.warning(f"⚠️ Veuillez sélectionner exactement {n_trials} colonnes")
-                        op_cols_list.append(selected_cols)
-                
-                if st.button("✅ Confirmer l'organisation"):
-                    st.rerun()
-                else:
-                    st.stop()
-            
-            # Afficher l'organisation choisie
-            st.write("**Organisation des colonnes :**")
-            for op_idx, op_cols in enumerate(op_cols_list):
-                st.write(f"Opérateur {op_idx + 1} : {op_cols}")
-            
-            # Maintenant, effectuer les calculs avec l'organisation choisie
-            for op_idx, op_cols in enumerate(op_cols_list):
-                if len(op_cols) != n_trials:
-                    st.error(f"❌ L'opérateur {op_idx + 1} n'a pas {n_trials} colonnes")
+                # Vérifier que les colonnes existent
+                missing_cols = [col for col in op_cols if col not in df.columns]
+                if missing_cols:
+                    st.error(f"❌ Colonnes manquantes pour l'opérateur {op+1}: {missing_cols}")
                     st.stop()
                 
                 df_op = df[op_cols]
+                op_data.append(df_op)
                 
-                # Étendues par pièce pour cet opérateur
-                op_ranges = df_op.max(axis=1) - df_op.min(axis=1)
-                ranges_per_part.append(op_ranges)
+                # Calculer les étendues par pièce pour cet opérateur
+                ranges_op = df_op.max(axis=1) - df_op.min(axis=1)
+                op_ranges.append(ranges_op)
                 
-                # Moyennes par pièce pour cet opérateur
-                op_means = df_op.mean(axis=1)
-                operator_means.append(op_means)
+                # Calculer les moyennes par pièce pour cet opérateur
+                means_op = df_op.mean(axis=1)
+                op_means_by_part.append(means_op)
                 
-                # Toutes les mesures pour statistiques
+                # Collecter toutes les mesures
                 all_measurements.extend(df_op.values.flatten())
             
-            # Vérifier que nous avons des données
-            if not all_measurements:
-                st.error("❌ Aucune donnée valide trouvée pour le calcul")
-                st.stop()
+            # =====================================================
+            # 2. CALCULS INTERMÉDIAIRES
+            # =====================================================
+            # Moyenne des étendues par pièce (sur tous les opérateurs)
+            R_bar_matrix = pd.concat(op_ranges, axis=1)
+            R_bar = R_bar_matrix.mean(axis=1)  # Étendue moyenne par pièce
+            R_bar_global = R_bar.mean()        # Étendue moyenne globale
             
-            # -------------------------------------------------
-            # 1. RÉPÉTABILITÉ (EV)
-            # -------------------------------------------------
-            # Moyenne des étendues par pièce (moyenne des opérateurs)
-            if ranges_per_part:
-                R_bar_matrix = pd.concat(ranges_per_part, axis=1)
-                R_bar_per_part = R_bar_matrix.mean(axis=1)
-                R_bar_global = R_bar_per_part.mean()
-                
-                EV = R_bar_global * k1_val
-            else:
-                EV = 0
-                R_bar_global = 0
-            
-            # -------------------------------------------------
-            # 2. REPRODUCTIBILITÉ (AV)
-            # -------------------------------------------------
             # Moyennes globales par opérateur
-            if operator_means:
-                op_global_means = [m.mean() for m in operator_means]
-                X_diff = max(op_global_means) - min(op_global_means)
-                
-                # Calcul AV avec vérification de la racine carrée
-                av_term = (X_diff * k2_val) ** 2 - (EV ** 2 / (n_parts * n_trials))
-                AV = math.sqrt(max(av_term, 0)) if av_term > 0 else 0
-            else:
-                AV = 0
-                X_diff = 0
+            op_global_means = [means.mean() for means in op_means_by_part]
+            X_diff = max(op_global_means) - min(op_global_means)
             
-            # -------------------------------------------------
-            # 3. VARIATION PIÈCES (PV)
-            # -------------------------------------------------
-            # Moyenne de toutes les mesures par pièce
-            part_data = []
-            for part_idx in range(min(n_parts, len(df))):
+            # Moyennes par pièce (tous opérateurs confondus)
+            part_means = []
+            for part_idx in range(n_parts):
                 part_vals = []
-                for op_cols in op_cols_list:
-                    part_vals.extend(df.loc[part_idx, op_cols].values)
-                if part_vals:
-                    part_data.append(np.mean(part_vals))
+                for op in range(n_operators):
+                    part_vals.extend(df.iloc[part_idx, op*n_trials:(op+1)*n_trials].values)
+                part_means.append(np.mean(part_vals))
             
-            if part_data:
-                R_p = max(part_data) - min(part_data)
-                PV = R_p * k3_val
-            else:
-                R_p = 0
-                PV = 0
-            
-            # -------------------------------------------------
-            # 4. VARIATION TOTALE (TV) ET %GRR
-            # -------------------------------------------------
-            GRR = math.sqrt(EV**2 + AV**2)
-            TV = math.sqrt(GRR**2 + PV**2)
-            
-            if TV > 0:
-                GRR_percent = (GRR / TV) * 100
-                EV_percent = (EV / TV) * 100
-                AV_percent = (AV / TV) * 100
-                PV_percent = (PV / TV) * 100
-            else:
-                GRR_percent = EV_percent = AV_percent = PV_percent = 0
-            
-            # Calcul supplémentaire %GRR/Tolérance si spécifiée
-            if tol_spec > 0:
-                GRR_tol_percent = (GRR / tol_spec) * 100
-            else:
-                GRR_tol_percent = None
-            
-            # -------------------------------------------------
-            # 5. STATISTIQUES DES DONNÉES
-            # -------------------------------------------------
-            if all_measurements:
-                all_measurements_array = np.array(all_measurements)
-                data_stats = {
-                    "Moyenne": np.mean(all_measurements_array),
-                    "Écart-type": np.std(all_measurements_array, ddof=1),
-                    "Min": np.min(all_measurements_array),
-                    "Max": np.max(all_measurements_array),
-                    "Étendue": np.ptp(all_measurements_array)
-                }
-            else:
-                data_stats = {
-                    "Moyenne": 0,
-                    "Écart-type": 0,
-                    "Min": 0,
-                    "Max": 0,
-                    "Étendue": 0
-                }
+            R_p = max(part_means) - min(part_means)  # Étendue des moyennes des pièces
             
             # =====================================================
-            # AFFICHAGE DES RÉSULTATS
+            # 3. CALCUL DES COMPOSANTES DE VARIATION
+            # =====================================================
+            st.subheader("📐 Calculs détaillés")
+            
+            # Déterminer les constantes K
+            k1 = K1.get(n_trials, 4.56/n_trials)  # Approximation si n_trials > 4
+            k2 = K2.get(n_operators, 3.65/n_operators)  # Approximation si n_operators > 4
+            
+            if method == "Avec d₂":
+                # Utiliser d2 pour PV
+                if n_parts in D2_TABLE:
+                    d2 = D2_TABLE[n_parts]
+                else:
+                    # Approximation pour n_parts > 15
+                    d2 = 3.55 + 0.06 * (n_parts - 15)
+                k3 = 5.15 / d2  # Facteur pour 99% de la distribution
+            else:
+                # Utiliser K3 standard
+                k3 = K3
+            
+            # Afficher les constantes utilisées
+            const_df = pd.DataFrame({
+                "Constante": ["K₁", "K₂", "K₃", "R̄", "X_diff", "R_p"],
+                "Valeur": [f"{k1:.4f}", f"{k2:.4f}", f"{k3:.4f}", 
+                          f"{R_bar_global:.4f}", f"{X_diff:.4f}", f"{R_p:.4f}"],
+                "Description": [
+                    f"Pour {n_trials} essais",
+                    f"Pour {n_operators} opérateurs",
+                    "Pour variation pièces" if method == "Avec d₂" else "Standard AIAG",
+                    "Étendue moyenne",
+                    "Différence des moyennes opérateurs",
+                    "Étendue des moyennes pièces"
+                ]
+            })
+            st.dataframe(const_df, use_container_width=True)
+            
+            # 3.1 Répétabilité (EV)
+            EV = R_bar_global * k1
+            
+            # 3.2 Reproductibilité (AV)
+            av_term = (X_diff * k2) ** 2 - (EV ** 2 / (n_parts * n_trials))
+            AV = math.sqrt(max(av_term, 0))
+            
+            # 3.3 Gage R&R
+            GRR = math.sqrt(EV ** 2 + AV ** 2)
+            
+            # 3.4 Variation pièces (PV)
+            PV = R_p * k3
+            
+            # 3.5 Variation totale (TV)
+            TV = math.sqrt(GRR ** 2 + PV ** 2)
+            
+            # 3.6 Pourcentages
+            if TV > 0:
+                EV_pct = (EV / TV) * 100
+                AV_pct = (AV / TV) * 100
+                GRR_pct = (GRR / TV) * 100
+                PV_pct = (PV / TV) * 100
+            else:
+                EV_pct = AV_pct = GRR_pct = PV_pct = 0
+            
+            # 3.7 %R&R/Tolérance si spécifiée
+            if tol_spec > 0:
+                GRR_tol_pct = (GRR / tol_spec) * 100
+                EV_tol_pct = (EV / tol_spec) * 100
+                AV_tol_pct = (AV / tol_spec) * 100
+            else:
+                GRR_tol_pct = EV_tol_pct = AV_tol_pct = None
+            
+            # =====================================================
+            # 4. AFFICHAGE DES RÉSULTATS
             # =====================================================
             st.subheader("📊 Résultats de l'analyse")
             
             # Métriques principales
             cols = st.columns(5)
-            with cols[0]:
-                st.metric("Répétabilité (EV)", f"{EV:.4f}", f"{EV_percent:.1f}%")
-            with cols[1]:
-                st.metric("Reproductibilité (AV)", f"{AV:.4f}", f"{AV_percent:.1f}%")
-            with cols[2]:
-                st.metric("Gage R&R (GRR)", f"{GRR:.4f}", f"{GRR_percent:.1f}%")
-            with cols[3]:
-                st.metric("Variation Pièces (PV)", f"{PV:.4f}", f"{PV_percent:.1f}%")
-            with cols[4]:
-                st.metric("Variation Totale (TV)", f"{TV:.4f}", "100%")
+            metrics = [
+                ("EV", EV, EV_pct, "#1f77b4"),
+                ("AV", AV, AV_pct, "#ff7f0e"),
+                ("GRR", GRR, GRR_pct, "#d62728"),
+                ("PV", PV, PV_pct, "#2ca02c"),
+                ("TV", TV, 100, "#9467bd")
+            ]
+            
+            for i, (name, value, pct, color) in enumerate(metrics):
+                with cols[i]:
+                    st.metric(
+                        label=name,
+                        value=f"{value:.4f}",
+                        delta=f"{pct:.1f}%" if name != "TV" else None
+                    )
             
             # Indicateur de qualité
             st.subheader("📈 Évaluation du système de mesure")
             
-            if GRR_percent < 10:
-                st.success(f"✅ **SYSTÈME ACCEPTABLE** - %GRR = {GRR_percent:.1f}% (< 10%)")
-                st.progress(GRR_percent / 30)
-            elif GRR_percent < 30:
-                st.warning(f"⚠️ **ACCEPTABLE SOUS CONDITIONS** - %GRR = {GRR_percent:.1f}% (entre 10% et 30%)")
-                st.progress(GRR_percent / 30)
+            # Barre de progression colorée
+            if GRR_pct < 10:
+                color = "green"
+                status = "✅ **SYSTÈME ACCEPTABLE**"
+            elif GRR_pct < 30:
+                color = "orange"
+                status = "⚠️ **ACCEPTABLE SOUS CONDITIONS**"
             else:
-                st.error(f"❌ **SYSTÈME INACCEPTABLE** - %GRR = {GRR_percent:.1f}% (> 30%)")
-                st.progress(1.0)
+                color = "red"
+                status = "❌ **SYSTÈME INACCEPTABLE**"
             
-            if GRR_tol_percent is not None:
-                st.info(f"📏 %GRR/Tolérance = {GRR_tol_percent:.1f}% (tolérance spécifiée: {tol_spec})")
+            st.markdown(f"""
+            <div style="background-color:{color}20; padding:15px; border-radius:10px; border-left:5px solid {color};">
+                <h4 style="margin:0; color:{color}">{status}</h4>
+                <p style="margin:5px 0 0 0; font-size:1.2em;">
+                    %R&R = <strong>{GRR_pct:.1f}%</strong> | %EV = {EV_pct:.1f}% | %AV = {AV_pct:.1f}%
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Barre de progression
+            progress_val = min(GRR_pct / 30, 1.0)
+            st.progress(progress_val, text=f"%R&R: {GRR_pct:.1f}%")
+            
+            if tol_spec > 0:
+                st.info(f"📏 **%R&R/Tolérance = {GRR_tol_pct:.1f}%** (tolérance spécifiée: {tol_spec:.3f})")
             
             # =====================================================
-            # TABLEAUX DÉTAILLÉS
+            # 5. TABLEAUX DÉTAILLÉS
             # =====================================================
-            tab1, tab2, tab3, tab4 = st.tabs(["📋 Tableau détaillé", "📐 Calculs intermédiaires", "📈 Statistiques", "🔧 Paramètres"])
+            st.subheader("📋 Tableaux détaillés")
+            
+            tab1, tab2, tab3, tab4 = st.tabs(["📊 Par pièce", "📈 Par opérateur", "🧮 Calculs", "📊 Statistiques"])
             
             with tab1:
-                # S'assurer que nous avons le bon nombre de pièces
-                actual_n_parts = min(n_parts, len(part_data))
-                detailed_df = pd.DataFrame({
-                    "Pièce": range(1, actual_n_parts + 1),
-                    "Moyenne Pièce": part_data[:actual_n_parts],
-                    "Étendue Moyenne (R̄)": R_bar_per_part.values[:actual_n_parts] if len(R_bar_per_part) > 0 else [0]*actual_n_parts,
-                    "EV (par pièce)": [EV] * actual_n_parts,
-                    "AV (par pièce)": [AV] * actual_n_parts,
-                    "GRR (par pièce)": [GRR] * actual_n_parts,
-                    "PV (par pièce)": [PV] * actual_n_parts,
-                    "TV (par pièce)": [TV] * actual_n_parts
+                # Tableau par pièce
+                detail_df = pd.DataFrame({
+                    "Pièce": range(1, n_parts + 1),
+                    "Moyenne": part_means,
+                    "Étendue moyenne (R̄)": R_bar.values,
+                    "EV contribution": [EV] * n_parts,
+                    "AV contribution": [AV] * n_parts,
+                    "GRR contribution": [GRR] * n_parts,
+                    "PV contribution": [PV] * n_parts
                 })
-                st.dataframe(detailed_df, use_container_width=True)
+                st.dataframe(detail_df, use_container_width=True)
             
             with tab2:
-                calc_df = pd.DataFrame({
-                    "Paramètre": ["R̄ (moyenne des étendues)", "X_diff (différence des moyennes op.)", 
-                                 "K1 utilisé", "K2 utilisé", "K3 utilisé", "R_p (étendue pièces)"],
-                    "Valeur": [f"{R_bar_global:.4f}", f"{X_diff:.4f}", 
-                              f"{k1_val}", f"{k2_val}", f"{k3_val}", f"{R_p:.4f}"],
-                    "Formule": ["ΣR_i / n_parts", "max(X̄_op) - min(X̄_op)", 
-                               f"K1({n_trials})", f"K2({n_operators})", "0.590", "max(X̄_part) - min(X̄_part)"]
-                })
-                st.dataframe(calc_df, use_container_width=True)
+                # Tableau par opérateur
+                op_stats = []
+                for op in range(n_operators):
+                    op_vals = df.iloc[:, op*n_trials:(op+1)*n_trials].values.flatten()
+                    op_stats.append({
+                        "Opérateur": f"Op{op+1}",
+                        "Moyenne": np.mean(op_vals),
+                        "Écart-type": np.std(op_vals, ddof=1),
+                        "Min": np.min(op_vals),
+                        "Max": np.max(op_vals),
+                        "Étendue moyenne": op_ranges[op].mean()
+                    })
+                op_df = pd.DataFrame(op_stats)
+                st.dataframe(op_df, use_container_width=True)
             
             with tab3:
-                stats_df = pd.DataFrame(list(data_stats.items()), 
-                                       columns=["Statistique", "Valeur"])
-                st.dataframe(stats_df, use_container_width=True)
+                # Calculs intermédiaires
+                calc_df = pd.DataFrame({
+                    "Étape": [
+                        "1. Étendue moyenne (R̄)",
+                        "2. Différence des moyennes (X_diff)",
+                        "3. Étendue des moyennes pièces (R_p)",
+                        "4. Répétabilité (EV = R̄ × K₁)",
+                        "5. Reproductibilité (AV = √[(X_diff × K₂)² - EV²/(n×r)])",
+                        "6. Gage R&R (√[EV² + AV²])",
+                        "7. Variation pièces (PV = R_p × K₃)",
+                        "8. Variation totale (√[GRR² + PV²])"
+                    ],
+                    "Calcul": [
+                        f"{R_bar_global:.4f} = Moyenne des étendues",
+                        f"{X_diff:.4f} = {max(op_global_means):.4f} - {min(op_global_means):.4f}",
+                        f"{R_p:.4f} = {max(part_means):.4f} - {min(part_means):.4f}",
+                        f"{EV:.4f} = {R_bar_global:.4f} × {k1:.4f}",
+                        f"{AV:.4f} = √[({X_diff:.4f}×{k2:.4f})² - {EV**2/(n_parts*n_trials):.4f}]",
+                        f"{GRR:.4f} = √[{EV:.4f}² + {AV:.4f}²]",
+                        f"{PV:.4f} = {R_p:.4f} × {k3:.4f}",
+                        f"{TV:.4f} = √[{GRR:.4f}² + {PV:.4f}²]"
+                    ],
+                    "Résultat": [
+                        f"{R_bar_global:.4f}",
+                        f"{X_diff:.4f}",
+                        f"{R_p:.4f}",
+                        f"{EV:.4f}",
+                        f"{AV:.4f}",
+                        f"{GRR:.4f}",
+                        f"{PV:.4f}",
+                        f"{TV:.4f}"
+                    ]
+                })
+                st.dataframe(calc_df, use_container_width=True, height=400)
             
             with tab4:
-                param_df = pd.DataFrame({
-                    "Paramètre": ["Pièces", "Opérateurs", "Essais", "Total mesures"],
-                    "Valeur": [n_parts, n_operators, n_trials, n_parts * n_operators * n_trials]
-                })
-                st.dataframe(param_df, use_container_width=True)
+                # Statistiques globales
+                all_vals = np.array(all_measurements)
+                stats_data = {
+                    "Statistique": [
+                        "Nombre total de mesures",
+                        "Moyenne globale",
+                        "Écart-type global",
+                        "Coefficient de variation",
+                        "Minimum",
+                        "Maximum",
+                        "Étendue totale",
+                        "Capabilité potentielle (Cp) si tolérance"
+                    ],
+                    "Valeur": [
+                        f"{len(all_vals)}",
+                        f"{np.mean(all_vals):.4f}",
+                        f"{np.std(all_vals, ddof=1):.4f}",
+                        f"{(np.std(all_vals, ddof=1)/np.mean(all_vals)*100 if np.mean(all_vals)!=0 else 0):.2f}%",
+                        f"{np.min(all_vals):.4f}",
+                        f"{np.max(all_vals):.4f}",
+                        f"{np.ptp(all_vals):.4f}",
+                        f"{tol_spec/(6*np.std(all_vals, ddof=1)):.2f}" if tol_spec>0 else "N/A"
+                    ]
+                }
+                stats_df = pd.DataFrame(stats_data)
+                st.dataframe(stats_df, use_container_width=True)
             
             # =====================================================
-            # VISUALISATIONS
+            # 6. VISUALISATIONS
             # =====================================================
-            st.subheader("📊 Visualisations")
+            st.subheader("📈 Visualisations")
             
             viz_col1, viz_col2 = st.columns(2)
             
             with viz_col1:
                 # Diagramme à barres des composantes
-                fig1, ax1 = plt.subplots(figsize=(8, 6))
-                components = ['EV', 'AV', 'PV', 'GRR', 'TV']
-                values = [EV, AV, PV, GRR, TV]
-                colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
+                fig1, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
                 
-                bars = ax1.bar(components, values, color=colors)
-                ax1.set_ylabel('Variation')
+                # Composantes absolues
+                components = ['EV', 'AV', 'GRR', 'PV', 'TV']
+                values = [EV, AV, GRR, PV, TV]
+                colors = ['#1f77b4', '#ff7f0e', '#d62728', '#2ca02c', '#9467bd']
+                
+                ax1.bar(components, values, color=colors)
+                ax1.set_ylabel('Valeur absolue')
                 ax1.set_title('Composantes de variation (absolues)')
+                ax1.grid(True, alpha=0.3, axis='y')
                 
-                # Ajout des valeurs sur les barres
-                for bar, val in zip(bars, values):
-                    height = bar.get_height()
-                    ax1.text(bar.get_x() + bar.get_width()/2., height,
-                            f'{val:.3f}', ha='center', va='bottom')
+                # Ajouter les valeurs sur les barres
+                for i, (comp, val) in enumerate(zip(components, values)):
+                    ax1.text(i, val, f'{val:.3f}', ha='center', va='bottom')
                 
-                st.pyplot(fig1)
-            
-            with viz_col2:
-                # Diagramme à barres des pourcentages
-                fig2, ax2 = plt.subplots(figsize=(8, 6))
-                components_pct = ['EV%', 'AV%', 'PV%', 'GRR%']
-                values_pct = [EV_percent, AV_percent, PV_percent, GRR_percent]
-                colors_pct = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+                # Composantes en pourcentage
+                components_pct = ['EV%', 'AV%', 'GRR%', 'PV%']
+                values_pct = [EV_pct, AV_pct, GRR_pct, PV_pct]
+                colors_pct = ['#1f77b4', '#ff7f0e', '#d62728', '#2ca02c']
                 
-                bars_pct = ax2.bar(components_pct, values_pct, color=colors_pct)
+                bars = ax2.bar(components_pct, values_pct, color=colors_pct)
                 ax2.set_ylabel('Pourcentage (%)')
                 ax2.set_title('Distribution des variations (%)')
                 ax2.axhline(y=10, color='green', linestyle='--', alpha=0.5, label='Limite 10%')
                 ax2.axhline(y=30, color='red', linestyle='--', alpha=0.5, label='Limite 30%')
+                ax2.grid(True, alpha=0.3, axis='y')
+                ax2.legend()
                 
-                # Ajout des valeurs sur les barres
-                for bar, val in zip(bars_pct, values_pct):
+                # Ajouter les valeurs sur les barres
+                for bar, val in zip(bars, values_pct):
                     height = bar.get_height()
                     ax2.text(bar.get_x() + bar.get_width()/2., height,
                             f'{val:.1f}%', ha='center', va='bottom')
                 
-                ax2.legend()
+                plt.tight_layout()
+                st.pyplot(fig1)
+            
+            with viz_col2:
+                # Graphique des moyennes par opérateur
+                fig2, ax = plt.subplots(figsize=(10, 6))
+                
+                x = np.arange(n_parts)
+                width = 0.8 / n_operators
+                
+                for op in range(n_operators):
+                    offset = (op - (n_operators-1)/2) * width
+                    ax.bar(x + offset, op_means_by_part[op], 
+                          width=width, label=f'Op {op+1}', alpha=0.7)
+                
+                ax.set_xlabel('Pièce')
+                ax.set_ylabel('Moyenne des mesures')
+                ax.set_title('Moyennes par opérateur et par pièce')
+                ax.legend()
+                ax.grid(True, alpha=0.3, axis='y')
+                ax.set_xticks(x)
+                ax.set_xticklabels([f'P{i+1}' for i in range(n_parts)])
+                
+                plt.tight_layout()
                 st.pyplot(fig2)
             
-            # Graphique des moyennes par opérateur
-            if operator_means:
-                st.subheader("📈 Moyennes par opérateur")
-                
-                fig3, ax3 = plt.subplots(figsize=(10, 6))
-                actual_n_parts = min(n_parts, len(operator_means[0]))
-                x_positions = np.arange(actual_n_parts)
-                width = 0.8 / min(n_operators, len(operator_means))
-                
-                for op_idx in range(min(n_operators, len(operator_means))):
-                    op_means = operator_means[op_idx][:actual_n_parts]
-                    ax3.bar(x_positions + op_idx * width, op_means, 
-                           width=width, label=f'Op {op_idx+1}', 
-                           alpha=0.7)
-                
-                ax3.set_xlabel('Pièces')
-                ax3.set_ylabel('Moyenne des mesures')
-                ax3.set_title('Moyennes par opérateur pour chaque pièce')
-                ax3.legend()
-                ax3.grid(True, alpha=0.3)
-                
-                st.pyplot(fig3)
+            # Graphique des étendues
+            fig3, ax = plt.subplots(figsize=(12, 5))
             
-            # Graphique des étendues par pièce
-            if ranges_per_part:
-                st.subheader("📉 Étendues par pièce")
-                
-                fig4, ax4 = plt.subplots(figsize=(10, 4))
-                actual_n_parts = min(n_parts, len(ranges_per_part[0]))
-                parts = range(1, actual_n_parts + 1)
-                
-                for op_idx in range(min(n_operators, len(ranges_per_part))):
-                    ax4.plot(parts, ranges_per_part[op_idx][:actual_n_parts], 
-                            marker='o', label=f'Op {op_idx+1}', 
-                            alpha=0.7, linewidth=2)
-                
-                ax4.set_xlabel('Pièces')
-                ax4.set_ylabel('Étendue')
-                ax4.set_title('Étendues par pièce et par opérateur')
-                ax4.legend()
-                ax4.grid(True, alpha=0.3)
-                
-                st.pyplot(fig4)
+            for op in range(n_operators):
+                ax.plot(range(1, n_parts + 1), op_ranges[op], 
+                       marker='o', label=f'Op {op+1}', linewidth=2, alpha=0.7)
+            
+            ax.set_xlabel('Pièce')
+            ax.set_ylabel('Étendue')
+            ax.set_title('Étendues par pièce et par opérateur')
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+            ax.set_xticks(range(1, n_parts + 1))
+            
+            plt.tight_layout()
+            st.pyplot(fig3)
             
             # =====================================================
-            # RAPPORT DÉTAILLÉ
-            # =====================================================
-            with st.expander("📄 Rapport détaillé de l'analyse", expanded=False):
-                st.markdown(f"""
-                ## Rapport d'analyse Gage R&R
-                
-                **Date de l'analyse:** {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
-                
-                **Paramètres de l'étude:**
-                - Nombre de pièces: {n_parts}
-                - Nombre d'opérateurs: {n_operators}
-                - Nombre de répétitions: {n_trials}
-                - Constantes utilisées: K1={k1_val}, K2={k2_val}, K3={k3_val}
-                
-                **Résultats:**
-                - Répétabilité (EV): {EV:.4f} ({EV_percent:.1f}%)
-                - Reproductibilité (AV): {AV:.4f} ({AV_percent:.1f}%)
-                - Variation Gage R&R (GRR): {GRR:.4f} ({GRR_percent:.1f}%)
-                - Variation Pièces (PV): {PV:.4f} ({PV_percent:.1f}%)
-                - Variation Totale (TV): {TV:.4f}
-                
-                **Conclusion:**
-                Le système de mesure est **{'acceptable' if GRR_percent < 10 else 'acceptable sous conditions' if GRR_percent < 30 else 'inacceptable'}** 
-                avec un %GRR de {GRR_percent:.1f}%.
-                """)
-            
-            # =====================================================
-            # EXPORT DES RÉSULTATS
+            # 7. EXPORT DES RÉSULTATS
             # =====================================================
             st.subheader("💾 Export des résultats")
             
-            # Préparation des données pour export
-            results_dict = {
-                "Paramètre": ["EV", "AV", "GRR", "PV", "TV", "%GRR", "%EV", "%AV", "%PV"],
-                "Valeur": [EV, AV, GRR, PV, TV, GRR_percent, EV_percent, AV_percent, PV_percent],
-                "Unité": ["absolu", "absolu", "absolu", "absolu", "absolu", "%", "%", "%", "%"]
-            }
-            
-            summary_df = pd.DataFrame(results_dict)
+            # Préparer les données pour export
+            results_summary = pd.DataFrame({
+                "Composante": ["EV", "AV", "GRR", "PV", "TV", 
+                              "%EV", "%AV", "%GRR", "%PV"],
+                "Valeur": [EV, AV, GRR, PV, TV,
+                          EV_pct, AV_pct, GRR_pct, PV_pct],
+                "Unité": ["absolu", "absolu", "absolu", "absolu", "absolu",
+                         "%", "%", "%", "%"]
+            })
             
             # Boutons d'export
             col_exp1, col_exp2, col_exp3 = st.columns(3)
             
             with col_exp1:
+                # Export CSV
+                csv_data = results_summary.to_csv(index=False)
                 st.download_button(
                     label="📥 Exporter résultats (CSV)",
-                    data=summary_df.to_csv(index=False),
+                    data=csv_data,
                     file_name="gage_rr_results.csv",
                     mime="text/csv"
                 )
             
             with col_exp2:
+                # Export Excel
                 excel_buffer = BytesIO()
                 with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
                     df.to_excel(writer, sheet_name='Données brutes', index=False)
-                    detailed_df.to_excel(writer, sheet_name='Analyse détaillée', index=False)
-                    summary_df.to_excel(writer, sheet_name='Résumé', index=False)
+                    detail_df.to_excel(writer, sheet_name='Analyse par pièce', index=False)
+                    results_summary.to_excel(writer, sheet_name='Résumé', index=False)
+                    calc_df.to_excel(writer, sheet_name='Calculs détaillés', index=False)
                 
                 st.download_button(
                     label="📥 Exporter rapport complet (Excel)",
@@ -741,26 +752,49 @@ if df is not None:
                 )
             
             with col_exp3:
-                # Génération d'un rapport texte
+                # Export rapport texte
                 report_text = f"""
-                RAPPORT GAGE R&R
-                =================
+                ===================================
+                RAPPORT D'ANALYSE GAGE R&R
+                ===================================
                 Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
+                Méthode: {method}
+                Niveau de confiance: {confidence}%
                 
                 PARAMÈTRES DE L'ÉTUDE:
-                - Pièces: {n_parts}
-                - Opérateurs: {n_operators}
-                - Essais: {n_trials}
+                - Nombre de pièces: {n_parts}
+                - Nombre d'opérateurs: {n_operators}
+                - Nombre de répétitions: {n_trials}
+                - Total mesures: {n_parts * n_operators * n_trials}
+                
+                CONSTANTES UTILISÉES:
+                - K₁ (répétabilité): {k1:.4f}
+                - K₂ (reproductibilité): {k2:.4f}
+                - K₃ (variation pièces): {k3:.4f}
                 
                 RÉSULTATS:
-                - Répétabilité (EV): {EV:.4f} ({EV_percent:.1f}%)
-                - Reproductibilité (AV): {AV:.4f} ({AV_percent:.1f}%)
-                - Gage R&R (GRR): {GRR:.4f} ({GRR_percent:.1f}%)
-                - Variation pièces (PV): {PV:.4f} ({PV_percent:.1f}%)
+                - Répétabilité (EV): {EV:.4f} ({EV_pct:.1f}%)
+                - Reproductibilité (AV): {AV:.4f} ({AV_pct:.1f}%)
+                - Gage R&R: {GRR:.4f} ({GRR_pct:.1f}%)
+                - Variation pièces (PV): {PV:.4f} ({PV_pct:.1f}%)
                 - Variation totale (TV): {TV:.4f}
                 
+                """
+                
+                if tol_spec > 0:
+                    report_text += f"""
+                PAR RAPPORT À LA TOLÉRANCE ({tol_spec:.3f}):
+                - %EV/Tolérance: {EV_tol_pct:.1f}%
+                - %AV/Tolérance: {AV_tol_pct:.1f}%
+                - %R&R/Tolérance: {GRR_tol_pct:.1f}%
+                
+                """
+                
+                report_text += f"""
                 CONCLUSION:
-                %GRR = {GRR_percent:.1f}% -> Système {'acceptable' if GRR_percent < 10 else 'acceptable sous conditions' if GRR_percent < 30 else 'inacceptable'}
+                %R&R = {GRR_pct:.1f}% → Système {'ACCEPTABLE' if GRR_pct < 10 else 'ACCEPTABLE SOUS CONDITIONS' if GRR_pct < 30 else 'INACCEPTABLE'}
+                
+                ===================================
                 """
                 
                 st.download_button(
@@ -769,10 +803,53 @@ if df is not None:
                     file_name="rapport_gage_rr.txt",
                     mime="text/plain"
                 )
+            
+            # =====================================================
+            # 8. RECOMMANDATIONS
+            # =====================================================
+            with st.expander("💡 Recommandations", expanded=True):
+                if GRR_pct > 30:
+                    st.error("**Actions prioritaires nécessaires :**")
+                    st.markdown("""
+                    1. **Investiguez la source de variation :**
+                       - Si %EV élevé → Vérifiez l'instrument de mesure
+                       - Si %AV élevé → Formez les opérateurs, standardisez les méthodes
+                    2. **Améliorez la précision :**
+                       - Calibrez l'équipement
+                       - Utilisez un instrument plus précis
+                    3. **Revoyez la méthode :**
+                       - Clarifiez les instructions
+                       - Améliorez le support des pièces
+                    """)
+                elif GRR_pct > 10:
+                    st.warning("**Améliorations recommandées :**")
+                    st.markdown("""
+                    1. **Surveillance continue :**
+                       - Mettez en place des contrôles réguliers
+                       - Documentez les procédures
+                    2. **Formation :**
+                       - Rafraîchissez la formation des opérateurs
+                       - Vérifiez la compréhension des méthodes
+                    3. **Maintenance préventive :**
+                       - Calendrier de calibration strict
+                       - Entretien régulier de l'équipement
+                    """)
+                else:
+                    st.success("**Maintenance du système :**")
+                    st.markdown("""
+                    1. **Surveillance :**
+                       - Continuez les vérifications régulières
+                       - Documentez toute dérive
+                    2. **Amélioration continue :**
+                       - Recherchez des opportunités d'amélioration
+                       - Partagez les bonnes pratiques
+                    """)
         
         except Exception as e:
             st.error(f"❌ Erreur lors du calcul : {str(e)}")
-            st.info("Veuillez vérifier que vos données sont correctement formatées et que tous les paramètres sont définis.")
+            import traceback
+            with st.expander("Détails de l'erreur"):
+                st.code(traceback.format_exc())
 
 else:
     st.info("👈 Veuillez importer ou saisir des données pour commencer l'analyse")
@@ -783,7 +860,7 @@ else:
 st.divider()
 st.markdown("""
 <div style="text-align: center; color: gray; font-size: 0.8em;">
-    <p>Gage R&R - Méthode des étendues et des moyennes | Basé sur les recommandations AIAG</p>
-    <p>Outils pour l'amélioration de la qualité et la maîtrise statistique des processus</p>
+    <p>Gage R&R - Méthode des étendues et des moyennes | Basé sur AIAG et normes qualité</p>
+    <p>© 2024 - Outil pour l'amélioration continue et la maîtrise statistique des processus</p>
 </div>
 """, unsafe_allow_html=True)
