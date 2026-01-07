@@ -42,11 +42,9 @@ st.subheader("⚙️ Paramètres")
 
 if df is not None:
     n_parts = df.shape[0]
-
     total_cols = df.shape[1]
     n_trials = st.number_input("Nombre de répétitions", 2, 10, 2)
     n_operators = total_cols // n_trials
-
     st.info(f"📌 Détection automatique : {n_operators} opérateurs × {n_trials} essais")
 else:
     c1, c2, c3 = st.columns(3)
@@ -95,7 +93,6 @@ with e1:
         "mesures_gage_rr.csv",
         "text/csv"
     )
-
 with e2:
     st.download_button(
         "⬇️ Export mesures Excel",
@@ -107,9 +104,11 @@ with e2:
 # =====================================================
 # CONSTANTES AIAG
 # =====================================================
-K1 = {2: 0.886, 3: 0.590, 4: 0.485}
-K2 = {2: 0.707, 3: 0.523, 4: 0.446}
-K3 = 0.590
+K3 = 0.590  # PV coefficient
+
+# Table des d2 pour n répétitions (AIAG standard)
+d2_table = {2:1.128, 3:1.693, 4:2.059, 5:2.326, 6:2.534,
+            7:2.704, 8:2.847, 9:2.970, 10:3.078}
 
 # =====================================================
 # CALCUL GAGE R&R
@@ -122,21 +121,17 @@ if st.button("🔢 Calculer Gage R&R"):
     for op in range(n_operators):
         cols = [f"Op{op+1}_Essai{t+1}" for t in range(n_trials)]
         df_op = df[cols]
-        ranges.append(df_op.max(axis=1) - df_op.min(axis=1))   # EV par pièce
+        ranges.append(df_op.max(axis=1) - df_op.min(axis=1))   # étendue pièce par opérateur
         operator_means.append(df_op.mean(axis=1))              # moyenne par pièce
 
     # Répétabilité (EV)
-    R_bar = pd.concat(ranges, axis=1).mean(axis=1)  # moyenne par pièce
-    EV = R_bar.mean()  # EV global
+    R_bar_total = np.mean([r.mean() for r in ranges])  # moyenne des étendues global
+    EV = R_bar_total  # EV global (ou appliquer K1 si nécessaire)
 
-    # Reproductibilité (AV)
-    op_means_global = [m.mean() for m in operator_means]
-    X_diff = max(op_means_global) - min(op_means_global)
+    # Reproductibilité (AV) selon formule exacte
+    d2 = d2_table.get(n_trials, 1.128)
     AV = np.sqrt(
-        max(
-            (X_diff * K2.get(n_operators, 0.707))**2 - (EV**2 / (n_parts * n_trials)),
-            0
-        )
+        (5.15 * R_bar_total / d2)**2 - (EV**2 / (n_parts * n_trials))
     )
 
     # Gage R&R
@@ -153,7 +148,7 @@ if st.button("🔢 Calculer Gage R&R"):
     # =====================================================
     detailed_df = pd.DataFrame({
         "Pièce": range(1, n_parts + 1),
-        "EV (répétabilité)": R_bar,
+        "EV (répétabilité)": [EV]*n_parts,
         "AV (reproductibilité)": [AV]*n_parts,
         "GRR": [GRR]*n_parts,
         "PV (variation pièces)": [PV]*n_parts,
