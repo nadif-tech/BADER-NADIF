@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
 from io import BytesIO
 import math
 
@@ -386,82 +385,77 @@ if df is not None:
                     st.info(f"📏 **%R&R/Tolérance = {grr_tol_pct:.1f}%** (Tolérance: {tolerance:.3f})")
                 
                 # =====================================================
-                # SECTION 3: VISUALISATIONS
+                # SECTION 3: VISUALISATIONS (avec Matplotlib)
                 # =====================================================
                 st.header("📊 Visualisations")
                 
-                # Création des graphiques avec Plotly
-                fig1 = go.Figure()
+                # Création des graphiques avec Matplotlib
+                fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+                fig.suptitle('Analyse Gage R&R - Résultats', fontsize=16)
                 
-                # Graphique 1: Distribution des composantes
+                # Graphique 1: Composantes de variation
+                ax1 = axes[0, 0]
                 components = ['EV', 'AV', 'R&R', 'PV', 'TV']
                 values = [results['EV'], results['AV'], results['GRR'], results['PV'], results['TV']]
-                percentages = [results['EV_pct'], results['AV_pct'], results['GRR_pct'], results['PV_pct'], 100]
+                colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd', '#8c564b']
                 
-                fig1.add_trace(go.Bar(
-                    x=components,
-                    y=values,
-                    name='Valeurs absolues',
-                    marker_color=['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd', '#8c564b'],
-                    text=[f'{v:.3f}' for v in values],
-                    textposition='auto'
-                ))
+                bars1 = ax1.bar(components, values, color=colors, alpha=0.8)
+                ax1.set_ylabel('Valeur')
+                ax1.set_title('Composantes de variation (absolues)')
+                ax1.grid(True, alpha=0.3, axis='y')
                 
-                fig1.update_layout(
-                    title='Composantes de variation',
-                    xaxis_title='Composante',
-                    yaxis_title='Valeur',
-                    height=400
-                )
-                
-                st.plotly_chart(fig1, use_container_width=True)
+                # Ajout des valeurs sur les barres
+                for bar, val in zip(bars1, values):
+                    height = bar.get_height()
+                    ax1.text(bar.get_x() + bar.get_width()/2, height, f'{val:.3f}',
+                            ha='center', va='bottom', fontsize=9)
                 
                 # Graphique 2: Pourcentages
-                fig2 = go.Figure()
+                ax2 = axes[0, 1]
+                comps_pct = ['EV%', 'AV%', 'R&R%', 'PV%']
+                vals_pct = [results['EV_pct'], results['AV_pct'], results['GRR_pct'], results['PV_pct']]
+                colors_pct = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd']
                 
-                fig2.add_trace(go.Bar(
-                    x=['EV%', 'AV%', 'R&R%', 'PV%'],
-                    y=percentages[:-1],
-                    marker_color=['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd'],
-                    text=[f'{p:.1f}%' for p in percentages[:-1]],
-                    textposition='auto'
-                ))
+                bars2 = ax2.bar(comps_pct, vals_pct, color=colors_pct, alpha=0.8)
+                ax2.set_ylabel('Pourcentage (%)')
+                ax2.set_title('Distribution des variations (%)')
+                ax2.axhline(y=threshold_1, color='green', linestyle='--', alpha=0.7, label=f'Seuil {threshold_1}%')
+                ax2.axhline(y=threshold_2, color='red', linestyle='--', alpha=0.7, label=f'Seuil {threshold_2}%')
+                ax2.grid(True, alpha=0.3, axis='y')
+                ax2.legend()
                 
-                # Ajout des lignes de référence
-                fig2.add_hline(y=threshold_1, line_dash="dash", line_color="green", 
-                              annotation_text=f"Seuil {threshold_1}%")
-                fig2.add_hline(y=threshold_2, line_dash="dash", line_color="red", 
-                              annotation_text=f"Seuil {threshold_2}%")
-                
-                fig2.update_layout(
-                    title='Distribution des pourcentages de variation',
-                    xaxis_title='Composante',
-                    yaxis_title='Pourcentage (%)',
-                    height=400
-                )
-                
-                st.plotly_chart(fig2, use_container_width=True)
+                for bar, val in zip(bars2, vals_pct):
+                    height = bar.get_height()
+                    ax2.text(bar.get_x() + bar.get_width()/2, height, f'{val:.1f}%',
+                            ha='center', va='bottom', fontsize=9)
                 
                 # Graphique 3: Moyennes par opérateur
-                fig3 = go.Figure()
+                ax3 = axes[1, 0]
+                op_indices = np.arange(n_operators)
+                ax3.bar(op_indices, results['operator_means'], color='skyblue', alpha=0.7)
+                ax3.set_xlabel('Opérateur')
+                ax3.set_ylabel('Moyenne')
+                ax3.set_title('Moyennes globales par opérateur')
+                ax3.set_xticks(op_indices)
+                ax3.set_xticklabels([f'Op{i+1}' for i in op_indices])
+                ax3.grid(True, alpha=0.3, axis='y')
                 
-                op_labels = [f'Op{i+1}' for i in range(n_operators)]
-                fig3.add_trace(go.Scatter(
-                    x=op_labels,
-                    y=results['operator_means'],
-                    mode='markers+lines',
-                    marker=dict(size=10, color='blue'),
-                    name='Moyenne par opérateur'
-                ))
+                for i, mean in enumerate(results['operator_means']):
+                    ax3.text(i, mean, f'{mean:.3f}', ha='center', va='bottom')
                 
-                fig3.update_layout(
-                    title='Moyennes par opérateur',
-                    xaxis_title='Opérateur',
-                    yaxis_title='Moyenne',
-                    height=300
-                )
+                # Graphique 4: Moyennes par pièce
+                ax4 = axes[1, 1]
+                part_indices = np.arange(n_parts)
+                ax4.plot(part_indices, results['part_means'], 'o-', color='green', linewidth=2)
+                ax4.set_xlabel('Pièce')
+                ax4.set_ylabel('Moyenne')
+                ax4.set_title('Moyennes par pièce (tous opérateurs)')
+                ax4.set_xticks(part_indices)
+                ax4.set_xticklabels([f'P{i+1}' for i in part_indices], rotation=45)
+                ax4.grid(True, alpha=0.3)
                 
-                st.plotly_chart(fig3, use_container_width=True)
+                plt.tight_layout()
+                st.pyplot(fig)
                 
                 # =====================================================
                 # SECTION 4: EXPORT DES RÉSULTATS
