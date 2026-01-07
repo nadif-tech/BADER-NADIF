@@ -1,0 +1,25 @@
+INSTALLATION & PATH (WINDOWS)
+
+1) Vérifier Python :
+   python --version
+   ou
+   py --version
+
+2) Installer Streamlit :
+   python -m pip install --upgrade pip
+   python -m pip install streamlit
+
+3) IMPORTANT (éviter les erreurs PATH) :
+   Utiliser TOUJOURS :
+   python -m streamlit run StreamlitApp.py
+
+   Ne pas utiliser :
+   streamlit run ...
+
+4) Si Python n'est pas reconnu :
+   - Réinstaller Python depuis https://python.org
+   - Cocher : "Add Python to PATH"
+
+5) Déploiement GitHub + Streamlit Cloud :
+   - Pousser tous les fichiers du dossier
+   - Fichier principal : StreamlitApp.py
