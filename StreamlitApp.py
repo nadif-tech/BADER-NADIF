@@ -4,11 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from io import BytesIO
 import math
-import folium
-from streamlit_folium import folium_static
-from geopy.distance import geodesic
 import random
 from datetime import datetime, timedelta
+import plotly.graph_objects as go
+import plotly.express as px
 
 # =====================================================
 # CONFIGURATION GÉNÉRALE
@@ -25,15 +24,22 @@ st.set_page_config(
 # =====================================================
 
 def calculate_distance_matrix(coordinates):
-    """Calcule la matrice des distances entre tous les points"""
+    """Calcule la matrice des distances entre tous les points (distance euclidienne simplifiée)"""
     n = len(coordinates)
     dist_matrix = np.zeros((n, n))
     
     for i in range(n):
         for j in range(n):
             if i != j:
-                # Calcul de distance géodésique (en km)
-                dist_matrix[i][j] = geodesic(coordinates[i], coordinates[j]).km
+                # Distance euclidienne simplifiée (pour l'exemple)
+                # En réalité, vous devriez utiliser une vraie API de distance
+                lat1, lon1 = coordinates[i]
+                lat2, lon2 = coordinates[j]
+                
+                # Approximation de distance (1 degré ≈ 111 km)
+                dist_lat = (lat2 - lat1) * 111
+                dist_lon = (lon2 - lon1) * 111 * math.cos(math.radians((lat1 + lat2) / 2))
+                dist_matrix[i][j] = math.sqrt(dist_lat**2 + dist_lon**2)
             else:
                 dist_matrix[i][j] = 0
     return dist_matrix
@@ -68,8 +74,7 @@ def nearest_neighbor_vrp(distance_matrix, depot_index=0, n_vehicles=3, max_capac
             if nearest is None:
                 break
                 
-            # Vérifier la capacité (simulée)
-            # Dans une version réelle, vous auriez des demandes réelles
+            # Vérifier la capacité
             node_load = random.randint(5, 20)  # Charge aléatoire pour simulation
             if current_load + node_load <= max_capacity:
                 route.append(nearest)
@@ -168,73 +173,105 @@ def savings_algorithm_vrp(distance_matrix, depot_index=0, n_vehicles=3, max_capa
     
     return final_routes, route_distances
 
-def create_route_map(coordinates, routes, depot_index=0):
-    """Crée une carte interactive avec les itinéraires"""
-    # Calculer le centre de la carte
-    avg_lat = np.mean([coord[0] for coord in coordinates])
-    avg_lon = np.mean([coord[1] for coord in coordinates])
+def create_interactive_map(coordinates, routes, clients_data, depot_index=0):
+    """Crée une carte interactive avec Plotly"""
     
-    # Créer la carte
-    m = folium.Map(location=[avg_lat, avg_lon], zoom_start=12)
+    # Créer la figure
+    fig = go.Figure()
     
     # Couleurs pour différents véhicules
     colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred', 
-              'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue', 
-              'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen']
+              'lightblue', 'lightgreen', 'pink', 'brown', 'gray']
     
-    # Ajouter le dépôt
-    folium.Marker(
-        location=coordinates[depot_index],
-        popup=f'Dépôt (Client {depot_index})',
-        icon=folium.Icon(color='black', icon='warehouse', prefix='fa')
-    ).add_to(m)
+    # Ajouter les clients (points)
+    client_lats = [coord[0] for coord in coordinates]
+    client_lons = [coord[1] for coord in coordinates]
+    client_names = [data['name'] for data in clients_data]
     
-    # Ajouter les clients
-    for i, coord in enumerate(coordinates):
-        if i != depot_index:
-            folium.Marker(
-                location=coord,
-                popup=f'Client {i}',
-                icon=folium.Icon(color='gray', icon='user', prefix='fa')
-            ).add_to(m)
+    # Marqueurs pour tous les clients
+    fig.add_trace(go.Scattermapbox(
+        lat=client_lats,
+        lon=client_lons,
+        mode='markers+text',
+        marker=go.scattermapbox.Marker(
+            size=15,
+            color='lightgray',
+            opacity=0.7
+        ),
+        text=[str(i) for i in range(len(coordinates))],
+        textposition="top center",
+        hoverinfo='text',
+        hovertext=[f"Client {i}: {name}" for i, name in enumerate(client_names)],
+        name='Clients'
+    ))
+    
+    # Marqueur spécial pour le dépôt
+    fig.add_trace(go.Scattermapbox(
+        lat=[coordinates[depot_index][0]],
+        lon=[coordinates[depot_index][1]],
+        mode='markers+text',
+        marker=go.scattermapbox.Marker(
+            size=20,
+            color='black',
+            symbol='circle'
+        ),
+        text=["Dépôt"],
+        textposition="top center",
+        hoverinfo='text',
+        hovertext=f"Dépôt principal",
+        name='Dépôt'
+    ))
     
     # Ajouter les itinéraires
     for i, route in enumerate(routes):
         route_color = colors[i % len(colors)]
         
-        # Créer les points de l'itinéraire
-        route_points = [coordinates[node] for node in route]
+        # Coordonnées de l'itinéraire
+        route_lats = [coordinates[node][0] for node in route]
+        route_lons = [coordinates[node][1] for node in route]
         
-        # Ajouter la ligne de l'itinéraire
-        folium.PolyLine(
-            route_points,
-            color=route_color,
-            weight=3,
-            opacity=0.8,
-            popup=f'Véhicule {i+1}'
-        ).add_to(m)
+        # Ligne de l'itinéraire
+        fig.add_trace(go.Scattermapbox(
+            lat=route_lats,
+            lon=route_lons,
+            mode='lines+markers',
+            line=dict(width=3, color=route_color),
+            marker=dict(size=10, color=route_color),
+            name=f'Véhicule {i+1}',
+            hoverinfo='text',
+            hovertext=[f"Véhicule {i+1}: {clients_data[node]['name']}" for node in route]
+        ))
         
-        # Ajouter des marqueurs numérotés pour l'ordre de visite
+        # Ajouter des numéros d'étape
         for j, node in enumerate(route[1:-1]):  # Exclure le dépôt au début et à la fin
-            folium.CircleMarker(
-                location=coordinates[node],
-                radius=8,
-                color=route_color,
-                fill=True,
-                fill_color='white',
-                fill_opacity=1,
-                popup=f'Véhicule {i+1}: Étape {j+1} - Client {node}'
-            ).add_to(m)
-            
-            # Ajouter le numéro d'étape
-            folium.map.Marker(
-                coordinates[node],
-                icon=folium.DivIcon(
-                    html=f'<div style="font-size: 12pt; color: {route_color}; font-weight: bold;">{j+1}</div>'
-                )
-            ).add_to(m)
+            fig.add_trace(go.Scattermapbox(
+                lat=[coordinates[node][0]],
+                lon=[coordinates[node][1]],
+                mode='text',
+                text=[str(j+1)],
+                textfont=dict(size=12, color='white'),
+                hoverinfo='skip',
+                showlegend=False
+            ))
     
-    return m
+    # Configuration de la carte
+    fig.update_layout(
+        mapbox_style="open-street-map",
+        mapbox=dict(
+            center=dict(lat=np.mean(client_lats), lon=np.mean(client_lons)),
+            zoom=10
+        ),
+        height=600,
+        margin={"r":0,"t":0,"l":0,"b":0},
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
+        )
+    )
+    
+    return fig
 
 # =====================================================
 # INTERFACE UTILISATEUR
@@ -307,7 +344,7 @@ with st.sidebar:
     st.markdown("### Aide")
     st.info("""
     **Format des données:**
-    - Fichier CSV/Excel avec colonnes: Client, Latitude, Longitude, Demande (optionnel)
+    - Fichier CSV/Excel avec colonnes: Client, Latitude, Longitude
     - La première ligne est considérée comme le dépôt par défaut
     - Les coordonnées doivent être en degrés décimaux
     
@@ -318,7 +355,7 @@ with st.sidebar:
     """)
 
 # TITRE PRINCIPAL
-st.title("🚚 Optimisation VRP - Voyageurs Représésentants Placiers")
+st.title("🚚 Optimisation VRP - Voyageurs Représentants Placiers")
 st.markdown("**Optimisation des itinéraires pour représentants commerciaux**")
 
 # =====================================================
@@ -564,14 +601,14 @@ if coordinates and len(coordinates) > 1:
                         sequence = " → ".join([clients_data[node_idx]['name'] for node_idx in route])
                         st.caption(f"**Séquence:** {sequence}")
                 
-                # 3. Carte interactive
+                # 3. Carte interactive avec Plotly
                 st.subheader("🗺️ Carte des itinéraires")
                 
                 # Créer la carte
-                route_map = create_route_map(coordinates, routes_list, depot_index)
+                fig_map = create_interactive_map(coordinates, routes_list, clients_data, depot_index)
                 
                 # Afficher la carte
-                folium_static(route_map, width=1200, height=600)
+                st.plotly_chart(fig_map, use_container_width=True)
                 
                 # 4. Graphiques de performance
                 st.subheader("📈 Analyse de performance")
@@ -650,6 +687,49 @@ if coordinates and len(coordinates) > 1:
                 
                 plt.tight_layout()
                 st.pyplot(fig)
+                
+                # Graphique supplémentaire avec Plotly
+                st.subheader("📊 Comparaison des performances")
+                
+                # Créer un graphique Plotly pour une meilleure interactivité
+                fig_comparison = go.Figure()
+                
+                # Ajouter les barres pour les distances
+                fig_comparison.add_trace(go.Bar(
+                    x=vehicles,
+                    y=route_distances,
+                    name='Distance (km)',
+                    marker_color='lightblue',
+                    text=[f'{d:.1f} km' for d in route_distances],
+                    textposition='auto',
+                ))
+                
+                # Ajouter une ligne pour l'utilisation
+                fig_comparison.add_trace(go.Scatter(
+                    x=vehicles,
+                    y=utilization,
+                    name='Utilisation (%)',
+                    yaxis='y2',
+                    mode='lines+markers',
+                    line=dict(color='orange', width=3),
+                    marker=dict(size=10)
+                ))
+                
+                fig_comparison.update_layout(
+                    title='Comparaison distance vs utilisation par véhicule',
+                    xaxis_title='Véhicules',
+                    yaxis_title='Distance (km)',
+                    yaxis2=dict(
+                        title='Utilisation (%)',
+                        overlaying='y',
+                        side='right',
+                        range=[0, 110]
+                    ),
+                    hovermode='x unified',
+                    height=500
+                )
+                
+                st.plotly_chart(fig_comparison, use_container_width=True)
                 
                 # =====================================================
                 # SECTION 3: EXPORT DES RÉSULTATS
@@ -869,7 +949,8 @@ if coordinates and len(coordinates) > 1:
                 
             except Exception as e:
                 st.error(f"❌ Erreur lors de l'optimisation: {str(e)}")
-                st.info("Vérifiez que les données de localisation sont valides et complètes.")
+                import traceback
+                st.code(traceback.format_exc())
 else:
     st.info("📝 Veuillez importer des données de localisation pour commencer l'optimisation.")
 
@@ -881,6 +962,6 @@ st.markdown("""
 <div style="text-align: center; color: gray;">
     <p><strong>VRP Optimization Tool</strong> - Optimisation des itinéraires pour voyageurs représentants placiers</p>
     <p>Algorithmes: Plus proche voisin • Clarke & Wright (Économies)</p>
-    <p>Visualisation cartographique • Analyse de coûts • Export complet</p>
+    <p>Visualisation interactive • Analyse de coûts • Export complet</p>
 </div>
 """, unsafe_allow_html=True)
