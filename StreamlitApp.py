@@ -6,8 +6,6 @@ from io import BytesIO
 import math
 import random
 from datetime import datetime, timedelta
-import plotly.graph_objects as go
-import plotly.express as px
 
 # =====================================================
 # CONFIGURATION GÉNÉRALE
@@ -24,7 +22,7 @@ st.set_page_config(
 # =====================================================
 
 def calculate_distance_matrix(coordinates):
-    """Calcule la matrice des distances entre tous les points (distance euclidienne simplifiée)"""
+    """Calcule la matrice des distances entre tous les points"""
     n = len(coordinates)
     dist_matrix = np.zeros((n, n))
     
@@ -173,104 +171,67 @@ def savings_algorithm_vrp(distance_matrix, depot_index=0, n_vehicles=3, max_capa
     
     return final_routes, route_distances
 
-def create_interactive_map(coordinates, routes, clients_data, depot_index=0):
-    """Crée une carte interactive avec Plotly"""
+def create_route_visualization(coordinates, routes, clients_data, depot_index=0):
+    """Crée une visualisation des itinéraires avec Matplotlib"""
     
-    # Créer la figure
-    fig = go.Figure()
+    fig, ax = plt.subplots(figsize=(12, 10))
     
-    # Couleurs pour différents véhicules
-    colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred', 
-              'lightblue', 'lightgreen', 'pink', 'brown', 'gray']
+    # Extraire les coordonnées
+    lats = [coord[0] for coord in coordinates]
+    lons = [coord[1] for coord in coordinates]
     
-    # Ajouter les clients (points)
-    client_lats = [coord[0] for coord in coordinates]
-    client_lons = [coord[1] for coord in coordinates]
-    client_names = [data['name'] for data in clients_data]
+    # Couleurs pour les véhicules
+    colors = ['red', 'blue', 'green', 'purple', 'orange', 'brown', 
+              'pink', 'gray', 'olive', 'cyan', 'magenta']
     
-    # Marqueurs pour tous les clients
-    fig.add_trace(go.Scattermapbox(
-        lat=client_lats,
-        lon=client_lons,
-        mode='markers+text',
-        marker=go.scattermapbox.Marker(
-            size=15,
-            color='lightgray',
-            opacity=0.7
-        ),
-        text=[str(i) for i in range(len(coordinates))],
-        textposition="top center",
-        hoverinfo='text',
-        hovertext=[f"Client {i}: {name}" for i, name in enumerate(client_names)],
-        name='Clients'
-    ))
+    # Tracer tous les points
+    ax.scatter(lons, lats, c='gray', alpha=0.5, s=100, label='Clients')
     
-    # Marqueur spécial pour le dépôt
-    fig.add_trace(go.Scattermapbox(
-        lat=[coordinates[depot_index][0]],
-        lon=[coordinates[depot_index][1]],
-        mode='markers+text',
-        marker=go.scattermapbox.Marker(
-            size=20,
-            color='black',
-            symbol='circle'
-        ),
-        text=["Dépôt"],
-        textposition="top center",
-        hoverinfo='text',
-        hovertext=f"Dépôt principal",
-        name='Dépôt'
-    ))
+    # Marquer le dépôt
+    ax.scatter(lons[depot_index], lats[depot_index], 
+               c='black', s=200, marker='s', label='Dépôt', edgecolors='white', linewidth=2)
     
-    # Ajouter les itinéraires
+    # Annoter les points
+    for i, (lat, lon) in enumerate(coordinates):
+        ax.annotate(f'{i}', (lon, lat), 
+                   xytext=(5, 5), textcoords='offset points',
+                   fontsize=9, fontweight='bold')
+    
+    # Tracer les itinéraires
     for i, route in enumerate(routes):
         route_color = colors[i % len(colors)]
         
         # Coordonnées de l'itinéraire
-        route_lats = [coordinates[node][0] for node in route]
         route_lons = [coordinates[node][1] for node in route]
+        route_lats = [coordinates[node][0] for node in route]
         
         # Ligne de l'itinéraire
-        fig.add_trace(go.Scattermapbox(
-            lat=route_lats,
-            lon=route_lons,
-            mode='lines+markers',
-            line=dict(width=3, color=route_color),
-            marker=dict(size=10, color=route_color),
-            name=f'Véhicule {i+1}',
-            hoverinfo='text',
-            hovertext=[f"Véhicule {i+1}: {clients_data[node]['name']}" for node in route]
-        ))
+        ax.plot(route_lons, route_lats, color=route_color, 
+                linewidth=2, marker='o', markersize=8,
+                label=f'Véhicule {i+1}')
         
         # Ajouter des numéros d'étape
-        for j, node in enumerate(route[1:-1]):  # Exclure le dépôt au début et à la fin
-            fig.add_trace(go.Scattermapbox(
-                lat=[coordinates[node][0]],
-                lon=[coordinates[node][1]],
-                mode='text',
-                text=[str(j+1)],
-                textfont=dict(size=12, color='white'),
-                hoverinfo='skip',
-                showlegend=False
-            ))
+        for j, node in enumerate(route[1:-1]):
+            ax.annotate(f'{j+1}', 
+                       (coordinates[node][1], coordinates[node][0]),
+                       xytext=(0, 15), textcoords='offset points',
+                       ha='center', fontsize=10, fontweight='bold',
+                       bbox=dict(boxstyle='round,pad=0.3', 
+                                facecolor=route_color, 
+                                alpha=0.7, edgecolor='none'))
     
-    # Configuration de la carte
-    fig.update_layout(
-        mapbox_style="open-street-map",
-        mapbox=dict(
-            center=dict(lat=np.mean(client_lats), lon=np.mean(client_lons)),
-            zoom=10
-        ),
-        height=600,
-        margin={"r":0,"t":0,"l":0,"b":0},
-        legend=dict(
-            yanchor="top",
-            y=0.99,
-            xanchor="left",
-            x=0.01
-        )
-    )
+    # Configuration du graphique
+    ax.set_xlabel('Longitude')
+    ax.set_ylabel('Latitude')
+    ax.set_title('Visualisation des Itinéraires VRP')
+    ax.grid(True, alpha=0.3)
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     
+    # Ajuster les limites
+    ax.set_xlim(min(lons) - 0.01, max(lons) + 0.01)
+    ax.set_ylim(min(lats) - 0.01, max(lats) + 0.01)
+    
+    plt.tight_layout()
     return fig
 
 # =====================================================
@@ -558,6 +519,7 @@ if coordinates and len(coordinates) > 1:
                                     'Client': clients_data[node_idx]['name'],
                                     'Heure estimée': current_time.strftime('%H:%M'),
                                     'Distance depuis précédent': '0 km',
+                                    'Temps trajet': '0 min',
                                     'Charge après visite': f'{load if j>0 else 0}'
                                 })
                             elif j == len(route) - 1:
@@ -572,6 +534,7 @@ if coordinates and len(coordinates) > 1:
                                     'Client': clients_data[node_idx]['name'],
                                     'Heure estimée': current_time.strftime('%H:%M'),
                                     'Distance depuis précédent': f'{segment_dist:.1f} km',
+                                    'Temps trajet': f'{segment_time:.0f} min',
                                     'Charge après visite': '0'
                                 })
                             else:
@@ -590,6 +553,7 @@ if coordinates and len(coordinates) > 1:
                                     'Client': clients_data[node_idx]['name'],
                                     'Heure estimée': current_time.strftime('%H:%M'),
                                     'Distance depuis précédent': f'{segment_dist:.1f} km',
+                                    'Temps trajet': f'{segment_time:.0f} min',
                                     'Charge après visite': f'{sum(clients_data[n]["demand"] for n in route[j+1:-1])}'
                                 })
                         
@@ -600,15 +564,24 @@ if coordinates and len(coordinates) > 1:
                         # Afficher la séquence simplifiée
                         sequence = " → ".join([clients_data[node_idx]['name'] for node_idx in route])
                         st.caption(f"**Séquence:** {sequence}")
+                        
+                        # Afficher les statistiques de l'itinéraire
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Distance totale", f"{distance:.1f} km")
+                        with col2:
+                            st.metric("Temps estimé", f"{total_time_minutes:.0f} min")
+                        with col3:
+                            st.metric("Utilisation", f"{(load/max_capacity)*100:.1f}%")
                 
-                # 3. Carte interactive avec Plotly
-                st.subheader("🗺️ Carte des itinéraires")
+                # 3. Visualisation des itinéraires avec Matplotlib
+                st.subheader("🗺️ Visualisation des itinéraires")
                 
-                # Créer la carte
-                fig_map = create_interactive_map(coordinates, routes_list, clients_data, depot_index)
+                # Créer la visualisation
+                fig_map = create_route_visualization(coordinates, routes_list, clients_data, depot_index)
                 
-                # Afficher la carte
-                st.plotly_chart(fig_map, use_container_width=True)
+                # Afficher la visualisation
+                st.pyplot(fig_map)
                 
                 # 4. Graphiques de performance
                 st.subheader("📈 Analyse de performance")
@@ -688,48 +661,29 @@ if coordinates and len(coordinates) > 1:
                 plt.tight_layout()
                 st.pyplot(fig)
                 
-                # Graphique supplémentaire avec Plotly
-                st.subheader("📊 Comparaison des performances")
+                # 5. Tableau récapitulatif
+                st.subheader("📊 Récapitulatif des performances")
                 
-                # Créer un graphique Plotly pour une meilleure interactivité
-                fig_comparison = go.Figure()
+                summary_data = []
+                for i, (distance, load, route) in enumerate(zip(route_distances, vehicle_loads, routes_list)):
+                    fuel_cost_i = distance * fuel_cost
+                    driver_cost_i = (distance/avg_speed) * driver_cost
+                    total_cost_i = fuel_cost_i + driver_cost_i
+                    utilization_i = (load/max_capacity) * 100
+                    
+                    summary_data.append({
+                        'Véhicule': i+1,
+                        'Clients visités': len(route)-2,
+                        'Distance (km)': f"{distance:.1f}",
+                        'Charge (unités)': f"{load}/{max_capacity}",
+                        'Utilisation (%)': f"{utilization_i:.1f}",
+                        'Coût carburant (€)': f"{fuel_cost_i:.2f}",
+                        'Coût total (€)': f"{total_cost_i:.2f}",
+                        'Séquence': " → ".join([str(node) for node in route])
+                    })
                 
-                # Ajouter les barres pour les distances
-                fig_comparison.add_trace(go.Bar(
-                    x=vehicles,
-                    y=route_distances,
-                    name='Distance (km)',
-                    marker_color='lightblue',
-                    text=[f'{d:.1f} km' for d in route_distances],
-                    textposition='auto',
-                ))
-                
-                # Ajouter une ligne pour l'utilisation
-                fig_comparison.add_trace(go.Scatter(
-                    x=vehicles,
-                    y=utilization,
-                    name='Utilisation (%)',
-                    yaxis='y2',
-                    mode='lines+markers',
-                    line=dict(color='orange', width=3),
-                    marker=dict(size=10)
-                ))
-                
-                fig_comparison.update_layout(
-                    title='Comparaison distance vs utilisation par véhicule',
-                    xaxis_title='Véhicules',
-                    yaxis_title='Distance (km)',
-                    yaxis2=dict(
-                        title='Utilisation (%)',
-                        overlaying='y',
-                        side='right',
-                        range=[0, 110]
-                    ),
-                    hovermode='x unified',
-                    height=500
-                )
-                
-                st.plotly_chart(fig_comparison, use_container_width=True)
+                summary_df = pd.DataFrame(summary_data)
+                st.dataframe(summary_df, use_container_width=True, hide_index=True)
                 
                 # =====================================================
                 # SECTION 3: EXPORT DES RÉSULTATS
@@ -753,21 +707,6 @@ if coordinates and len(coordinates) > 1:
                         })
                 
                 export_df = pd.DataFrame(export_data)
-                
-                # Résumé par véhicule
-                summary_data = []
-                for i, (distance, load) in enumerate(zip(route_distances, vehicle_loads)):
-                    summary_data.append({
-                        'Véhicule': i+1,
-                        'Distance_km': f"{distance:.2f}",
-                        'Charge': load,
-                        'Utilisation_%': f"{(load/max_capacity)*100:.1f}",
-                        'Coût_carburant_€': f"{distance * fuel_cost:.2f}",
-                        'Temps_heures': f"{distance/avg_speed:.2f}",
-                        'Nombre_clients': len(routes_list[i])-2  # Exclure dépôt départ et retour
-                    })
-                
-                summary_df = pd.DataFrame(summary_data)
                 
                 # Boutons d'export
                 col1, col2, col3 = st.columns(3)
@@ -800,6 +739,12 @@ if coordinates and len(coordinates) > 1:
                                       f"{total_distance:.2f} km", total_load, f"{total_cost:.2f} €"]
                         })
                         params_df.to_excel(writer, sheet_name='Paramètres', index=False)
+                        
+                        # Ajouter la matrice de distances
+                        dist_df = pd.DataFrame(distance_matrix)
+                        dist_df.columns = [f'Client {i}' for i in range(len(distance_matrix))]
+                        dist_df.index = [f'Client {i}' for i in range(len(distance_matrix))]
+                        dist_df.to_excel(writer, sheet_name='Matrice_distances', index=True)
                     
                     st.download_button(
                         label="📥 Excel complet",
@@ -949,8 +894,7 @@ if coordinates and len(coordinates) > 1:
                 
             except Exception as e:
                 st.error(f"❌ Erreur lors de l'optimisation: {str(e)}")
-                import traceback
-                st.code(traceback.format_exc())
+                st.info("Vérifiez que les données de localisation sont valides et complètes.")
 else:
     st.info("📝 Veuillez importer des données de localisation pour commencer l'optimisation.")
 
@@ -962,6 +906,6 @@ st.markdown("""
 <div style="text-align: center; color: gray;">
     <p><strong>VRP Optimization Tool</strong> - Optimisation des itinéraires pour voyageurs représentants placiers</p>
     <p>Algorithmes: Plus proche voisin • Clarke & Wright (Économies)</p>
-    <p>Visualisation interactive • Analyse de coûts • Export complet</p>
+    <p>Visualisation graphique • Analyse de coûts • Export complet</p>
 </div>
 """, unsafe_allow_html=True)
