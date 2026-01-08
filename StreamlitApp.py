@@ -16,24 +16,79 @@ st.set_page_config(
 )
 
 # =====================================================
-# TABLE d2 CORRIGÉE (selon normes statistiques)
+# TABLE d2 CORRIGÉE (basée sur votre image)
 # =====================================================
-D2_TABLE = {
-    2: {1: 1.128, 2: 1.693, 3: 2.059, 4: 2.326, 5: 2.534, 6: 2.704, 7: 2.847, 8: 2.970, 9: 3.078, 10: 3.173},
-    3: {1: 1.023, 2: 1.160, 3: 1.147, 4: 1.129, 5: 1.110, 6: 1.092, 7: 1.075, 8: 1.060, 9: 1.046, 10: 1.033},
-    4: {1: 0.729, 2: 0.841, 3: 0.808, 4: 0.773, 5: 0.743, 6: 0.718, 7: 0.697, 8: 0.680, 9: 0.665, 10: 0.652},
-    5: {1: 0.577, 2: 0.606, 3: 0.562, 4: 0.525, 5: 0.496, 6: 0.472, 7: 0.454, 8: 0.438, 9: 0.425, 10: 0.414}
+# Table d2 complète basée sur l'image fournie
+D2_TABLE_COMPLETE = {
+    1: {1: 1.41, 2: 1.91, 3: 2.24, 4: 2.48, 5: 2.67, 6: 2.83, 7: 2.96, 8: 3.08, 9: 3.18, 10: 3.27, 11: 3.35, 12: 3.42, 13: 3.49, 14: 3.55, 15: 3.61},
+    2: {1: 1.28, 2: 1.81, 3: 2.15, 4: 2.40, 5: 2.60, 6: 2.77, 7: 2.91, 8: 3.02, 9: 3.13, 10: 3.22, 11: 3.30, 12: 3.38, 13: 3.45, 14: 3.51, 15: 3.57},
+    3: {1: 1.23, 2: 1.77, 3: 2.12, 4: 2.38, 5: 2.58, 6: 2.75, 7: 2.89, 8: 3.01, 9: 3.11, 10: 3.21, 11: 3.29, 12: 3.37, 13: 3.43, 14: 3.50, 15: 3.56},
+    4: {1: 1.21, 2: 1.75, 3: 2.11, 4: 2.37, 5: 2.57, 6: 2.74, 7: 2.88, 8: 3.00, 9: 3.10, 10: 3.20, 11: 3.28, 12: 3.36, 13: 3.43, 14: 3.49, 15: 3.55},
+    5: {1: 1.19, 2: 1.74, 3: 2.10, 4: 2.36, 5: 2.56, 6: 2.73, 7: 2.87, 8: 2.99, 9: 3.10, 10: 3.19, 11: 3.28, 12: 3.36, 13: 3.42, 14: 3.49, 15: 3.55},
+    6: {1: 1.18, 2: 1.73, 3: 2.09, 4: 2.35, 5: 2.56, 6: 2.73, 7: 2.87, 8: 2.99, 9: 3.10, 10: 3.19, 11: 3.27, 12: 3.35, 13: 3.42, 14: 3.49, 15: 3.55},
+    7: {1: 1.17, 2: 1.73, 3: 2.09, 4: 2.35, 5: 2.55, 6: 2.72, 7: 2.87, 8: 2.99, 9: 3.10, 10: 3.19, 11: 3.27, 12: 3.35, 13: 3.42, 14: 3.48, 15: 3.54},
+    8: {1: 1.17, 2: 1.72, 3: 2.08, 4: 2.35, 5: 2.55, 6: 2.72, 7: 2.87, 8: 2.98, 9: 3.09, 10: 3.19, 11: 3.27, 12: 3.35, 13: 3.42, 14: 3.48, 15: 3.54},
+    9: {1: 1.16, 2: 1.72, 3: 2.08, 4: 2.34, 5: 2.55, 6: 2.72, 7: 2.86, 8: 2.98, 9: 3.09, 10: 3.19, 11: 3.27, 12: 3.35, 13: 3.42, 14: 3.48, 15: 3.54},
+    10: {1: 1.16, 2: 1.72, 3: 2.08, 4: 2.34, 5: 2.55, 6: 2.72, 7: 2.86, 8: 2.98, 9: 3.09, 10: 3.18, 11: 3.27, 12: 3.34, 13: 3.42, 14: 3.48, 15: 3.54},
+    11: {1: 1.15, 2: 1.71, 3: 2.08, 4: 2.34, 5: 2.55, 6: 2.72, 7: 2.86, 8: 2.98, 9: 3.09, 10: 3.18, 11: 3.27, 12: 3.34, 13: 3.41, 14: 3.48, 15: 3.54},
+    12: {1: 1.15, 2: 1.71, 3: 2.07, 4: 2.34, 5: 2.55, 6: 2.72, 7: 2.85, 8: 2.98, 9: 3.09, 10: 3.18, 11: 3.27, 12: 3.34, 13: 3.41, 14: 3.48, 15: 3.54},
+    13: {1: 1.15, 2: 1.71, 3: 2.07, 4: 2.34, 5: 2.55, 6: 2.71, 7: 2.85, 8: 2.98, 9: 3.09, 10: 3.18, 11: 3.27, 12: 3.34, 13: 3.41, 14: 3.48, 15: 3.53},
+    14: {1: 1.15, 2: 1.71, 3: 2.07, 4: 2.34, 5: 2.54, 6: 2.71, 7: 2.85, 8: 2.98, 9: 3.09, 10: 3.18, 11: 3.27, 12: 3.34, 13: 3.41, 14: 3.48, 15: 3.53},
+    15: {1: 1.15, 2: 1.71, 3: 2.07, 4: 2.34, 5: 2.54, 6: 2.71, 7: 2.85, 8: 2.98, 9: 3.08, 10: 3.18, 11: 3.26, 12: 3.34, 13: 3.41, 14: 3.48, 15: 3.53}
 }
 
-def get_d2(w, m):
+# Valeurs pour W > 15 (dernière ligne du tableau)
+D2_TABLE_LARGE = {
+    1: 1.128, 2: 1.693, 3: 2.059, 4: 2.326, 5: 2.534, 6: 2.704, 7: 2.847, 8: 2.970,
+    9: 3.078, 10: 3.173, 11: 3.258, 12: 3.336, 13: 3.407, 14: 3.472
+}
+
+def get_d2(z, w):
     """
-    Retourne la valeur d2 pour w (taille d'échantillon) et m (nombre d'échantillons)
-    Formule standard pour Gage R&R
+    Retourne la valeur d2 pour:
+    - z = nombre d'échantillons (première colonne du tableau)
+    - w = taille de l'échantillon (en-tête du tableau)
+    
+    Selon votre tableau, pour Gage R&R:
+    - Pour EV (répétabilité): z = 1, w = nombre d'essais
+    - Pour AV (reproductibilité): z = nombre de pièces, w = nombre d'opérateurs
+    - Pour PV (variation pièces): z = 1, w = nombre de pièces
     """
-    if w in D2_TABLE and m in D2_TABLE[w]:
-        return D2_TABLE[w][m]
+    # Pour w > 15, utiliser la dernière ligne du tableau
+    if w > 15:
+        # Pour z > 15 aussi, utiliser les valeurs de la dernière ligne
+        if z > 15:
+            z = 15
+        # Pour w > 15, retourner la valeur de D2_TABLE_LARGE
+        # On prend la valeur pour le w donné, ou la plus proche si > 14
+        if w in D2_TABLE_LARGE:
+            return D2_TABLE_LARGE[w]
+        else:
+            # Pour w > 14, utiliser la dernière valeur disponible
+            return D2_TABLE_LARGE[14]
+    
+    # Pour z > 15, utiliser z = 15
+    if z > 15:
+        z = 15
+    
+    # Chercher la valeur dans la table complète
+    if z in D2_TABLE_COMPLETE and w in D2_TABLE_COMPLETE[z]:
+        return D2_TABLE_COMPLETE[z][w]
+    elif z in D2_TABLE_COMPLETE and w <= 15:
+        # Si w existe dans le tableau pour ce z
+        # Trouver la valeur la plus proche
+        available_w = [k for k in D2_TABLE_COMPLETE[z].keys() if k <= w]
+        if available_w:
+            closest_w = max(available_w)
+            return D2_TABLE_COMPLETE[z][closest_w]
+    
+    # Fallback: utiliser la valeur pour z=1
+    if w in D2_TABLE_COMPLETE.get(1, {}):
+        return D2_TABLE_COMPLETE[1][w]
+    elif w <= 15:
+        # Approximation linéaire
+        return 1.0 + (w - 1) * 0.15
     else:
-        # Approximation pour valeurs hors table
         return 1.0
 
 # =====================================================
@@ -81,30 +136,39 @@ def calculate_gage_rr_correct(df, n_parts, n_operators, n_trials, k=5.15):
     
     R_p = max(all_part_means) - min(all_part_means)
     
-    # 4. Calcul des valeurs d2
-    # Pour EV: m = nombre d'essais, w = 1 (car on utilise R_bar)
+    # 4. Calcul des valeurs d2 AVEC LA NOUVELLE MÉTHODE
+    # Pour EV: z = 1 (car on utilise R_bar), w = nombre d'essais
     d2_ev = get_d2(1, n_trials)
     
-    # Pour AV: m = nombre d'opérateurs, w = nombre de pièces
+    # Pour AV: z = nombre de pièces, w = nombre d'opérateurs
     d2_av = get_d2(n_parts, n_operators)
     
-    # Pour PV: m = nombre de pièces, w = 1
+    # Pour PV: z = 1 (car on utilise R_p), w = nombre de pièces
     d2_pv = get_d2(1, n_parts)
     
     # 5. Calcul des composantes
     # Répétabilité (EV)
-    EV = (k * R_bar) / d2_ev
+    if d2_ev > 0:
+        EV = (k * R_bar) / d2_ev
+    else:
+        EV = 0
     
     # Reproductibilité (AV)
-    AV_term1 = ((k * X_diff) / d2_av) ** 2
-    AV_term2 = (EV ** 2) / (n_parts * n_trials)
-    AV = math.sqrt(max(AV_term1 - AV_term2, 0))
+    if d2_av > 0:
+        AV_term1 = ((k * X_diff) / d2_av) ** 2
+        AV_term2 = (EV ** 2) / (n_parts * n_trials)
+        AV = math.sqrt(max(AV_term1 - AV_term2, 0))
+    else:
+        AV = 0
     
     # Gage R&R
     GRR = math.sqrt(EV ** 2 + AV ** 2)
     
     # Variation Pièces (PV)
-    PV = (k * R_p) / d2_pv
+    if d2_pv > 0:
+        PV = (k * R_p) / d2_pv
+    else:
+        PV = 0
     
     # Variation Totale (TV)
     TV = math.sqrt(GRR ** 2 + PV ** 2)
@@ -169,6 +233,16 @@ with st.sidebar:
     threshold_1 = st.number_input("Seuil vert (<%)", value=10.0, min_value=0.0, max_value=100.0)
     threshold_2 = st.number_input("Seuil orange (<%)", value=30.0, min_value=0.0, max_value=100.0)
     
+    # Afficher un aperçu de la table d2
+    with st.expander("📊 Aperçu de la table d2"):
+        st.caption("Valeurs d2 pour Z=1 (utilisées pour EV et PV):")
+        df_d2_preview = pd.DataFrame({
+            'W': list(range(1, 16)),
+            'd2': [D2_TABLE_COMPLETE[1].get(i, 0) for i in range(1, 16)]
+        })
+        st.dataframe(df_d2_preview, hide_index=True, use_container_width=True)
+        st.caption(f"Pour W>15: {D2_TABLE_LARGE[14]:.3f} (valeur maximale)")
+    
     st.divider()
     
     st.markdown("### Aide")
@@ -177,6 +251,11 @@ with st.sidebar:
     - ✅ < 10% : Acceptable
     - ⚠️ 10-30% : Marginal
     - ❌ > 30% : Inacceptable
+    
+    **Valeurs d2:**
+    - EV: d2(1, nombre d'essais)
+    - AV: d2(nombre de pièces, nombre d'opérateurs)
+    - PV: d2(1, nombre de pièces)
     """)
 
 # TITRE PRINCIPAL
@@ -315,20 +394,23 @@ if df is not None:
                 
                 # 1. Résumé des paramètres intermédiaires
                 with st.expander("📐 Paramètres intermédiaires", expanded=True):
-                    col1, col2, col3 = st.columns(3)
+                    col1, col2, col3, col4 = st.columns(4)
                     
                     with col1:
-                        st.metric("R̄ (moyenne étendues)", f"{results['R_bar']:.4f}")
-                        st.metric("X_diff", f"{results['X_diff']:.4f}")
+                        st.metric("R̄ (moyenne étendues)", f"{results['R_bar']:.6f}")
+                        st.metric("X_diff", f"{results['X_diff']:.6f}")
                     
                     with col2:
-                        st.metric("R_p (étendue pièces)", f"{results['R_p']:.4f}")
+                        st.metric("R_p (étendue pièces)", f"{results['R_p']:.6f}")
                         st.metric("k (facteur)", f"{k_factor}")
                     
                     with col3:
-                        st.metric("d2(EV)", f"{results['d2_ev']:.3f}")
-                        st.metric("d2(AV)", f"{results['d2_av']:.3f}")
-                        st.metric("d2(PV)", f"{results['d2_pv']:.3f}")
+                        st.metric("d2(EV)", f"{results['d2_ev']:.6f}")
+                        st.metric("d2(AV)", f"{results['d2_av']:.6f}")
+                    
+                    with col4:
+                        st.metric("d2(PV)", f"{results['d2_pv']:.6f}")
+                        st.metric("Pièces/Op/Essais", f"{n_parts}/{n_operators}/{n_trials}")
                 
                 # 2. Résultats principaux
                 st.subheader("🎯 Résultats de l'analyse")
@@ -344,7 +426,7 @@ if df is not None:
                 
                 for idx, (label, desc, value, pct) in enumerate(metrics):
                     with cols[idx]:
-                        st.metric(label, f"{value:.4f}", f"{pct}" if isinstance(pct, str) else f"{pct:.1f}%")
+                        st.metric(label, f"{value:.6f}", f"{pct}" if isinstance(pct, str) else f"{pct:.2f}%")
                         st.caption(desc)
                 
                 # 3. Évaluation du système
@@ -369,20 +451,20 @@ if df is not None:
                 <div style="background-color:{color}20; padding:20px; border-radius:10px; border-left:5px solid {color}; margin:20px 0;">
                     <h3 style="color:{color}; margin:0;">{icon} {status}</h3>
                     <p style="font-size:1.5em; margin:10px 0;">
-                        <strong>%R&R = {results['GRR_pct']:.1f}%</strong>
+                        <strong>%R&R = {results['GRR_pct']:.2f}%</strong>
                     </p>
-                    <p>%EV = {results['EV_pct']:.1f}% | %AV = {results['AV_pct']:.1f}% | %PV = {results['PV_pct']:.1f}%</p>
+                    <p>%EV = {results['EV_pct']:.2f}% | %AV = {results['AV_pct']:.2f}% | %PV = {results['PV_pct']:.2f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
                 
                 # Barre de progression
                 progress_value = min(results['GRR_pct'] / threshold_2, 1.0)
-                st.progress(progress_value, text=f"R&R: {results['GRR_pct']:.1f}% / Limite: {threshold_2}%")
+                st.progress(progress_value, text=f"R&R: {results['GRR_pct']:.2f}% / Limite: {threshold_2}%")
                 
                 # Calcul %R&R/Tolérance si spécifié
                 if tolerance > 0:
                     grr_tol_pct = (results['GRR'] / tolerance) * 100
-                    st.info(f"📏 **%R&R/Tolérance = {grr_tol_pct:.1f}%** (Tolérance: {tolerance:.3f})")
+                    st.info(f"📏 **%R&R/Tolérance = {grr_tol_pct:.2f}%** (Tolérance: {tolerance:.6f})")
                 
                 # =====================================================
                 # SECTION 3: VISUALISATIONS (avec Matplotlib)
@@ -407,7 +489,7 @@ if df is not None:
                 # Ajout des valeurs sur les barres
                 for bar, val in zip(bars1, values):
                     height = bar.get_height()
-                    ax1.text(bar.get_x() + bar.get_width()/2, height, f'{val:.3f}',
+                    ax1.text(bar.get_x() + bar.get_width()/2, height, f'{val:.4f}',
                             ha='center', va='bottom', fontsize=9)
                 
                 # Graphique 2: Pourcentages
@@ -441,7 +523,7 @@ if df is not None:
                 ax3.grid(True, alpha=0.3, axis='y')
                 
                 for i, mean in enumerate(results['operator_means']):
-                    ax3.text(i, mean, f'{mean:.3f}', ha='center', va='bottom')
+                    ax3.text(i, mean, f'{mean:.4f}', ha='center', va='bottom')
                 
                 # Graphique 4: Moyennes par pièce
                 ax4 = axes[1, 1]
@@ -466,20 +548,21 @@ if df is not None:
                 export_df = pd.DataFrame({
                     'Paramètre': [
                         'Pièces (n)', 'Opérateurs (k)', 'Essais (r)',
-                        'R̄', 'X_diff', 'R_p',
+                        'R̄ (moyenne étendues)', 'X_diff (diff moyennes)', 'R_p (étendue pièces)',
                         'd2_EV', 'd2_AV', 'd2_PV',
-                        'EV', 'AV', 'R&R', 'PV', 'TV',
+                        'EV (Répétabilité)', 'AV (Reproductibilité)', 'R&R (Gage R&R)', 
+                        'PV (Variation Pièces)', 'TV (Variation Totale)',
                         '%EV', '%AV', '%R&R', '%PV',
-                        'Statut'
+                        'Statut', 'k facteur'
                     ],
                     'Valeur': [
                         n_parts, n_operators, n_trials,
                         f"{results['R_bar']:.6f}",
                         f"{results['X_diff']:.6f}",
                         f"{results['R_p']:.6f}",
-                        f"{results['d2_ev']:.3f}",
-                        f"{results['d2_av']:.3f}",
-                        f"{results['d2_pv']:.3f}",
+                        f"{results['d2_ev']:.6f}",
+                        f"{results['d2_av']:.6f}",
+                        f"{results['d2_pv']:.6f}",
                         f"{results['EV']:.6f}",
                         f"{results['AV']:.6f}",
                         f"{results['GRR']:.6f}",
@@ -489,28 +572,30 @@ if df is not None:
                         f"{results['AV_pct']:.2f}%",
                         f"{results['GRR_pct']:.2f}%",
                         f"{results['PV_pct']:.2f}%",
-                        status
+                        status,
+                        f"{k_factor}"
                     ],
                     'Description': [
                         'Nombre de pièces',
                         'Nombre d\'opérateurs',
                         'Nombre d\'essais',
-                        'Moyenne des étendues',
-                        'Différence des moyennes opérateurs',
-                        'Étendue des moyennes pièces',
-                        'd2 pour répétabilité',
-                        'd2 pour reproductibilité',
-                        'd2 pour variation pièces',
-                        'Répétabilité',
-                        'Reproductibilité',
-                        'Gage R&R',
-                        'Variation pièces',
-                        'Variation totale',
-                        'Pourcentage EV',
-                        'Pourcentage AV',
-                        'Pourcentage R&R',
-                        'Pourcentage PV',
-                        'Évaluation du système'
+                        'Moyenne des étendues par opérateur et pièce',
+                        'Différence entre les moyennes maximales et minimales des opérateurs',
+                        'Étendue des moyennes de toutes les pièces',
+                        'Facteur d2 pour la répétabilité (z=1, w=essais)',
+                        'Facteur d2 pour la reproductibilité (z=pièces, w=opérateurs)',
+                        'Facteur d2 pour la variation pièces (z=1, w=pièces)',
+                        'Équipment Variation (Répétabilité)',
+                        'Appraiser Variation (Reproductibilité)',
+                        'Gage Repeatability & Reproducibility',
+                        'Part Variation (Variation entre pièces)',
+                        'Total Variation',
+                        'Pourcentage de répétabilité',
+                        'Pourcentage de reproductibilité',
+                        'Pourcentage de Gage R&R',
+                        'Pourcentage de variation pièces',
+                        'Évaluation du système de mesure',
+                        'Facteur k de niveau de confiance'
                     ]
                 })
                 
@@ -539,6 +624,15 @@ if df is not None:
                             'Moyenne': results['operator_means']
                         })
                         means_df.to_excel(writer, sheet_name='Moyennes', index=False)
+                        
+                        # Ajouter la table d2 utilisée
+                        d2_used_df = pd.DataFrame({
+                            'Calcul': ['EV', 'AV', 'PV'],
+                            'z (échantillons)': [1, n_parts, 1],
+                            'w (taille)': [n_trials, n_operators, n_parts],
+                            'd2 valeur': [results['d2_ev'], results['d2_av'], results['d2_pv']]
+                        })
+                        d2_used_df.to_excel(writer, sheet_name='Valeurs d2 utilisées', index=False)
                     
                     st.download_button(
                         label="📥 Excel",
@@ -561,26 +655,42 @@ if df is not None:
                     - Essais par opérateur: {n_trials}
                     - Facteur k: {k_factor}
                     
-                    RÉSULTATS:
+                    VALEURS d2 UTILISÉES:
+                    - EV (Répétabilité): d2(z=1, w={n_trials}) = {results['d2_ev']:.4f}
+                    - AV (Reproductibilité): d2(z={n_parts}, w={n_operators}) = {results['d2_av']:.4f}
+                    - PV (Variation Pièces): d2(z=1, w={n_parts}) = {results['d2_pv']:.4f}
+                    
+                    RÉSULTATS INTERMÉDIAIRES:
                     ---------------------------
-                    Répétabilité (EV): {results['EV']:.4f} ({results['EV_pct']:.1f}%)
-                    Reproductibilité (AV): {results['AV']:.4f} ({results['AV_pct']:.1f}%)
-                    Gage R&R: {results['GRR']:.4f} ({results['GRR_pct']:.1f}%)
-                    Variation Pièces (PV): {results['PV']:.4f} ({results['PV_pct']:.1f}%)
-                    Variation Totale (TV): {results['TV']:.4f}
+                    R̄ (moyenne étendues): {results['R_bar']:.6f}
+                    X_diff (différence moyennes): {results['X_diff']:.6f}
+                    R_p (étendue pièces): {results['R_p']:.6f}
+                    
+                    RÉSULTATS FINAUX:
+                    ---------------------------
+                    Répétabilité (EV): {results['EV']:.6f} ({results['EV_pct']:.2f}%)
+                    Reproductibilité (AV): {results['AV']:.6f} ({results['AV_pct']:.2f}%)
+                    Gage R&R: {results['GRR']:.6f} ({results['GRR_pct']:.2f}%)
+                    Variation Pièces (PV): {results['PV']:.6f} ({results['PV_pct']:.2f}%)
+                    Variation Totale (TV): {results['TV']:.6f}
                     
                     ÉVALUATION:
                     ---------------------------
-                    %R&R = {results['GRR_pct']:.1f}%
+                    %R&R = {results['GRR_pct']:.2f}%
                     Classification: {status}
                     
+                    MOYENNES PAR OPÉRATEUR:
                     """
+                    
+                    for i, mean in enumerate(results['operator_means']):
+                        report += f"\n  - Opérateur {i+1}: {mean:.4f}"
                     
                     if tolerance > 0:
                         report += f"""
+                    
                     PAR RAPPORT À LA TOLÉRANCE:
-                    - Tolérance spécifiée: {tolerance:.3f}
-                    - %R&R/Tolérance: {(results['GRR']/tolerance)*100:.1f}%
+                    - Tolérance spécifiée: {tolerance:.6f}
+                    - %R&R/Tolérance: {(results['GRR']/tolerance)*100:.2f}%
                         """
                     
                     st.download_button(
@@ -597,30 +707,80 @@ if df is not None:
                 
                 if results['GRR_pct'] > 30:
                     st.error("""
-                    **Actions recommandées:**
-                    1. **Améliorer la répétabilité** (%EV élevé):
+                    **Actions recommandées (Système INACCEPTABLE):**
+                    
+                    1. **Si %EV est élevé (>20%):**
                        - Vérifier l'étalonnage des instruments
                        - Standardiser les méthodes de mesure
-                       - Former les opérateurs
-                    2. **Réduire la reproductibilité** (%AV élevé):
-                       - Harmoniser les techniques de mesure
-                       - Créer des procédures standardisées
+                       - Former les opérateurs sur l'utilisation correcte
+                       - Vérifier la stabilité de l'équipement
+                    
+                    2. **Si %AV est élevé (>20%):**
+                       - Harmoniser les techniques de mesure entre opérateurs
+                       - Créer des procédures standardisées détaillées
                        - Vérifier la compréhension des instructions
+                       - Mettre en place des formations communes
+                    
+                    3. **Actions générales:**
+                       - Revoir le système de mesure complet
+                       - Considérer un équipement plus précis
+                       - Augmenter le nombre d'essais ou d'opérateurs
+                       - Améliorer la formation des opérateurs
                     """)
                 elif results['GRR_pct'] > 10:
                     st.warning("""
-                    **Suggestions d'amélioration:**
-                    - Documenter les meilleures pratiques
-                    - Mettre en place des audits réguliers
-                    - Considérer un recalibrage périodique
+                    **Suggestions d'amélioration (Système MARGINAL):**
+                    
+                    1. **Actions correctives:**
+                       - Documenter les meilleures pratiques
+                       - Mettre en place des audits réguliers du processus de mesure
+                       - Considérer un recalibrage périodique plus fréquent
+                       - Standardiser les conditions de mesure (température, humidité, etc.)
+                    
+                    2. **Surveillance:**
+                       - Surveiller régulièrement la performance du système
+                       - Mettre en place des contrôles statistiques du processus de mesure
+                       - Documenter les dérives potentielles
+                    
+                    3. **Amélioration continue:**
+                       - Recueillir les retours des opérateurs
+                       - Identifier les sources de variation résiduelles
+                       - Planifier des améliorations incrémentales
                     """)
                 else:
                     st.success("""
-                    **Système de mesure acceptable:**
-                    - Maintenir les procédures actuelles
-                    - Surveiller régulièrement la performance
-                    - Documenter les résultats pour référence future
+                    **Système de mesure ACCEPTABLE:**
+                    
+                    1. **Maintenance:**
+                       - Maintenir les procédures actuelles
+                       - Continuer le programme d'étalonnage régulier
+                       - Documenter les résultats pour référence future
+                    
+                    2. **Surveillance:**
+                       - Surveiller régulièrement la performance
+                       - Mettre en place des indicateurs de performance clés
+                       - Réviser périodiquement les procédures
+                    
+                    3. **Amélioration continue:**
+                       - Identifier les opportunités d'amélioration mineures
+                       - Maintenir la formation des opérateurs
+                       - Documenter les meilleures pratiques
                     """)
+                
+                # Information supplémentaire sur les valeurs d2
+                with st.expander("📊 Informations sur les valeurs d2 utilisées"):
+                    st.markdown("""
+                    **Signification des paramètres d2:**
+                    - **z**: Nombre d'échantillons (première colonne du tableau)
+                    - **w**: Taille de l'échantillon (en-tête du tableau)
+                    
+                    **Pour cette analyse:**
+                    - **EV**: Répétabilité → d2(z=1, w=nombre d'essais) = **{:.4f}**
+                    - **AV**: Reproductibilité → d2(z=nombre de pièces, w=nombre d'opérateurs) = **{:.4f}**
+                    - **PV**: Variation Pièces → d2(z=1, w=nombre de pièces) = **{:.4f}**
+                    
+                    **Source:** Table d2 standard pour les méthodes de contrôle statistique
+                    """.format(results['d2_ev'], results['d2_av'], results['d2_pv']))
                 
             except Exception as e:
                 st.error(f"❌ Erreur lors du calcul: {str(e)}")
@@ -632,7 +792,8 @@ if df is not None:
 st.divider()
 st.markdown("""
 <div style="text-align: center; color: gray;">
-    <p><strong>Gage R&R Analysis Tool</strong> - Méthode des étendues et des moyennes</p>
+    <p><strong>Gage R&R Analysis Tool</strong> - Méthode des étendues et des moyennes avec table d₂</p>
     <p>Lean Six Sigma - Outil d'analyse de la capabilité des systèmes de mesure</p>
+    <p>Version 2.0 - Table d₂ corrigée selon normes statistiques</p>
 </div>
 """, unsafe_allow_html=True)
