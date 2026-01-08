@@ -305,14 +305,10 @@ with st.sidebar:
     st.markdown("### Aide")
     st.info("""
     **Format des données:**
-    - Fichier CSV/Excel avec colonnes: Client, Latitude, Longitude
+    - Fichier CSV/Excel avec colonnes: Latitude, Longitude
+    - Formats acceptés: lat, latitude, y, Lat | lon, longitude, x, Lng
     - La première ligne est considérée comme le dépôt par défaut
-    - Les coordonnées doivent être en degrés décimaux
-    
-    **Optimisation:**
-    - Réduction des distances totales parcourues
-    - Équilibrage des charges entre véhicules
-    - Visualisation des itinéraires sur carte
+    - Les coordonnées doivent être en degrés décimés
     """)
 
 # TITRE PRINCIPAL
@@ -326,7 +322,7 @@ st.header("📥 Importation des données géographiques")
 
 data_mode = st.radio(
     "Sélectionnez le mode d'entrée:",
-    ["📁 Importer un fichier", "📊 Exemple prédéfini"],
+    ["📁 Importer un fichier", "📊 Exemple prédéfini", "✍️ Saisie manuelle"],
     horizontal=True
 )
 
@@ -344,51 +340,169 @@ if data_mode == "📁 Importer un fichier":
     if uploaded_file:
         try:
             if uploaded_file.name.endswith('.csv'):
-                df = pd.read_csv(uploaded_file)
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
             else:
                 df = pd.read_excel(uploaded_file)
             
-            # Vérification des colonnes nécessaires
-            required_cols = []
-            lat_col = None
-            lon_col = None
+            st.success(f"✅ Fichier importé: {df.shape[0]} lignes × {df.shape[1]} colonnes")
             
-            # Chercher les colonnes de coordonnées
-            for col in df.columns:
-                col_lower = col.lower()
-                if 'lat' in col_lower:
-                    lat_col = col
-                elif 'lon' in col_lower or 'lng' in col_lower:
-                    lon_col = col
+            # Afficher les colonnes disponibles
+            st.subheader("📋 Colonnes disponibles")
+            st.write(f"Colonnes détectées: {list(df.columns)}")
             
-            if lat_col and lon_col:
-                st.success(f"✅ Fichier importé: {df.shape[0]} clients trouvés")
+            # Sélection manuelle des colonnes
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Trouver les colonnes potentielles pour latitude
+                lat_options = []
+                for col in df.columns:
+                    col_lower = str(col).lower()
+                    if any(keyword in col_lower for keyword in ['lat', 'y', 'latitude']):
+                        lat_options.append(col)
+                
+                if lat_options:
+                    lat_col = st.selectbox(
+                        "Sélectionnez la colonne Latitude",
+                        lat_options,
+                        help="Colonne contenant les latitudes"
+                    )
+                else:
+                    # Si aucune colonne n'est détectée, permettre la sélection manuelle
+                    lat_col = st.selectbox(
+                        "Sélectionnez la colonne Latitude",
+                        df.columns,
+                        help="Sélectionnez manuellement la colonne de latitude"
+                    )
+            
+            with col2:
+                # Trouver les colonnes potentielles pour longitude
+                lon_options = []
+                for col in df.columns:
+                    col_lower = str(col).lower()
+                    if any(keyword in col_lower for keyword in ['lon', 'lng', 'x', 'long', 'longitude']):
+                        lon_options.append(col)
+                
+                if lon_options:
+                    lon_col = st.selectbox(
+                        "Sélectionnez la colonne Longitude",
+                        lon_options,
+                        help="Colonne contenant les longitudes"
+                    )
+                else:
+                    # Si aucune colonne n'est détectée, permettre la sélection manuelle
+                    lon_col = st.selectbox(
+                        "Sélectionnez la colonne Longitude",
+                        df.columns,
+                        help="Sélectionnez manuellement la colonne de longitude"
+                    )
+            
+            # Colonne optionnelle pour le nom du client
+            name_options = ['(Aucune)'] + list(df.columns)
+            name_col = st.selectbox(
+                "Colonne pour le nom du client (optionnel)",
+                name_options,
+                help="Sélectionnez la colonne contenant les noms des clients"
+            )
+            
+            # Colonne optionnelle pour la demande
+            demand_options = ['(Aucune)'] + list(df.columns)
+            demand_col = st.selectbox(
+                "Colonne pour la demande (optionnel)",
+                demand_options,
+                help="Sélectionnez la colonne contenant les demandes des clients"
+            )
+            
+            # Vérifier que les colonnes de coordonnées sont numériques
+            try:
+                df[lat_col] = pd.to_numeric(df[lat_col], errors='coerce')
+                df[lon_col] = pd.to_numeric(df[lon_col], errors='coerce')
+                
+                # Supprimer les lignes avec coordonnées invalides
+                df_clean = df.dropna(subset=[lat_col, lon_col])
+                
+                if len(df_clean) < len(df):
+                    st.warning(f"⚠️ {len(df) - len(df_clean)} lignes avec coordonnées invalides ont été ignorées")
                 
                 # Extraire les coordonnées
-                coordinates = list(zip(df[lat_col], df[lon_col]))
+                coordinates = list(zip(df_clean[lat_col], df_clean[lon_col]))
                 
                 # Préparer les données clients
-                for idx, row in df.iterrows():
+                for idx, row in df_clean.iterrows():
+                    client_name = row[name_col] if name_col != '(Aucune)' and pd.notna(row.get(name_col, None)) else f'Client {idx}'
+                    
+                    if demand_col != '(Aucune)' and pd.notna(row.get(demand_col, None)):
+                        try:
+                            demand_val = float(row[demand_col])
+                        except:
+                            demand_val = random.randint(5, 20)
+                    else:
+                        demand_val = random.randint(5, 20)
+                    
                     client_info = {
                         'id': idx,
-                        'name': row.get('Client', f'Client {idx}'),
-                        'latitude': row[lat_col],
-                        'longitude': row[lon_col],
-                        'demand': row.get('Demande', random.randint(5, 20))
+                        'name': str(client_name),
+                        'latitude': float(row[lat_col]),
+                        'longitude': float(row[lon_col]),
+                        'demand': demand_val
                     }
                     clients_data.append(client_info)
                 
                 # Afficher un aperçu
-                st.subheader("📋 Aperçu des données")
+                st.subheader("📋 Aperçu des données traitées")
                 preview_df = pd.DataFrame(clients_data)
-                st.dataframe(preview_df[['id', 'name', 'latitude', 'longitude', 'demand']].head(), 
+                st.dataframe(preview_df[['id', 'name', 'latitude', 'longitude', 'demand']].head(10), 
                            use_container_width=True)
                 
-            else:
-                st.error("❌ Colonnes 'Latitude' et 'Longitude' requises. Noms acceptés: lat, latitude, lon, longitude, lng")
+                st.success(f"✅ {len(coordinates)} clients valides prêts pour l'optimisation")
+                
+            except Exception as e:
+                st.error(f"❌ Erreur lors du traitement des données: {str(e)}")
                 
         except Exception as e:
             st.error(f"❌ Erreur lors de l'importation: {str(e)}")
+
+elif data_mode == "✍️ Saisie manuelle":
+    st.info("📝 Entrez manuellement vos données de localisation")
+    
+    num_clients = st.number_input("Nombre de clients", min_value=2, max_value=50, value=10)
+    
+    # Créer un DataFrame pour la saisie
+    data_entries = []
+    for i in range(num_clients):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            name = st.text_input(f"Nom Client {i}", value=f"Client {i}")
+        with col2:
+            lat = st.number_input(f"Latitude {i}", value=48.8566 + random.uniform(-0.1, 0.1), format="%.6f")
+        with col3:
+            lon = st.number_input(f"Longitude {i}", value=2.3522 + random.uniform(-0.1, 0.1), format="%.6f")
+        
+        data_entries.append({
+            'Client': name,
+            'Latitude': lat,
+            'Longitude': lon,
+            'Demande': random.randint(5, 20)
+        })
+    
+    if st.button("✅ Valider la saisie"):
+        df = pd.DataFrame(data_entries)
+        
+        # Extraire les coordonnées
+        coordinates = list(zip(df['Latitude'], df['Longitude']))
+        
+        # Préparer les données clients
+        for idx, row in df.iterrows():
+            client_info = {
+                'id': idx,
+                'name': row['Client'],
+                'latitude': row['Latitude'],
+                'longitude': row['Longitude'],
+                'demand': row['Demande']
+            }
+            clients_data.append(client_info)
+        
+        st.success(f"✅ {len(coordinates)} clients saisis manuellement")
 
 else:  # Exemple prédéfini
     st.info("📊 Chargement d'un exemple de localisations clients (Paris et banlieue)")
@@ -433,6 +547,11 @@ else:  # Exemple prédéfini
         clients_data.append(client_info)
     
     df = pd.DataFrame(clients_data)
+    
+    # Afficher un aperçu
+    st.subheader("📋 Aperçu des données d'exemple")
+    st.dataframe(df[['id', 'name', 'latitude', 'longitude', 'demand']].head(), 
+               use_container_width=True)
 
 # =====================================================
 # SECTION 2: OPTIMISATION DES ITINÉRAIRES
@@ -894,9 +1013,10 @@ if coordinates and len(coordinates) > 1:
                 
             except Exception as e:
                 st.error(f"❌ Erreur lors de l'optimisation: {str(e)}")
-                st.info("Vérifiez que les données de localisation sont valides et complètes.")
+                import traceback
+                st.code(traceback.format_exc())
 else:
-    st.info("📝 Veuillez importer des données de localisation pour commencer l'optimisation.")
+    st.info("📝 Veuillez importer ou saisir des données de localisation pour commencer l'optimisation.")
 
 # =====================================================
 # FOOTER
