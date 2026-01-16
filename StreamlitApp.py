@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 
 # --- Configuration page ---
-st.set_page_config(page_title="Gage R&R – Dashboard", layout="wide")
-st.title("📊 Gage R&R – Dashboard Compact et Structuré")
+st.set_page_config(page_title="Gage R&R – Dashboard Complet", layout="wide")
+st.title("📊 Gage R&R – Dashboard Complet et Compact")
 st.write("---")
 
 # --- Fonction d2 ---
@@ -73,32 +73,104 @@ if uploaded_file:
 
     # --- Tableaux bien structurés ---
     st.subheader("📋 Tableaux Résultats Gage R&R")
-
-    # Résultats principaux
     main_results = pd.DataFrame({
         "Indicateur": ["EV", "AV", "GRR", "VT"],
         "Valeur": [round(ev,4), round(av,4), round(grr,4), round(vt,4)]
     })
-
-    # Pourcentages
     percentage_results = pd.DataFrame({
         "Indicateur": ["%EV", "%AV", "%VP", "%GRR", "NdC"],
         "Valeur": [round(p_ev,1), round(p_av,1), round(p_vp,1), round(p_grr,1), round(ndc,1)]
     })
-
-    # Affichage côte à côte
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("**📌 Résultats principaux**")
         st.table(main_results.style.set_properties(**{'text-align':'center'}).set_table_styles(
             [{'selector':'th','props':[('text-align','center')]}]
         ))
-
     with col2:
         st.markdown("**📌 Pourcentages (%) et NdC**")
         st.table(percentage_results.style.set_properties(**{'text-align':'center'}).set_table_styles(
             [{'selector':'th','props':[('text-align','center')]}]
         ))
+
+    # --- Couleurs ---
+    colors = ['#1f77b4','#ff7f0e','#2ca02c']
+
+    # --- Graphiques miniatures côte à côte ---
+    st.subheader("📊 Graphiques Gage R&R")
+    col_box, col_hist, col_cc = st.columns(3)
+
+    # Boxplot
+    with col_box:
+        fig_box, ax = plt.subplots(figsize=(3,3))
+        bplot = ax.boxplot([df[op1_cols].values.flatten(),
+                            df[op2_cols].values.flatten(),
+                            df[op3_cols].values.flatten()],
+                            labels=["OP1","OP2","OP3"],
+                            patch_artist=True,
+                            medianprops=dict(color='red', linewidth=2))
+        for patch, color in zip(bplot['boxes'], colors):
+            patch.set_facecolor(color)
+        ax.set_title("Boxplot", fontsize=9)
+        ax.tick_params(axis='x', labelsize=7)
+        ax.tick_params(axis='y', labelsize=7)
+        ax.grid(True, linestyle='--', alpha=0.3)
+        st.pyplot(fig_box, use_container_width=True)
+
+    # Histogramme
+    with col_hist:
+        fig_hist, ax = plt.subplots(figsize=(3,3))
+        data_ops = [df[op1_cols].values.flatten(),
+                    df[op2_cols].values.flatten(),
+                    df[op3_cols].values.flatten()]
+        labels = ["OP1","OP2","OP3"]
+        for i, data in enumerate(data_ops):
+            ax.hist(data, bins=bins_hist, alpha=0.6, color=colors[i], label=f"{labels[i]} (moy={data.mean():.2f})", edgecolor='black')
+            ax.axvline(data.mean(), color=colors[i], linestyle='--', linewidth=1)
+        ax.set_title("Histogramme", fontsize=9)
+        ax.tick_params(axis='x', labelsize=7)
+        ax.tick_params(axis='y', labelsize=7)
+        ax.grid(True, linestyle='--', alpha=0.3)
+        ax.legend(fontsize=6)
+        st.pyplot(fig_hist, use_container_width=True)
+
+    # Carte de contrôle EV/AV/GRR
+    with col_cc:
+        fig_cc, ax = plt.subplots(figsize=(3,3))
+        measures = [ev, av, grr]
+        mean_val = np.mean(measures)
+        std_val = np.std(measures)
+        ucl = mean_val + 3*std_val
+        lcl = max(mean_val - 3*std_val, 0)
+        ax.plot(['EV','AV','GRR'], measures, marker='o', color='purple', label='Mesures')
+        ax.axhline(mean_val, color='green', linestyle='--', label='Moyenne')
+        ax.axhline(ucl, color='red', linestyle='--', label='UCL')
+        ax.axhline(lcl, color='red', linestyle='--', label='LCL')
+        ax.set_title("Carte de contrôle", fontsize=9)
+        ax.tick_params(axis='x', labelsize=7)
+        ax.tick_params(axis='y', labelsize=7)
+        ax.grid(True, linestyle='--', alpha=0.3)
+        ax.legend(fontsize=6)
+        st.pyplot(fig_cc, use_container_width=True)
+
+    # Interaction pièce × opérateur (en dessous)
+    st.subheader("🔁 Interaction Pièce × Opérateur")
+    fig_inter, ax = plt.subplots(figsize=(8,3))
+    interaction_df = pd.DataFrame({
+        "Pièce": df["N° Pièce"],
+        "OP1": df[op1_cols].mean(axis=1),
+        "OP2": df[op2_cols].mean(axis=1),
+        "OP3": df[op3_cols].mean(axis=1)
+    })
+    for i, op in enumerate(["OP1","OP2","OP3"]):
+        ax.plot(interaction_df["Pièce"], interaction_df[op], marker='o', color=colors[i], label=op)
+    ax.set_xlabel("Pièce", fontsize=9)
+    ax.set_ylabel("Mesure", fontsize=9)
+    ax.grid(True, linestyle='--', alpha=0.3)
+    ax.tick_params(axis='x', labelsize=8)
+    ax.tick_params(axis='y', labelsize=8)
+    ax.legend(fontsize=8)
+    st.pyplot(fig_inter, use_container_width=True)
 
     # --- Export Excel ---
     export_df = pd.DataFrame({
