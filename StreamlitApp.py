@@ -21,7 +21,7 @@ def get_d2(z, w):
 # --- Paramètres ---
 with st.sidebar:
     st.header("⚙️ Paramètres")
-    confidence_factor = 5.15
+    confidence_factor = st.number_input("Facteur de confiance", value=5.15, step=0.01)
 
 # --- Import Excel ---
 uploaded_file = st.file_uploader(
@@ -76,7 +76,6 @@ if uploaded_file:
     rp = df["Moy_Piece"].max() - df["Moy_Piece"].min()
     d2_vp = get_d2(1, n_pieces)
     vp = (confidence_factor * rp) / d2_vp
-
     vt = np.sqrt(grr ** 2 + vp ** 2)
 
     # --- Statistiques ---
@@ -116,30 +115,32 @@ if uploaded_file:
         "Pourcentage": [p_ev, p_av, p_vp]
     })
     fig_contrib, ax = plt.subplots(figsize=(6,4))
-    bars = ax.bar(contrib_df["Source"], contrib_df["Pourcentage"], color=['skyblue','salmon','lightgreen'])
+    colors = ['#4daf4a','#377eb8','#ff7f00']
+    bars = ax.bar(contrib_df["Source"], contrib_df["Pourcentage"], color=colors, edgecolor='black')
     ax.set_ylim(0,100)
     ax.set_ylabel("Pourcentage (%)")
-    ax.set_title("Contribution des sources de variation (%)")
+    ax.set_title("Contribution des sources de variation (%)", color='navy', fontsize=14, fontweight='bold')
     for bar in bars:
         yval = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center', fontweight='bold')
+        ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center', fontweight='bold', color='black')
+    ax.grid(axis='y', linestyle='--', alpha=0.5)
     st.pyplot(fig_contrib)
 
     # --- Boxplot ---
     st.subheader("📦 Distribution des mesures par opérateur")
     fig_box, ax = plt.subplots(figsize=(8,5))
-    ax.boxplot(
+    box = ax.boxplot(
         [df[op1_cols].values.flatten(),
          df[op2_cols].values.flatten(),
          df[op3_cols].values.flatten()],
         labels=["OP1", "OP2", "OP3"],
         patch_artist=True,
-        boxprops=dict(facecolor='lightblue', color='blue'),
-        medianprops=dict(color='red', linewidth=2),
-        whiskerprops=dict(color='blue'),
-        capprops=dict(color='blue')
+        medianprops=dict(color='red', linewidth=2)
     )
-    ax.set_title("Boxplot des mesures par opérateur")
+    colors_box = ['#a6cee3','#1f78b4','#b2df8a']
+    for patch, color in zip(box['boxes'], colors_box):
+        patch.set_facecolor(color)
+    ax.set_title("Boxplot des mesures par opérateur", fontsize=14, fontweight='bold', color='navy')
     ax.set_ylabel("Valeur mesurée")
     ax.grid(True, linestyle='--', alpha=0.5)
     st.pyplot(fig_box)
@@ -147,10 +148,10 @@ if uploaded_file:
     # --- Histogramme ---
     st.subheader("📊 Histogramme des mesures par opérateur")
     fig_hist, ax = plt.subplots(figsize=(8,5))
-    ax.hist(df[op1_cols].values.flatten(), bins=10, alpha=0.5, color='skyblue', label='OP1')
-    ax.hist(df[op2_cols].values.flatten(), bins=10, alpha=0.5, color='salmon', label='OP2')
-    ax.hist(df[op3_cols].values.flatten(), bins=10, alpha=0.5, color='lightgreen', label='OP3')
-    ax.set_title("Histogramme des mesures par opérateur")
+    ax.hist(df[op1_cols].values.flatten(), bins=10, alpha=0.6, color='#1f78b4', label='OP1', edgecolor='black')
+    ax.hist(df[op2_cols].values.flatten(), bins=10, alpha=0.6, color='#33a02c', label='OP2', edgecolor='black')
+    ax.hist(df[op3_cols].values.flatten(), bins=10, alpha=0.6, color='#ff7f00', label='OP3', edgecolor='black')
+    ax.set_title("Histogramme des mesures par opérateur", fontsize=14, fontweight='bold', color='navy')
     ax.set_xlabel("Valeur mesurée")
     ax.set_ylabel("Fréquence")
     ax.legend()
@@ -166,10 +167,10 @@ if uploaded_file:
         "OP3": df[op3_cols].mean(axis=1)
     })
     fig_line, ax = plt.subplots(figsize=(8,5))
-    ax.plot(interaction_df["Pièce"], interaction_df["OP1"], marker='o', label='OP1', color='skyblue')
-    ax.plot(interaction_df["Pièce"], interaction_df["OP2"], marker='s', label='OP2', color='salmon')
-    ax.plot(interaction_df["Pièce"], interaction_df["OP3"], marker='^', label='OP3', color='lightgreen')
-    ax.set_title("Interaction Pièce × Opérateur")
+    ax.plot(interaction_df["Pièce"], interaction_df["OP1"], marker='o', color='#1f78b4', label='OP1')
+    ax.plot(interaction_df["Pièce"], interaction_df["OP2"], marker='s', color='#33a02c', label='OP2')
+    ax.plot(interaction_df["Pièce"], interaction_df["OP3"], marker='^', color='#ff7f00', label='OP3')
+    ax.set_title("Interaction Pièce × Opérateur", fontsize=14, fontweight='bold', color='navy')
     ax.set_xlabel("Pièce")
     ax.set_ylabel("Valeur mesurée")
     ax.grid(True, linestyle='--', alpha=0.5)
@@ -189,7 +190,6 @@ if uploaded_file:
         "%GRR": [p_grr],
         "NdC": [ndc]
     })
-
     buffer = BytesIO()
     export_df.to_excel(buffer, index=False)
     buffer.seek(0)
