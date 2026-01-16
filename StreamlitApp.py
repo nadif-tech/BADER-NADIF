@@ -24,10 +24,7 @@ with st.sidebar:
     confidence_factor = st.number_input("Facteur de confiance", value=5.15, step=0.01)
 
 # --- Import Excel ---
-uploaded_file = st.file_uploader(
-    "📥 Importer le fichier Excel Gage R&R",
-    type=["xlsx"]
-)
+uploaded_file = st.file_uploader("📥 Importer le fichier Excel Gage R&R", type=["xlsx"])
 
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
@@ -97,24 +94,26 @@ if uploaded_file:
     c7.metric("% VP", f"{p_vp:.1f}%")
     c8.metric("NdC", f"{ndc:.1f}")
 
-    # --- Couleur et style pour les graphiques ---
+    # --- Couleurs ---
     colors = ['#1f77b4','#ff7f0e','#2ca02c']
 
-    # --- Contribution barres ---
+    # --- Contribution barres compact ---
     st.subheader("📊 Contribution des sources (%)")
-    fig1, ax = plt.subplots(figsize=(5,3))
+    fig1, ax = plt.subplots(figsize=(4,2))
     bars = ax.bar(['EV','AV','VP'], [p_ev,p_av,p_vp], color=colors, edgecolor='black')
     ax.set_ylim(0,100)
     for bar in bars:
         yval = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center', fontweight='bold')
-    ax.set_ylabel("Pourcentage")
+        ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center', fontsize=8)
+    ax.set_ylabel("Pourcentage", fontsize=8)
+    ax.tick_params(axis='x', labelsize=8)
+    ax.tick_params(axis='y', labelsize=8)
     ax.grid(axis='y', linestyle='--', alpha=0.5)
     st.pyplot(fig1)
 
     # --- Boxplot compact ---
     st.subheader("📦 Distribution mesures")
-    fig2, ax = plt.subplots(figsize=(5,3))
+    fig2, ax = plt.subplots(figsize=(4,2))
     bplot = ax.boxplot(
         [df[op1_cols].values.flatten(),
          df[op2_cols].values.flatten(),
@@ -125,22 +124,26 @@ if uploaded_file:
     )
     for patch, color in zip(bplot['boxes'], colors):
         patch.set_facecolor(color)
+    ax.tick_params(axis='x', labelsize=8)
+    ax.tick_params(axis='y', labelsize=8)
     ax.grid(True, linestyle='--', alpha=0.5)
     st.pyplot(fig2)
 
     # --- Histogramme compact ---
     st.subheader("📊 Histogramme mesures")
-    fig3, ax = plt.subplots(figsize=(5,3))
+    fig3, ax = plt.subplots(figsize=(4,2))
     ax.hist(df[op1_cols].values.flatten(), bins=10, alpha=0.5, color=colors[0], label='OP1', edgecolor='black')
     ax.hist(df[op2_cols].values.flatten(), bins=10, alpha=0.5, color=colors[1], label='OP2', edgecolor='black')
     ax.hist(df[op3_cols].values.flatten(), bins=10, alpha=0.5, color=colors[2], label='OP3', edgecolor='black')
-    ax.set_xlabel("Valeur")
-    ax.set_ylabel("Fréquence")
-    ax.legend(fontsize=8)
+    ax.set_xlabel("Valeur", fontsize=8)
+    ax.set_ylabel("Fréquence", fontsize=8)
+    ax.tick_params(axis='x', labelsize=8)
+    ax.tick_params(axis='y', labelsize=8)
+    ax.legend(fontsize=7)
     ax.grid(True, linestyle='--', alpha=0.5)
     st.pyplot(fig3)
 
-    # --- Interaction pièce × opérateur ---
+    # --- Interaction pièce × opérateur compact ---
     st.subheader("🔁 Interaction Pièce × Opérateur")
     interaction_df = pd.DataFrame({
         "Pièce": df["N° Pièce"],
@@ -148,31 +151,35 @@ if uploaded_file:
         "OP2": df[op2_cols].mean(axis=1),
         "OP3": df[op3_cols].mean(axis=1)
     })
-    fig4, ax = plt.subplots(figsize=(5,3))
+    fig4, ax = plt.subplots(figsize=(4,2))
     ax.plot(interaction_df["Pièce"], interaction_df["OP1"], marker='o', color=colors[0], label='OP1')
     ax.plot(interaction_df["Pièce"], interaction_df["OP2"], marker='s', color=colors[1], label='OP2')
     ax.plot(interaction_df["Pièce"], interaction_df["OP3"], marker='^', color=colors[2], label='OP3')
-    ax.set_xlabel("Pièce")
-    ax.set_ylabel("Mesure")
+    ax.set_xlabel("Pièce", fontsize=8)
+    ax.set_ylabel("Mesure", fontsize=8)
+    ax.tick_params(axis='x', labelsize=8)
+    ax.tick_params(axis='y', labelsize=8)
     ax.grid(True, linestyle='--', alpha=0.5)
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=7)
     st.pyplot(fig4)
 
-    # --- Carte de contrôle (EV, AV, GRR) ---
-    st.subheader("📈 Carte de contrôle")
-    fig5, ax = plt.subplots(figsize=(5,3))
+    # --- Carte de contrôle compacte ---
+    st.subheader("📈 Carte de contrôle EV/AV/GRR")
+    fig5, ax = plt.subplots(figsize=(4,2))
     measures = [ev, av, grr]
     mean_val = np.mean(measures)
-    ucl = mean_val + 3*np.std(measures)
-    lcl = mean_val - 3*np.std(measures)
+    std_val = np.std(measures)
+    ucl = mean_val + 3*std_val
+    lcl = max(mean_val - 3*std_val, 0)
     ax.plot(['EV','AV','GRR'], measures, marker='o', color='purple', label='Mesures')
     ax.axhline(mean_val, color='green', linestyle='--', label='Moyenne')
     ax.axhline(ucl, color='red', linestyle='--', label='UCL')
     ax.axhline(lcl, color='red', linestyle='--', label='LCL')
-    ax.set_ylim(0, max(measures)*1.3)
+    ax.set_ylim(0, max(ucl*1.1, max(measures)*1.2))
+    ax.tick_params(axis='x', labelsize=8)
+    ax.tick_params(axis='y', labelsize=8)
     ax.grid(True, linestyle='--', alpha=0.5)
-    ax.set_ylabel("Valeur")
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=7)
     st.pyplot(fig5)
 
     # --- Export Excel ---
