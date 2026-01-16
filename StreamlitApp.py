@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 from io import BytesIO
 
-st.set_page_config(page_title="Gage R&R - Étendues", layout="wide")
-st.title("📊 Étude Gage R&R – Méthode des Étendues")
+st.set_page_config(page_title="Gage R&R – Étendues", layout="wide")
+st.title("📊 Étude Gage R&R – Méthode des Étendues (AIAG)")
 
 # ---------------- d2 FUNCTION ----------------
 def get_d2(z, w):
@@ -22,15 +22,18 @@ with st.sidebar:
     confidence_factor = 5.15
 
 # ---------------- IMPORT EXCEL ----------------
-uploaded_file = st.file_uploader("📥 Importer le fichier Excel Gage R&R", type=["xlsx"])
+uploaded_file = st.file_uploader(
+    "📥 Importer le fichier Excel Gage R&R",
+    type=["xlsx"]
+)
 
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
 
     st.subheader("📄 Aperçu des données")
-    st.dataframe(df)
+    st.dataframe(df, use_container_width=True)
 
-    # Colonnes opérateurs
+    # Colonnes opérateurs (FORMAT EXACT DU FICHIER)
     op1_cols = ["OP1-1", "OP1-2", "OP1-3"]
     op2_cols = ["OP2-1", "OP2-2", "OP2-3"]
     op3_cols = ["OP3-1", "OP3-2", "OP3-3"]
@@ -75,36 +78,77 @@ if uploaded_file:
     vp = (confidence_factor * rp) / d2_vp
 
     vt = np.sqrt(grr ** 2 + vp ** 2)
+
+    # ---------------- STATISTIQUES ----------------
+    p_ev = (ev / vt) * 100
+    p_av = (av / vt) * 100
+    p_vp = (vp / vt) * 100
     p_grr = (grr / vt) * 100
+    ndc = 1.41 * (vp / grr) if grr != 0 else 0
 
     # ---------------- AFFICHAGE ----------------
     st.divider()
     st.subheader("📊 Résultats Gage R&R")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("EV – Répétabilité", round(ev, 4))
-        st.metric("AV – Reproductibilité", round(av, 4))
-        st.metric("Gage R&R", round(grr, 4))
-        st.metric("Variabilité Totale", round(vt, 4))
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("EV", f"{ev:.4f}")
+    c2.metric("AV", f"{av:.4f}")
+    c3.metric("GRR", f"{grr:.4f}")
+    c4.metric("VT", f"{vt:.4f}")
 
-    with col2:
-        st.metric("% Gage R&R", f"{p_grr:.2f}%")
-        if p_grr < 10:
-            st.success("✅ Système de mesure acceptable")
-        elif p_grr <= 30:
-            st.warning("⚠️ Acceptable avec amélioration")
-        else:
-            st.error("❌ Système non acceptable")
+    st.subheader("📈 Indicateurs (%)")
+    c5, c6, c7, c8 = st.columns(4)
+    c5.metric("% EV", f"{p_ev:.1f}%")
+    c6.metric("% AV", f"{p_av:.1f}%")
+    c7.metric("% VP", f"{p_vp:.1f}%")
+    c8.metric("NdC", f"{ndc:.1f}")
+
+    if p_grr < 10:
+        st.success("✅ Système de mesure acceptable")
+    elif p_grr <= 30:
+        st.warning("⚠️ Acceptable avec amélioration")
+    else:
+        st.error("❌ Système de mesure non acceptable")
+
+    # ---------------- GRAPHE CONTRIBUTION ----------------
+    st.subheader("📊 Contribution des sources de variation (%)")
+    contrib_df = pd.DataFrame({
+        "Source": ["EV", "AV", "VP"],
+        "Pourcentage": [p_ev, p_av, p_vp]
+    })
+    st.bar_chart(contrib_df.set_index("Source"))
+
+    # ---------------- BOXPLOT ----------------
+    st.subheader("📦 Distribution des mesures par opérateur")
+    box_df = pd.DataFrame({
+        "OP1": df[op1_cols].values.flatten(),
+        "OP2": df[op2_cols].values.flatten(),
+        "OP3": df[op3_cols].values.flatten()
+    })
+    st.box_chart(box_df)
+
+    # ---------------- INTERACTION ----------------
+    st.subheader("🔁 Interaction Pièce × Opérateur")
+    interaction_df = pd.DataFrame({
+        "Pièce": df["N° Pièce"],
+        "OP1": df[op1_cols].mean(axis=1),
+        "OP2": df[op2_cols].mean(axis=1),
+        "OP3": df[op3_cols].mean(axis=1)
+    })
+    st.line_chart(interaction_df.set_index("Pièce"))
 
     # ---------------- EXPORT EXCEL ----------------
     export_df = pd.DataFrame({
         "EV": [ev],
         "AV": [av],
-        "GRR": [grr],
         "VP": [vp],
+        "GRR": [grr],
         "VT": [vt],
-        "%GRR": [p_grr]
+        "%EV": [p_ev],
+        "%AV": [p_av],
+        "%VP": [p_vp],
+        "%GRR": [p_grr],
+        "NdC": [ndc]
     })
 
     buffer = BytesIO()
