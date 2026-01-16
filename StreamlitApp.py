@@ -1,113 +1,99 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from io import BytesIO
 
-st.set_page_config(page_title="Calculateur Gage R&R - Méthode des Étendues", layout="wide")
+st.set_page_config(page_title="Gage R&R Pro - Import/Export", layout="wide")
 
-st.title("📊 Étude de Précision : Gage R&R")
-st.subheader("Méthode des Étendues et des Moyennes (Lean Six Sigma)")
+st.title("📊 Étude Gage R&R avec Import/Export Excel")
+st.write("Méthode des étendues et des moyennes[cite: 699].")
 
-# --- FONCTION DE RÉCUPÉRATION DE d2 ---
+# --- FONCTIONS DE CALCUL ---
 def get_d2(z, w):
-    # Extrait de la table d2 du cours (Page 71)
-    # Z = lignes (1 à >15), W = colonnes (2 à 15)
-    # On utilise ici les valeurs courantes pour l'exemple standard
-    table = {
-        (1, 2): 1.41, (1, 3): 1.91,
-        (10, 3): 1.72, # Cas courant pour EV: Z=30, W=3 (approximation >15)
-        (30, 3): 1.693, # Valeur exacte pour Z > 15, W = 3
-    }
-    # Valeurs spécifiques citées dans l'exemple du cours (Page 77-79)
-    if z > 15 and w == 3: return 1.693 # d2 pour répétabilité (EV)
-    if z == 1 and w == 3: return 1.91  # d2 pour reproductibilité (AV)
-    if z == 1 and w == 10: return 3.18 # d2 pour variabilité pièce (VP)
-    return 1.0 # Valeur par défaut si non trouvé
+    # Valeurs d2 selon la table du cours (Page 71) [cite: 712]
+    if z > 15 and w == 3: return 1.693
+    if z == 1 and w == 3: return 1.91
+    if z == 1 and w == 10: return 3.18
+    return 1.128
 
-# --- SAISIE DES PARAMÈTRES ---
+# --- SECTION 1 : IMPORTATION ---
+st.header("1. Importation des données")
+uploaded_file = st.file_uploader("Choisissez un fichier Excel (.xlsx)", type="xlsx")
+
+if uploaded_file:
+    df_input = pd.read_excel(uploaded_file)
+    st.write("Aperçu des données importées :")
+    st.dataframe(df_input.head())
+    
+    # Hypothèse : Le fichier contient les colonnes 'Moyenne' et 'Etendue' par opérateur
+    # Vous pouvez adapter selon la structure de votre fichier Excel
+else:
+    st.info("Utilisez les valeurs par défaut ou importez un fichier pour commencer.")
+
+# --- SECTION 2 : PARAMÈTRES ET SAISIE ---
 with st.sidebar:
-    st.header("Paramètres de l'étude")
-    n_pieces = st.number_input("Nombre de pièces (n)", value=10)
-    n_operateurs = st.number_input("Nombre d'opérateurs", value=3)
-    n_essais = st.number_input("Nombre d'essais (r)", value=3)
-    confidence_factor = 5.15 # Niveau de confiance 99% selon le cours
-
-# --- ENTRÉE DES DONNÉES ---
-st.write("### Saisie des mesures moyennes et étendues")
-st.info("Saisissez les résultats calculés par opérateur (comme dans le tableau page 76 du cours).")
+    st.header("⚙️ Paramètres")
+    n = st.number_input("Nombre de pièces (n)", value=10) [cite: 695]
+    op_count = st.number_input("Nombre d'opérateurs", value=3) [cite: 695]
+    r_count = st.number_input("Nombre d'essais (r)", value=3) [cite: 695]
+    k = 5.15 # Facteur de confiance 99% [cite: 706]
 
 col1, col2, col3 = st.columns(3)
-
 with col1:
-    x_double_bar_op1 = st.number_input("Moyenne OP1 (X̄1)", value=45.09)
-    r_bar_op1 = st.number_input("Étendue moyenne OP1 (R̄1)", value=0.055)
-
+    x1 = st.number_input("Moyenne OP1", value=45.09)
+    r1 = st.number_input("R̄ OP1", value=0.055)
 with col2:
-    x_double_bar_op2 = st.number_input("Moyenne OP2 (X̄2)", value=45.06)
-    r_bar_op2 = st.number_input("Étendue moyenne OP2 (R̄2)", value=0.087)
-
+    x2 = st.number_input("Moyenne OP2", value=45.06)
+    r2 = st.number_input("R̄ OP2", value=0.087)
 with col3:
-    x_double_bar_op3 = st.number_input("Moyenne OP3 (X̄3)", value=45.08)
-    r_bar_op3 = st.number_input("Étendue moyenne OP3 (R̄3)", value=0.031)
+    x3 = st.number_input("Moyenne OP3", value=45.08)
+    r3 = st.number_input("R̄ OP3", value=0.031)
 
 # --- CALCULS ---
-if st.button("Calculer la variabilité"):
-    # 1. Répétabilité (EV)
-    r_double_bar = (r_bar_op1 + r_bar_op2 + r_bar_op3) / n_operateurs [cite: 1486]
-    d2_ev = get_d2(n_pieces * n_operateurs, n_essais)
-    ev = (confidence_factor * r_double_bar) / d2_ev [cite: 1473]
+if st.button("Calculer et Préparer l'Export"):
+    # EV - Répétabilité [cite: 700, 702]
+    r_double_bar = (r1 + r2 + r3) / op_count
+    d2_ev = get_d2(n * op_count, r_count)
+    ev = (k * r_double_bar) / d2_ev
     
-    # 2. Reproductibilité (AV)
-    means = [x_double_bar_op1, x_double_bar_op2, x_double_bar_op3]
-    x_etendue = max(means) - min(means) [cite: 1477]
-    d2_av = get_d2(1, n_operateurs)
+    # AV - Reproductibilité [cite: 716, 717]
+    x_range = max([x1, x2, x3]) - min([x1, x2, x3])
+    d2_av = get_d2(1, op_count)
+    av_val = np.sqrt(max(0, (k * x_range / d2_av)**2 - (ev**2 / (n * r_count))))
     
-    # Formule avec correction de la répétabilité [cite: 1477]
-    av_term = (confidence_factor * x_etendue / d2_av)**2
-    ev_correction = (ev**2) / (n_pieces * n_essais)
-    av = np.sqrt(max(0, av_term - ev_correction))
+    # R&R et VT [cite: 725, 733]
+    rr = np.sqrt(ev**2 + av_val**2)
+    # Exemple Rp du cours [cite: 772]
+    rp_val = 0.33 
+    d2_vp = get_d2(1, n)
+    vp = (k * rp_val) / d2_vp
+    vt = np.sqrt(rr**2 + vp**2)
     
-    # 3. Gage R&R
-    grr = np.sqrt(ev**2 + av**2) [cite: 1479]
+    # Résultats pour export
+    results = {
+        "Indicateur": ["EV (Répétabilité)", "AV (Reproductibilité)", "Gage R&R", "Variabilité Pièce", "VT (Totale)"],
+        "Valeur": [ev, av_val, rr, vp, vt],
+        "% Contribution": [(ev/vt)*100, (av_val/vt)*100, (rr/vt)*100, (vp/vt)*100, 100]
+    }
+    df_results = pd.DataFrame(results)
     
-    # 4. Variabilité Pièce (VP)
-    # Simulation de Rp pour l'exemple (Max - Min des moyennes de pièces)
-    rp = st.number_input("Étendue des moyennes de pièces (Rp)", value=0.33)
-    d2_vp = get_d2(1, n_pieces)
-    vp = (confidence_factor * rp) / d2_vp [cite: 1479]
-    
-    # 5. Variabilité Totale (VT)
-    vt = np.sqrt(grr**2 + vp**2) [cite: 1481]
-    
-    # --- AFFICHAGE DES RÉSULTATS ---
-    st.divider()
-    res_col1, res_col2 = st.columns(2)
-    
-    with res_col1:
-        st.write("#### Composantes de la variance")
-        st.metric("Répétabilité (EV)", round(ev, 4))
-        st.metric("Reproductibilité (AV)", round(av, 4))
-        st.metric("Gage R&R", round(grr, 4))
-        st.metric("Variabilité Totale (VT)", round(vt, 4))
+    st.table(df_results)
 
-    with res_col2:
-        st.write("#### Contribution (%)")
-        p_ev = (ev / vt) * 100
-        p_av = (av / vt) * 100
-        p_grr = (grr / vt) * 100
-        
-        st.write(f"**% EV (Équipement):** {p_ev:.1f}%")
-        st.write(f"**% AV (Opérateur):** {p_av:.1f}%")
-        st.write(f"**% Gage R&R:** {p_grr:.1f}%")
-        
-        # Conclusion selon les règles du cours 
-        if p_grr < 10:
-            st.success("✅ Processus satisfaisant (< 10%)")
-        elif 10 <= p_grr <= 30:
-            st.warning("⚠️ Processus acceptable mais à améliorer (10-30%)")
-        else:
-            st.error("❌ Processus inacceptable (> 30%)")
+    # --- SECTION 3 : EXPORTATION ---
+    st.header("2. Exportation des résultats")
+    
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_results.to_excel(writer, index=False, sheet_name='Resultats_Gage_RR')
+    
+    st.download_button(
+        label="📥 Télécharger les résultats en Excel",
+        data=output.getvalue(),
+        file_name="resultats_gage_rr.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
-st.sidebar.markdown("""
----
-**Note :** Les constantes $d_2$ sont extraites automatiquement pour les configurations standards (10 pièces, 3 opérateurs, 3 essais).
-""")
+# --- RAPPEL DES RÈGLES DE DÉCISION ---
+st.divider()
+st.write("### Rappel des critères d'acceptation[cite: 790]:")
+st.info("- **< 10%** : Processus satisfaisant [cite: 791]\n- **10% - 30%** : Acceptable mais améliorable [cite: 792]\n- **> 30%** : Inacceptable [cite: 793]")
