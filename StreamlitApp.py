@@ -4,11 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from io import BytesIO
 
-# --- Configuration page ---
-st.set_page_config(page_title="Gage R&R – Étendues", layout="wide")
-st.title("📊 Étude Gage R&R – Méthode des Étendues (AIAG)")
+# --- CONFIGURATION PAGE ---
+st.set_page_config(
+    page_title="Gage R&R – Tableau de Bord",
+    layout="wide"
+)
 
-# --- Fonction d2 ---
+st.markdown("<h1 style='text-align: center; color: navy;'>📊 Gage R&R – Méthode des Étendues (AIAG)</h1>", unsafe_allow_html=True)
+st.write("---")
+
+# --- FONCTION D2 ---
 def get_d2(z, w):
     if z > 15 and w == 3:
         return 1.693
@@ -18,12 +23,12 @@ def get_d2(z, w):
         return 3.18
     return 1.0
 
-# --- Paramètres ---
+# --- PARAMÈTRES SIDEBAR ---
 with st.sidebar:
     st.header("⚙️ Paramètres")
     confidence_factor = st.number_input("Facteur de confiance", value=5.15, step=0.01)
 
-# --- Import Excel ---
+# --- IMPORT EXCEL ---
 uploaded_file = st.file_uploader("📥 Importer le fichier Excel Gage R&R", type=["xlsx"])
 
 if uploaded_file:
@@ -40,7 +45,7 @@ if uploaded_file:
     n_operateurs = 3
     n_essais = 3
 
-    # --- Calculs de base ---
+    # --- CALCULS ---
     df["R_OP1"] = df[op1_cols].max(axis=1) - df[op1_cols].min(axis=1)
     df["R_OP2"] = df[op2_cols].max(axis=1) - df[op2_cols].min(axis=1)
     df["R_OP3"] = df[op3_cols].max(axis=1) - df[op3_cols].min(axis=1)
@@ -65,85 +70,75 @@ if uploaded_file:
 
     grr = np.sqrt(ev ** 2 + av ** 2)
 
-    # --- Variabilité pièces ---
+    # Variabilité pièces
     df["Moy_Piece"] = df[op1_cols + op2_cols + op3_cols].mean(axis=1)
     rp = df["Moy_Piece"].max() - df["Moy_Piece"].min()
     vp = (confidence_factor * rp) / get_d2(1, n_pieces)
     vt = np.sqrt(grr ** 2 + vp ** 2)
 
-    # --- Pourcentages ---
+    # Pourcentages
     p_ev = (ev / vt) * 100
     p_av = (av / vt) * 100
     p_vp = (vp / vt) * 100
     p_grr = (grr / vt) * 100
     ndc = 1.41 * (vp / grr) if grr != 0 else 0
 
-    # --- Affichage résultats ---
-    st.divider()
-    st.subheader("📊 Résultats Gage R&R")
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("EV", f"{ev:.4f}")
-    c2.metric("AV", f"{av:.4f}")
-    c3.metric("GRR", f"{grr:.4f}")
-    c4.metric("VT", f"{vt:.4f}")
+    # --- AFFICHAGE DES MÉTRIQUES ---
+    st.subheader("📊 Indicateurs clés")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("EV", f"{ev:.4f}", delta=f"{p_ev:.1f}%")
+    col2.metric("AV", f"{av:.4f}", delta=f"{p_av:.1f}%")
+    col3.metric("GRR", f"{grr:.4f}", delta=f"{p_grr:.1f}%")
+    col4.metric("VT", f"{vt:.4f}")
 
-    st.subheader("📈 Indicateurs (%)")
-    c5, c6, c7, c8 = st.columns(4)
-    c5.metric("% EV", f"{p_ev:.1f}%")
-    c6.metric("% AV", f"{p_av:.1f}%")
-    c7.metric("% VP", f"{p_vp:.1f}%")
-    c8.metric("NdC", f"{ndc:.1f}")
-
-    # --- Couleurs ---
+    # --- GRAPHIQUES STYLE DASHBOARD ---
     colors = ['#1f77b4','#ff7f0e','#2ca02c']
 
-    # --- Contribution barres compact ---
+    # Contribution des sources
     st.subheader("📊 Contribution des sources (%)")
-    fig1, ax = plt.subplots(figsize=(4,2))
+    fig, ax = plt.subplots(figsize=(4,2))
     bars = ax.bar(['EV','AV','VP'], [p_ev,p_av,p_vp], color=colors, edgecolor='black')
     ax.set_ylim(0,100)
     for bar in bars:
         yval = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center', fontsize=8)
+        ax.text(bar.get_x() + bar.get_width()/2, yval+1, f"{yval:.1f}%", ha='center', fontsize=8)
     ax.set_ylabel("Pourcentage", fontsize=8)
     ax.tick_params(axis='x', labelsize=8)
     ax.tick_params(axis='y', labelsize=8)
-    ax.grid(axis='y', linestyle='--', alpha=0.5)
-    st.pyplot(fig1)
+    ax.grid(axis='y', linestyle='--', alpha=0.3)
+    st.pyplot(fig, use_container_width=True)
 
-    # --- Boxplot compact ---
-    st.subheader("📦 Distribution mesures")
+    # Boxplot compact
+    st.subheader("📦 Distribution des mesures")
     fig2, ax = plt.subplots(figsize=(4,2))
-    bplot = ax.boxplot(
-        [df[op1_cols].values.flatten(),
-         df[op2_cols].values.flatten(),
-         df[op3_cols].values.flatten()],
-        labels=["OP1","OP2","OP3"],
-        patch_artist=True,
-        medianprops=dict(color='red', linewidth=2)
-    )
+    bplot = ax.boxplot([df[op1_cols].values.flatten(),
+                        df[op2_cols].values.flatten(),
+                        df[op3_cols].values.flatten()],
+                        labels=["OP1","OP2","OP3"],
+                        patch_artist=True,
+                        medianprops=dict(color='red', linewidth=2))
     for patch, color in zip(bplot['boxes'], colors):
         patch.set_facecolor(color)
     ax.tick_params(axis='x', labelsize=8)
     ax.tick_params(axis='y', labelsize=8)
-    ax.grid(True, linestyle='--', alpha=0.5)
-    st.pyplot(fig2)
+    ax.grid(True, linestyle='--', alpha=0.3)
+    st.pyplot(fig2, use_container_width=True)
 
-    # --- Histogramme compact ---
+    # Histogramme compact
     st.subheader("📊 Histogramme mesures")
     fig3, ax = plt.subplots(figsize=(4,2))
-    ax.hist(df[op1_cols].values.flatten(), bins=10, alpha=0.5, color=colors[0], label='OP1', edgecolor='black')
-    ax.hist(df[op2_cols].values.flatten(), bins=10, alpha=0.5, color=colors[1], label='OP2', edgecolor='black')
-    ax.hist(df[op3_cols].values.flatten(), bins=10, alpha=0.5, color=colors[2], label='OP3', edgecolor='black')
+    ax.hist(df[op1_cols].values.flatten(), bins=8, alpha=0.5, color=colors[0], label='OP1', edgecolor='black')
+    ax.hist(df[op2_cols].values.flatten(), bins=8, alpha=0.5, color=colors[1], label='OP2', edgecolor='black')
+    ax.hist(df[op3_cols].values.flatten(), bins=8, alpha=0.5, color=colors[2], label='OP3', edgecolor='black')
     ax.set_xlabel("Valeur", fontsize=8)
     ax.set_ylabel("Fréquence", fontsize=8)
     ax.tick_params(axis='x', labelsize=8)
     ax.tick_params(axis='y', labelsize=8)
     ax.legend(fontsize=7)
-    ax.grid(True, linestyle='--', alpha=0.5)
-    st.pyplot(fig3)
+    ax.grid(True, linestyle='--', alpha=0.3)
+    st.pyplot(fig3, use_container_width=True)
 
-    # --- Interaction pièce × opérateur compact ---
+    # Interaction Pièce × Opérateur
     st.subheader("🔁 Interaction Pièce × Opérateur")
     interaction_df = pd.DataFrame({
         "Pièce": df["N° Pièce"],
@@ -159,11 +154,11 @@ if uploaded_file:
     ax.set_ylabel("Mesure", fontsize=8)
     ax.tick_params(axis='x', labelsize=8)
     ax.tick_params(axis='y', labelsize=8)
-    ax.grid(True, linestyle='--', alpha=0.5)
+    ax.grid(True, linestyle='--', alpha=0.3)
     ax.legend(fontsize=7)
-    st.pyplot(fig4)
+    st.pyplot(fig4, use_container_width=True)
 
-    # --- Carte de contrôle compacte ---
+    # Carte de contrôle EV/AV/GRR compacte
     st.subheader("📈 Carte de contrôle EV/AV/GRR")
     fig5, ax = plt.subplots(figsize=(4,2))
     measures = [ev, av, grr]
@@ -178,11 +173,11 @@ if uploaded_file:
     ax.set_ylim(0, max(ucl*1.1, max(measures)*1.2))
     ax.tick_params(axis='x', labelsize=8)
     ax.tick_params(axis='y', labelsize=8)
-    ax.grid(True, linestyle='--', alpha=0.5)
+    ax.grid(True, linestyle='--', alpha=0.3)
     ax.legend(fontsize=7)
-    st.pyplot(fig5)
+    st.pyplot(fig5, use_container_width=True)
 
-    # --- Export Excel ---
+    # --- EXPORT EXCEL ---
     export_df = pd.DataFrame({
         "EV":[ev],
         "AV":[av],
