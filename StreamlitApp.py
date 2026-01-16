@@ -3,83 +3,304 @@ import pandas as pd
 import numpy as np
 from io import BytesIO
 import matplotlib.pyplot as plt
+import time
 
-st.set_page_config(page_title="Gage R&R - Étendues", layout="wide")
+st.set_page_config(
+    page_title="Gage R&R - Étendues",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# CSS personnalisé pour améliorer l'esthétique
+# CSS personnalisé avec animations et effets visuels
 st.markdown("""
 <style>
-    .main-title {
-        text-align: center;
-        color: #2c3e50;
-        padding: 20px;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 2.5em;
-        font-weight: bold;
-        margin-bottom: 30px;
+        padding: 2rem;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.1);
+        animation: fadeIn 1s ease-out;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .main-title {
+        color: white;
+        font-size: 2.8rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.5px;
+    }
+    
+    .main-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.1rem;
+        font-weight: 400;
     }
     
     .metric-card {
-        background: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin: 10px 0;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        border-left: 5px solid #3498db;
-        transition: transform 0.3s;
+        background: linear-gradient(145deg, #ffffff, #f5f7fa);
+        border-radius: 16px;
+        padding: 1.8rem;
+        margin: 1rem 0;
+        box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.05), 
+                    -5px -5px 15px rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+        position: relative;
+        overflow: hidden;
     }
     
     .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 15px 15px 30px rgba(0, 0, 0, 0.1), 
+                    -15px -15px 30px rgba(255, 255, 255, 0.9);
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.6s ease;
+    }
+    
+    .metric-card:hover::before {
+        transform: scaleX(1);
+    }
+    
+    .metric-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #2c3e50, #3498db);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0.5rem 0;
+    }
+    
+    .metric-label {
+        color: #7f8c8d;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
     .result-indicator {
-        padding: 15px;
-        border-radius: 10px;
-        margin: 10px 0;
+        padding: 1.2rem 1.5rem;
+        border-radius: 12px;
+        margin: 1rem 0;
         text-align: center;
-        font-weight: bold;
-        font-size: 1.1em;
+        font-weight: 600;
+        font-size: 1.1rem;
+        backdrop-filter: blur(10px);
+        transition: all 0.4s ease;
+        border: 2px solid transparent;
+        animation: pulse 2s infinite;
+    }
+    
+    .result-indicator:hover {
+        transform: scale(1.03);
     }
     
     .good {
-        background-color: #d4edda;
-        color: #155724;
-        border: 2px solid #c3e6cb;
+        background: linear-gradient(135deg, rgba(46, 204, 113, 0.15), rgba(39, 174, 96, 0.25));
+        color: #27ae60;
+        border-color: #2ecc71;
     }
     
     .warning {
-        background-color: #fff3cd;
-        color: #856404;
-        border: 2px solid #ffeaa7;
+        background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.25));
+        color: #f39c12;
+        border-color: #f1c40f;
     }
     
     .bad {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 2px solid #f5c6cb;
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.15), rgba(192, 57, 43, 0.25));
+        color: #c0392b;
+        border-color: #e74c3c;
+        animation: shake 0.5s ease-in-out;
     }
     
-    .stDataFrame {
-        border-radius: 10px;
-        border: 1px solid #ddd;
+    .section-header {
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        margin: 2rem 0 1rem 0;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
     }
     
     .plot-container {
         background: white;
-        padding: 20px;
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        margin: 1.5rem 0;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease;
+    }
+    
+    .plot-container:hover {
+        transform: translateY(-5px);
+    }
+    
+    .dataframe-container {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e0e6ed;
+    }
+    
+    .upload-area {
+        border: 3px dashed #667eea;
+        border-radius: 20px;
+        padding: 3rem;
+        text-align: center;
+        background: rgba(102, 126, 234, 0.05);
+        transition: all 0.3s ease;
+        margin: 2rem 0;
+    }
+    
+    .upload-area:hover {
+        background: rgba(102, 126, 234, 0.1);
+        border-color: #764ba2;
+    }
+    
+    .download-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin: 1rem 0;
+    }
+    
+    .download-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    
+    .sidebar-content {
+        padding: 1.5rem;
+        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 0 20px 20px 0;
+        height: 100%;
+    }
+    
+    .floating-badge {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    
+    .progress-container {
+        background: #f1f5f9;
         border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        margin: 20px 0;
+        padding: 3px;
+        margin: 1rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        height: 10px;
+        border-radius: 8px;
+        background: linear-gradient(90deg, #2ecc71, #f1c40f, #e74c3c);
+        transition: width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid #3498db;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        border-left-color: #667eea;
+        transform: translateX(5px);
+    }
+    
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #764ba2, #667eea);
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Titre avec style
-st.markdown('<div class="main-title">📊 Étude Gage R&R – Méthode des Étendues</div>', unsafe_allow_html=True)
+# Header principal avec animation
+st.markdown("""
+<div class="main-header">
+    <div class="main-title">📊 Gage R&R - Méthode des Étendues</div>
+    <div class="main-subtitle">Analyse avancée de la capacité du système de mesure</div>
+</div>
+""", unsafe_allow_html=True)
 
 # ---------------- d2 FUNCTION ----------------
 def get_d2(z, w):
@@ -91,47 +312,143 @@ def get_d2(z, w):
         return 3.18
     return 1.0
 
-# ---------------- PARAMÈTRES ----------------
+# ---------------- SIDEBAR STYLÉE ----------------
 with st.sidebar:
-    st.header("⚙️ Paramètres")
-    st.markdown("---")
+    st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
+    
+    st.markdown('<div style="font-size: 1.5rem; font-weight: 700; color: #2c3e50; margin-bottom: 2rem;">⚙️ Configuration</div>', unsafe_allow_html=True)
+    
     confidence_factor = st.slider(
-        "Facteur de confiance (k)",
+        "**Facteur de Confiance (k)**",
         min_value=4.0,
         max_value=6.0,
         value=5.15,
         step=0.05,
-        help="Valeur recommandée: 5.15 pour 99% de couverture"
+        help="Facteur pour le niveau de confiance des calculs"
     )
     
     st.markdown("---")
-    st.header("📊 Légende")
-    st.markdown("""
-    **EV**: Répétabilité (Équipement)  
-    **AV**: Reproductibilité (Opérateurs)  
-    **GRR**: Variation du système  
-    **VP**: Variation des pièces  
-    **VT**: Variation totale
-    """)
+    
+    st.markdown('<div style="font-size: 1.2rem; font-weight: 600; color: #2c3e50; margin: 1.5rem 0 1rem 0;">📈 Guide de Lecture</div>', unsafe_allow_html=True)
+    
+    with st.expander("🔍 Comprendre les indicateurs", expanded=True):
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.markdown("""
+            <div class="stat-card">
+                <div style="color: #3498db; font-weight: 600;">EV</div>
+                <div style="color: #7f8c8d; font-size: 0.85rem;">Répétabilité</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("""
+            <div class="stat-card">
+                <div style="color: #2ecc71; font-weight: 600;">AV</div>
+                <div style="color: #7f8c8d; font-size: 0.85rem;">Reproductibilité</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_b:
+            st.markdown("""
+            <div class="stat-card">
+                <div style="color: #9b59b6; font-weight: 600;">GRR</div>
+                <div style="color: #7f8c8d; font-size: 0.85rem;">Variation système</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("""
+            <div class="stat-card">
+                <div style="color: #e74c3c; font-weight: 600;">%GRR</div>
+                <div style="color: #7f8c8d; font-size: 0.85rem;">Pourcentage total</div>
+            </div>
+            """, unsafe_allow_html=True)
     
     st.markdown("---")
-    st.header("✅ Critères")
+    
+    st.markdown('<div style="font-size: 1.2rem; font-weight: 600; color: #2c3e50; margin: 1.5rem 0 1rem 0;">🎯 Critères</div>', unsafe_allow_html=True)
+    
     st.markdown("""
-    - **< 10%** : Excellent
-    - **10-30%** : Acceptable
-    - **> 30%** : Inacceptable
-    """)
+    <div style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(39, 174, 96, 0.2)); 
+                padding: 1rem; border-radius: 10px; border-left: 4px solid #2ecc71; margin-bottom: 0.5rem;">
+        <div style="font-weight: 600; color: #27ae60;">✓ EXCELLENT</div>
+        <div style="color: #7f8c8d; font-size: 0.9rem;">&lt; 10% - Système optimal</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(243, 156, 18, 0.2)); 
+                padding: 1rem; border-radius: 10px; border-left: 4px solid #f1c40f; margin-bottom: 0.5rem;">
+        <div style="font-weight: 600; color: #f39c12;">⚠ ACCEPTABLE</div>
+        <div style="color: #7f8c8d; font-size: 0.9rem;">10-30% - Amélioration souhaitée</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), rgba(192, 57, 43, 0.2)); 
+                padding: 1rem; border-radius: 10px; border-left: 4px solid #e74c3c;">
+        <div style="font-weight: 600; color: #c0392b;">✗ INACCEPTABLE</div>
+        <div style="color: #7f8c8d; font-size: 0.9rem;">&gt; 30% - Action corrective requise</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# ---------------- IMPORT EXCEL ----------------
-uploaded_file = st.file_uploader("📥 Importer le fichier Excel Gage R&R", type=["xlsx"])
+# ---------------- ZONE D'UPLOAD STYLÉE ----------------
+st.markdown('<div class="section-header"><span>📥 Importation des Données</span></div>', unsafe_allow_html=True)
+
+uploaded_file = st.file_uploader(
+    "",
+    type=["xlsx"],
+    help="Téléversez votre fichier Excel contenant les mesures",
+    label_visibility="collapsed"
+)
+
+if uploaded_file is None:
+    st.markdown("""
+    <div class="upload-area">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">📁</div>
+        <div style="font-size: 1.5rem; font-weight: 600; color: #2c3e50; margin-bottom: 0.5rem;">
+            Glissez-déposez votre fichier Excel
+        </div>
+        <div style="color: #7f8c8d; margin-bottom: 2rem;">
+            ou cliquez pour parcourir
+        </div>
+        <div style="background: rgba(102, 126, 234, 0.1); padding: 1rem; border-radius: 10px; display: inline-block;">
+            <div style="font-weight: 600; color: #667eea;">Format requis :</div>
+            <div style="color: #7f8c8d; font-size: 0.9rem; text-align: left; margin-top: 0.5rem;">
+                • Colonnes : OP1-1, OP1-2, OP1-3, OP2-1, OP2-2, OP2-3, OP3-1, OP3-2, OP3-3<br>
+                • Lignes : Pièces mesurées<br>
+                • 3 opérateurs × 3 essais
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 if uploaded_file:
-    df = pd.read_excel(uploaded_file)
+    # Animation de chargement
+    with st.spinner('🔄 Traitement des données en cours...'):
+        time.sleep(0.5)
+        df = pd.read_excel(uploaded_file)
 
-    with st.expander("📄 Aperçu des données", expanded=True):
-        # Style pour le dataframe
-        styled_df = df.style.background_gradient(subset=pd.IndexSlice[:, df.columns.str.contains('OP')], cmap='Blues')
+    # ---------------- APERÇU DES DONNÉES ----------------
+    st.markdown('<div class="section-header"><span>📄 Aperçu des Données</span></div>', unsafe_allow_html=True)
+    
+    with st.expander("Voir les données détaillées", expanded=True):
+        st.markdown('<div class="dataframe-container">', unsafe_allow_html=True)
+        
+        # Style amélioré pour le DataFrame
+        def color_gradient(val):
+            if isinstance(val, (int, float)):
+                intensity = min(0.8, abs(val - df.values.mean()) / df.values.std() * 0.3)
+                if val > df.values.mean():
+                    return f'background: linear-gradient(90deg, rgba(46, 204, 113, {intensity}), rgba(39, 174, 96, {intensity/2}))'
+                else:
+                    return f'background: linear-gradient(90deg, rgba(52, 152, 219, {intensity}), rgba(41, 128, 185, {intensity/2}))'
+            return ''
+        
+        styled_df = df.style.applymap(color_gradient)
         st.dataframe(styled_df, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # Colonnes opérateurs
     op1_cols = ["OP1-1", "OP1-2", "OP1-3"]
@@ -142,7 +459,7 @@ if uploaded_file:
     n_operateurs = 3
     n_essais = 3
 
-    # ---------------- MOYENNES & ÉTENDUES ----------------
+    # ---------------- CALCULS ----------------
     df["R_OP1"] = df[op1_cols].max(axis=1) - df[op1_cols].min(axis=1)
     df["R_OP2"] = df[op2_cols].max(axis=1) - df[op2_cols].min(axis=1)
     df["R_OP3"] = df[op3_cols].max(axis=1) - df[op3_cols].min(axis=1)
@@ -155,7 +472,7 @@ if uploaded_file:
     x_bar_op2 = df[op2_cols].values.mean()
     x_bar_op3 = df[op3_cols].values.mean()
 
-    # ---------------- CALCULS GRR ----------------
+    # Calculs GRR
     r_double_bar = (r_bar_op1 + r_bar_op2 + r_bar_op3) / n_operateurs
     d2_ev = get_d2(n_pieces * n_operateurs, n_essais)
     ev = (confidence_factor * r_double_bar) / d2_ev
@@ -170,7 +487,7 @@ if uploaded_file:
 
     grr = np.sqrt(ev ** 2 + av ** 2)
 
-    # ---------------- VARIABILITÉ PIÈCES ----------------
+    # Variabilité pièces
     df["Moy_Piece"] = df[op1_cols + op2_cols + op3_cols].mean(axis=1)
     rp = df["Moy_Piece"].max() - df["Moy_Piece"].min()
 
@@ -180,270 +497,314 @@ if uploaded_file:
     vt = np.sqrt(grr ** 2 + vp ** 2)
     p_grr = (grr / vt) * 100
 
-    # ---------------- GRAPHIQUES ----------------
-    st.divider()
-    st.subheader("📈 Visualisations")
+    # ---------------- VISUALISATIONS AVANCÉES ----------------
+    st.markdown('<div class="section-header"><span>📈 Visualisations</span></div>', unsafe_allow_html=True)
     
-    # Création des graphiques
     col1, col2 = st.columns(2)
     
     with col1:
-        # Graphique 1: Composantes de variation
-        st.markdown("<div class='plot-container'>", unsafe_allow_html=True)
-        st.markdown("**📊 Composantes de Variation**")
-        fig1, ax1 = plt.subplots(figsize=(8, 4))
+        # Graphique 1 : Composantes de variation (3D style)
+        st.markdown('<div class="plot-container">', unsafe_allow_html=True)
+        fig1, ax1 = plt.subplots(figsize=(10, 6))
+        
         components = ['EV', 'AV', 'GRR', 'VP', 'VT']
         values = [ev, av, grr, vp, vt]
         colors = ['#3498db', '#2ecc71', '#9b59b6', '#e74c3c', '#f39c12']
         
-        bars = ax1.bar(components, values, color=colors, edgecolor='black')
-        ax1.set_ylabel('Valeur')
-        ax1.set_title('Composantes de Variation')
+        # Barres avec effet 3D
+        bars = ax1.bar(components, values, color=colors, edgecolor='white', 
+                      linewidth=2, alpha=0.9, zorder=3)
         
-        # Ajouter les valeurs sur les barres
+        # Ajouter un dégradé aux barres
+        for bar, color in zip(bars, colors):
+            bar.set_edgecolor('white')
+        
+        # Style amélioré
+        ax1.grid(True, alpha=0.3, zorder=0)
+        ax1.set_facecolor('#f8fafc')
+        ax1.spines['top'].set_visible(False)
+        ax1.spines['right'].set_visible(False)
+        
+        # Ajouter les valeurs avec animation visuelle
         for bar, value in zip(bars, values):
             height = bar.get_height()
             ax1.text(bar.get_x() + bar.get_width()/2., height + max(values)*0.01,
-                    f'{value:.3f}', ha='center', va='bottom', fontweight='bold')
+                    f'{value:.3f}', ha='center', va='bottom', 
+                    fontweight='bold', fontsize=10, color='#2c3e50')
         
+        ax1.set_title('📊 Composantes de Variation', fontsize=14, fontweight=600, pad=20)
         plt.tight_layout()
         st.pyplot(fig1)
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         plt.close()
         
-        # Graphique 2: Répartition en pourcentage
-        st.markdown("<div class='plot-container'>", unsafe_allow_html=True)
-        st.markdown("**🥧 Répartition des Variations**")
-        fig2, ax2 = plt.subplots(figsize=(8, 4))
-        labels = ['GRR', 'VP']
+        # Graphique 2 : Radar des opérateurs
+        st.markdown('<div class="plot-container">', unsafe_allow_html=True)
+        fig2 = plt.figure(figsize=(8, 6))
+        
+        # Données pour le radar
+        categories = ['Moyenne', 'Étendue', 'Précision']
+        N = len(categories)
+        
+        angles = [n / float(N) * 2 * np.pi for n in range(N)]
+        angles += angles[:1]
+        
+        # Valeurs normalisées
+        means_norm = [x_bar_op1, r_bar_op1, 1/r_bar_op1]
+        means_norm = [v/max(means_norm) for v in means_norm]
+        
+        ax2 = plt.subplot(111, polar=True)
+        ax2.plot(angles, means_norm + means_norm[:1], 'o-', linewidth=2, label='Opérateur 1', color='#3498db')
+        ax2.fill(angles, means_norm + means_norm[:1], alpha=0.25, color='#3498db')
+        
+        ax2.set_xticks(angles[:-1])
+        ax2.set_xticklabels(categories)
+        ax2.set_title('🎯 Performance Opérateurs', fontsize=14, fontweight=600, pad=20)
+        ax2.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
+        
+        plt.tight_layout()
+        st.pyplot(fig2)
+        st.markdown('</div>', unsafe_allow_html=True)
+        plt.close()
+    
+    with col2:
+        # Graphique 3 : Camembert amélioré
+        st.markdown('<div class="plot-container">', unsafe_allow_html=True)
+        fig3, ax3 = plt.subplots(figsize=(8, 6))
+        
+        labels = ['Variation Système\n(GRR)', 'Variation Pièces\n(VP)']
         sizes = [grr**2, vp**2]
         colors = ['#9b59b6', '#e74c3c']
+        explode = (0.1, 0)
         
-        wedges, texts, autotexts = ax2.pie(sizes, labels=labels, colors=colors,
-                                           autopct='%1.1f%%', startangle=90)
+        wedges, texts, autotexts = ax3.pie(
+            sizes, explode=explode, labels=labels, colors=colors,
+            autopct='%1.1f%%', shadow=True, startangle=90,
+            textprops={'fontsize': 11, 'fontweight': 'bold'},
+            wedgeprops={'edgecolor': 'white', 'linewidth': 2}
+        )
         
         for autotext in autotexts:
             autotext.set_color('white')
             autotext.set_fontweight('bold')
+            autotext.set_fontsize(12)
         
-        ax2.axis('equal')
-        plt.tight_layout()
-        st.pyplot(fig2)
-        st.markdown("</div>", unsafe_allow_html=True)
-        plt.close()
-    
-    with col2:
-        # Graphique 3: Performance des opérateurs
-        st.markdown("<div class='plot-container'>", unsafe_allow_html=True)
-        st.markdown("**👥 Performance par Opérateur**")
-        fig3, ax3 = plt.subplots(figsize=(8, 4))
-        operators = ['Opérateur 1', 'Opérateur 2', 'Opérateur 3']
-        r_values = [r_bar_op1, r_bar_op2, r_bar_op3]
+        centre_circle = plt.Circle((0,0), 0.70, fc='white', edgecolor='white', linewidth=2)
+        fig3.gca().add_artist(centre_circle)
         
-        bars = ax3.bar(operators, r_values, color=['#3498db', '#2ecc71', '#9b59b6'], edgecolor='black')
-        ax3.set_ylabel('Étendue Moyenne')
-        ax3.set_title('Étendues par Opérateur')
-        
-        # Ajouter les valeurs sur les barres
-        for bar, value in zip(bars, r_values):
-            height = bar.get_height()
-            ax3.text(bar.get_x() + bar.get_width()/2., height + max(r_values)*0.01,
-                    f'{value:.3f}', ha='center', va='bottom', fontweight='bold')
-        
+        ax3.axis('equal')
+        ax3.set_title('🥧 Répartition des Variations', fontsize=14, fontweight=600, pad=20)
         plt.tight_layout()
         st.pyplot(fig3)
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         plt.close()
         
-        # Graphique 4: % Gage R&R avec barre de progression
-        st.markdown("<div class='plot-container'>", unsafe_allow_html=True)
-        st.markdown("**🎯 % Gage R&R**")
+        # Graphique 4 : Jauge de performance
+        st.markdown('<div class="plot-container">', unsafe_allow_html=True)
+        fig4, ax4 = plt.subplots(figsize=(10, 4))
         
-        # Créer une barre de progression horizontale
-        fig4, ax4 = plt.subplots(figsize=(8, 1))
+        # Créer une jauge horizontale
+        gauge_colors = ['#2ecc71', '#f1c40f', '#e74c3c']
+        gauge_ranges = [(0, 10), (10, 30), (30, 100)]
         
-        # Zones de couleur
-        ax4.barh(0, 10, height=0.6, color='#2ecc71', edgecolor='black')
-        ax4.barh(0, 20, left=10, height=0.6, color='#f1c40f', edgecolor='black')
-        ax4.barh(0, 70, left=30, height=0.6, color='#e74c3c', edgecolor='black')
+        for (start, end), color in zip(gauge_ranges, gauge_colors):
+            ax4.barh(0, end-start, left=start, height=0.3, color=color, edgecolor='white', linewidth=2)
         
-        # Marqueur pour la valeur actuelle
-        ax4.axvline(x=p_grr, color='black', linestyle='--', linewidth=2, alpha=0.7)
-        ax4.text(p_grr, 0, f'  {p_grr:.1f}%', 
-                verticalalignment='center', fontweight='bold', fontsize=10)
+        # Aiguille de la jauge
+        ax4.axvline(x=p_grr, color='#2c3e50', linestyle='-', linewidth=3, alpha=0.8)
         
+        # Style
         ax4.set_xlim(0, 100)
         ax4.set_ylim(-0.5, 0.5)
-        ax4.set_xlabel('% Gage R&R')
         ax4.set_yticks([])
+        ax4.set_xlabel('% Gage R&R', fontsize=12, fontweight=600)
         ax4.grid(True, alpha=0.3, axis='x')
         
+        # Texte de valeur
+        ax4.text(p_grr, 0.4, f'{p_grr:.1f}%', 
+                ha='center', va='center', fontsize=16, fontweight=700,
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='#2c3e50', alpha=0.9))
+        
+        ax4.set_title('🎯 Jauge de Performance - %GRR', fontsize=14, fontweight=600, pad=20)
         plt.tight_layout()
         st.pyplot(fig4)
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         plt.close()
 
-    # ---------------- AFFICHAGE DES RÉSULTATS ----------------
-    st.divider()
-    st.subheader("📊 Résultats Gage R&R")
+    # ---------------- RÉSULTATS PRINCIPAUX ----------------
+    st.markdown('<div class="section-header"><span>📊 Résultats Principaux</span></div>', unsafe_allow_html=True)
+    
+    # Métriques principales
+    col1, col2, col3, col4 = st.columns(4)
+    
+    metrics_data = [
+        ("EV", ev, "#3498db", "Répétabilité"),
+        ("AV", av, "#2ecc71", "Reproductibilité"),
+        ("GRR", grr, "#9b59b6", "Variation Système"),
+        ("%GRR", p_grr, "#e74c3c", "Pourcentage Total")
+    ]
+    
+    for col, (label, value, color, desc) in zip([col1, col2, col3, col4], metrics_data):
+        with col:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">{desc}</div>
+                <div class="metric-value" style="background: linear-gradient(135deg, {color}, #2c3e50); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    {value:.3f}{'%' if label == '%GRR' else ''}
+                </div>
+                <div style="color: #95a5a6; font-size: 0.9rem; margin-top: 0.5rem;">
+                    <strong>{label}</strong>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Barre de progression avec animation
+    progress_html = f"""
+    <div style="margin: 2rem 0;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <div style="font-weight: 600; color: #2c3e50;">Progression du %GRR</div>
+            <div style="font-weight: 600; color: #e74c3c;">{p_grr:.1f}%</div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" style="width: {min(p_grr, 100)}%"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.85rem; color: #7f8c8d;">
+            <div>0%</div>
+            <div>10%</div>
+            <div>30%</div>
+            <div>100%</div>
+        </div>
+    </div>
+    """
+    st.markdown(progress_html, unsafe_allow_html=True)
+    
+    # Indicateur de résultat
+    if p_grr < 10:
+        status = ("good", "✅", "SYSTÈME EXCELLENT", "Le système de mesure est optimal")
+        st.balloons()
+    elif p_grr <= 30:
+        status = ("warning", "⚠️", "SYSTÈME ACCEPTABLE", "Améliorations possibles")
+    else:
+        status = ("bad", "❌", "SYSTÈME INACCEPTABLE", "Action corrective requise")
+    
+    st.markdown(f"""
+    <div class="result-indicator {status[0]}">
+        <div style="font-size: 1.3rem; margin-bottom: 0.5rem;">{status[1]} {status[2]}</div>
+        <div style="font-size: 0.95rem; opacity: 0.9;">{status[3]}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Affichage des métriques dans des cartes stylisées
+    # ---------------- STATISTIQUES DÉTAILLÉES ----------------
+    st.markdown('<div class="section-header"><span>📋 Statistiques Détaillées</span></div>', unsafe_allow_html=True)
+    
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.metric("**EV – Répétabilité**", f"{ev:.4f}", 
-                 help="Variation due à l'équipement de mesure")
-        st.markdown("</div>", unsafe_allow_html=True)
+        # Tableau des opérateurs
+        st.markdown("**👥 Performance par Opérateur**")
+        operators_data = []
+        for i, (op_cols, op_name) in enumerate(zip([op1_cols, op2_cols, op3_cols], 
+                                                  ['Opérateur 1', 'Opérateur 2', 'Opérateur 3']), 1):
+            op_data = df[op_cols].values.flatten()
+            operators_data.append({
+                'Opérateur': f'👤 {op_name}',
+                'Moyenne': f'{np.mean(op_data):.4f}',
+                'Étendue': f'{[r_bar_op1, r_bar_op2, r_bar_op3][i-1]:.4f}',
+                'σ': f'{np.std(op_data):.4f}'
+            })
         
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.metric("**AV – Reproductibilité**", f"{av:.4f}",
-                 help="Variation entre les opérateurs")
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.metric("**Gage R&R**", f"{grr:.4f}",
-                 help="Variation totale du système de mesure")
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.metric("**Variabilité Totale**", f"{vt:.4f}",
-                 help="Variation totale du processus")
-        st.markdown("</div>", unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.metric("**% Gage R&R**", f"{p_grr:.2f}%",
-                 help="Pourcentage de variation du système par rapport à la variation totale")
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-        # Affichage du statut avec style
-        if p_grr < 10:
-            status_class = "good"
-            status_icon = "✅"
-            status_text = "Système de mesure EXCELLENT"
-            st.balloons()
-        elif p_grr <= 30:
-            status_class = "warning"
-            status_icon = "⚠️"
-            status_text = "Système ACCEPTABLE avec amélioration"
-        else:
-            status_class = "bad"
-            status_icon = "❌"
-            status_text = "Système NON ACCEPTABLE"
-        
-        st.markdown(f'<div class="result-indicator {status_class}">{status_icon} {status_text}</div>', 
-                   unsafe_allow_html=True)
-        
-        # Tableau des statistiques par opérateur
-        st.markdown("**📋 Statistiques par Opérateur**")
-        stats_data = {
-            'Opérateur': ['Opérateur 1', 'Opérateur 2', 'Opérateur 3'],
-            'Moyenne': [x_bar_op1, x_bar_op2, x_bar_op3],
-            'Étendue Moyenne': [r_bar_op1, r_bar_op2, r_bar_op3],
-            'Écart-Type': [
-                df[op1_cols].values.std(),
-                df[op2_cols].values.std(),
-                df[op3_cols].values.std()
-            ]
-        }
-        
-        stats_df = pd.DataFrame(stats_data)
+        operators_df = pd.DataFrame(operators_data)
         st.dataframe(
-            stats_df.style
-            .background_gradient(subset=['Moyenne', 'Étendue Moyenne', 'Écart-Type'], cmap='YlOrRd')
-            .format(precision=4),
+            operators_df.style
+            .background_gradient(subset=['Moyenne', 'Étendue', 'σ'], cmap='YlOrRd')
+            .set_properties(**{'text-align': 'center'}),
             use_container_width=True
         )
-
-    # ---------------- EXPORT EXCEL ----------------
-    st.divider()
-    st.subheader("💾 Export des Résultats")
     
-    # Créer un fichier Excel avec plusieurs feuilles
+    with col2:
+        # Indicateurs secondaires
+        st.markdown("**📈 Indicateurs Complémentaires**")
+        
+        secondary_metrics = [
+            ("VP (Pièces)", f"{vp:.4f}", "#e74c3c"),
+            ("VT (Totale)", f"{vt:.4f}", "#f39c12"),
+            ("R̄ (Étendue)", f"{r_double_bar:.4f}", "#3498db"),
+            ("Pièces (n)", str(n_pieces), "#95a5a6")
+        ]
+        
+        for label, value, color in secondary_metrics:
+            st.markdown(f"""
+            <div style="background: white; padding: 1rem; border-radius: 10px; margin: 0.5rem 0; 
+                        border-left: 4px solid {color}; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-weight: 600; color: #2c3e50;">{label}</div>
+                    <div style="font-weight: 700; color: {color}; font-size: 1.1rem;">{value}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # ---------------- EXPORT STYLÉ ----------------
+    st.markdown('<div class="section-header"><span>💾 Export des Résultats</span></div>', unsafe_allow_html=True)
+    
+    # Création du fichier Excel
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        # Feuille des résultats principaux
         export_df = pd.DataFrame({
             "Paramètre": ["EV", "AV", "GRR", "VP", "VT", "%GRR"],
             "Valeur": [ev, av, grr, vp, vt, p_grr],
-            "Description": [
-                "Répétabilité (Équipement)",
-                "Reproductibilité (Opérateurs)",
-                "Variation système de mesure",
-                "Variation pièces",
-                "Variation totale",
-                "Pourcentage Gage R&R"
-            ],
+            "Unité": ["unité", "unité", "unité", "unité", "unité", "%"],
             "Statut": [
-                "✓" if ev/vt*100 < 30 else "✗",
-                "✓" if av/vt*100 < 30 else "✗",
-                "✓" if p_grr < 30 else "✗",
-                "-",
-                "-",
-                "✓ Excellent" if p_grr < 10 else ("⚠ Acceptable" if p_grr <= 30 else "✗ Inacceptable")
+                "✓ Acceptable" if ev/vt*100 < 30 else "✗ Inacceptable",
+                "✓ Acceptable" if av/vt*100 < 30 else "✗ Inacceptable",
+                "✓ Excellent" if p_grr < 10 else ("⚠ Conditionnel" if p_grr <= 30 else "✗ Inacceptable"),
+                "-", "-",
+                f"{p_grr:.1f}%"
             ]
         })
         export_df.to_excel(writer, sheet_name='Résultats', index=False)
         
-        # Feuille des données calculées
-        df.to_excel(writer, sheet_name='Données Calculées', index=False)
+        # Ajouter d'autres feuilles
+        df.to_excel(writer, sheet_name='Données Brutes', index=False)
         
-        # Feuille des statistiques par opérateur
-        stats_df.to_excel(writer, sheet_name='Statistiques Opérateurs', index=False)
+        summary_df = pd.DataFrame({
+            'Info': ['Date', 'Pièces', 'Opérateurs', 'Essais', 'Facteur k'],
+            'Valeur': [pd.Timestamp.now().strftime('%Y-%m-%d'), n_pieces, n_operateurs, n_essais, confidence_factor]
+        })
+        summary_df.to_excel(writer, sheet_name='Résumé', index=False)
     
     output.seek(0)
     
     # Bouton de téléchargement stylisé
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.download_button(
-            label="📥 Télécharger le rapport complet Excel",
-            data=output,
-            file_name="resultats_gage_rr_complet.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            help="Contient tous les résultats et statistiques détaillées",
-            use_container_width=True
-        )
+        st.markdown(f"""
+        <a href='data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{output.getvalue().hex()}' 
+           download='resultats_gage_rr_{pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+           class='download-btn'>
+           📥 Télécharger le Rapport Complet
+        </a>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("""
+        <div style="text-align: center; color: #7f8c8d; font-size: 0.9rem; margin-top: 1rem;">
+            Inclut : Résultats détaillés • Données brutes • Résumé de l'étude
+        </div>
+        """, unsafe_allow_html=True)
 
-else:
-    # Affichage quand aucun fichier n'est uploadé
-    st.info("📋 **Instructions:**")
-    st.markdown("""
-    1. **Préparez votre fichier Excel** avec les colonnes suivantes :
-       - `OP1-1`, `OP1-2`, `OP1-3` (Opérateur 1)
-       - `OP2-1`, `OP2-2`, `OP2-3` (Opérateur 2)
-       - `OP3-1`, `OP3-2`, `OP3-3` (Opérateur 3)
-    
-    2. **Structure des données :**
-       - Chaque ligne représente une pièce différente
-       - Chaque colonne contient une mesure
-       - 3 opérateurs × 3 essais = 9 colonnes
-    
-    3. **Exemple de format :**
-    """)
-    
-    # Exemple de données
-    example_data = {
-        'OP1-1': [10.1, 10.2, 10.3, 10.4, 10.5],
-        'OP1-2': [10.2, 10.3, 10.4, 10.5, 10.6],
-        'OP1-3': [10.0, 10.1, 10.2, 10.3, 10.4],
-        'OP2-1': [10.3, 10.4, 10.5, 10.6, 10.7],
-        'OP2-2': [10.2, 10.3, 10.4, 10.5, 10.6],
-        'OP2-3': [10.1, 10.2, 10.3, 10.4, 10.5],
-        'OP3-1': [10.0, 10.1, 10.2, 10.3, 10.4],
-        'OP3-2': [10.1, 10.2, 10.3, 10.4, 10.5],
-        'OP3-3': [10.2, 10.3, 10.4, 10.5, 10.6]
-    }
-    
-    example_df = pd.DataFrame(example_data)
-    st.dataframe(example_df, use_container_width=True)
-
-# Pied de page
-st.markdown("---")
-st.markdown(
-    "<div style='text-align: center; color: #7f8c8d; font-size: 0.9em;'>"
-    "📊 Gage R&R - Méthode des Étendues | Développé avec Streamlit"
-    "</div>",
-    unsafe_allow_html=True
-)
+# Pied de page élégant
+st.markdown("""
+<div style="margin-top: 4rem; padding: 2rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); 
+            border-radius: 20px; text-align: center; border-top: 1px solid #e0e6ed;">
+    <div style="font-size: 0.9rem; color: #7f8c8d;">
+        <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 0.5rem;">
+            <div>📊</div>
+            <div><strong>Gage R&R - Méthode des Étendues</strong></div>
+            <div>⚡</div>
+        </div>
+        <div>Analyse avancée de la capacité du système de mesure • Version Premium</div>
+        <div style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.7;">
+            Développé avec Streamlit • Optimisé pour la qualité industrielle
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
