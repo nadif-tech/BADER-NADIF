@@ -1,12 +1,13 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from io import BytesIO
 
 st.set_page_config(page_title="Gage R&R – Étendues", layout="wide")
 st.title("📊 Étude Gage R&R – Méthode des Étendues (AIAG)")
 
-# ---------------- d2 FUNCTION ----------------
+# ---------------- FONCTION d2 ----------------
 def get_d2(z, w):
     if z > 15 and w == 3:
         return 1.693
@@ -33,7 +34,7 @@ if uploaded_file:
     st.subheader("📄 Aperçu des données")
     st.dataframe(df, use_container_width=True)
 
-    # Colonnes opérateurs (FORMAT EXACT DU FICHIER)
+    # Colonnes exactes du fichier
     op1_cols = ["OP1-1", "OP1-2", "OP1-3"]
     op2_cols = ["OP2-1", "OP2-2", "OP2-3"]
     op3_cols = ["OP3-1", "OP3-2", "OP3-3"]
@@ -55,7 +56,7 @@ if uploaded_file:
     x_bar_op2 = df[op2_cols].values.mean()
     x_bar_op3 = df[op3_cols].values.mean()
 
-    # ---------------- CALCULS GRR ----------------
+    # ---------------- CALCULS GAGE R&R ----------------
     r_double_bar = (r_bar_op1 + r_bar_op2 + r_bar_op3) / n_operateurs
     d2_ev = get_d2(n_pieces * n_operateurs, n_essais)
     ev = (confidence_factor * r_double_bar) / d2_ev
@@ -86,7 +87,7 @@ if uploaded_file:
     p_grr = (grr / vt) * 100
     ndc = 1.41 * (vp / grr) if grr != 0 else 0
 
-    # ---------------- AFFICHAGE ----------------
+    # ---------------- AFFICHAGE RÉSULTATS ----------------
     st.divider()
     st.subheader("📊 Résultats Gage R&R")
 
@@ -118,23 +119,35 @@ if uploaded_file:
     })
     st.bar_chart(contrib_df.set_index("Source"))
 
-    # ---------------- BOXPLOT ----------------
+    # ---------------- BOXPLOT (MATPLOTLIB) ----------------
     st.subheader("📦 Distribution des mesures par opérateur")
-    box_df = pd.DataFrame({
-        "OP1": df[op1_cols].values.flatten(),
-        "OP2": df[op2_cols].values.flatten(),
-        "OP3": df[op3_cols].values.flatten()
-    })
-    st.box_chart(box_df)
 
-    # ---------------- INTERACTION ----------------
+    fig, ax = plt.subplots()
+    ax.boxplot(
+        [
+            df[op1_cols].values.flatten(),
+            df[op2_cols].values.flatten(),
+            df[op3_cols].values.flatten()
+        ],
+        labels=["OP1", "OP2", "OP3"],
+        showmeans=True
+    )
+    ax.set_title("Boxplot des mesures par opérateur")
+    ax.set_ylabel("Valeur mesurée")
+    ax.grid(True)
+
+    st.pyplot(fig)
+
+    # ---------------- INTERACTION PIÈCE × OPÉRATEUR ----------------
     st.subheader("🔁 Interaction Pièce × Opérateur")
+
     interaction_df = pd.DataFrame({
         "Pièce": df["N° Pièce"],
         "OP1": df[op1_cols].mean(axis=1),
         "OP2": df[op2_cols].mean(axis=1),
         "OP3": df[op3_cols].mean(axis=1)
     })
+
     st.line_chart(interaction_df.set_index("Pièce"))
 
     # ---------------- EXPORT EXCEL ----------------
@@ -156,7 +169,7 @@ if uploaded_file:
     buffer.seek(0)
 
     st.download_button(
-        "📤 Télécharger résultats Excel",
+        "📤 Télécharger les résultats Excel",
         buffer,
         "resultats_gage_rr.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
