@@ -290,7 +290,7 @@ with st.sidebar:
     
     st.markdown("---")
     
-    st.markdown('<div style="font-size: 1.2rem; font-weight: 600; color: var(--dark); margin: 1.5rem 0 1rem 0;">🎯 Critères d'Évaluation</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size: 1.2rem; font-weight: 600; color: var(--dark); margin: 1.5rem 0 1rem 0;">🎯 Critères d\'Évaluation</div>', unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     with col1:
