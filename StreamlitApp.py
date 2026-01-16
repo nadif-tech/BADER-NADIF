@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 from io import BytesIO
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-import plotly.express as px
 import time
 from datetime import datetime
 
@@ -284,12 +282,6 @@ st.markdown("""
     
     .stDataFrame {
         border-radius: 12px;
-        overflow: hidden;
-        box-shadow: var(--shadow-sm);
-    }
-    
-    .stPlotlyChart {
-        border-radius: var(--border-radius);
         overflow: hidden;
         box-shadow: var(--shadow-sm);
     }
@@ -593,7 +585,7 @@ if uploaded_file:
     vt = np.sqrt(grr ** 2 + vp ** 2)
     p_grr = (grr / vt) * 100 if vt > 0 else 0
 
-    # ------------------------- VISUALISATIONS PLOTLY -------------------------
+    # ------------------------- VISUALISATIONS MATPLOTLIB -------------------------
     st.markdown('<div class="section-title"><span>📈 Tableau de bord analytique</span></div>', unsafe_allow_html=True)
     
     # Layout avec onglets
@@ -603,8 +595,9 @@ if uploaded_file:
         col1, col2 = st.columns(2)
         
         with col1:
-            # Graphique en radar (amélioré)
-            fig_radar = go.Figure()
+            # Graphique en radar (avec matplotlib)
+            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+            st.markdown('### 🎯 Performance du système')
             
             categories = ['Répétabilité', 'Reproductibilité', 'Consistance', 'Précision']
             values = [
@@ -614,156 +607,178 @@ if uploaded_file:
                 100 - p_grr
             ]
             
-            fig_radar.add_trace(go.Scatterpolar(
-                r=values + values[:1],
-                theta=categories + categories[:1],
-                fill='toself',
-                fillcolor='rgba(102, 126, 234, 0.3)',
-                line=dict(color='#667eea', width=2),
-                name='Performance'
-            ))
+            # Création du graphique radar
+            fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection='polar'))
             
-            fig_radar.update_layout(
-                polar=dict(
-                    radialaxis=dict(
-                        visible=True,
-                        range=[0, 100],
-                        tickfont=dict(size=10),
-                        gridcolor='rgba(0,0,0,0.1)'
-                    ),
-                    angularaxis=dict(
-                        tickfont=dict(size=11),
-                        rotation=90
-                    ),
-                    bgcolor='rgba(255,255,255,0.1)'
-                ),
-                showlegend=False,
-                height=400,
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                title=dict(
-                    text="🎯 Performance du système",
-                    font=dict(size=16, color='#1e293b')
-                )
-            )
-            st.plotly_chart(fig_radar, use_container_width=True)
+            # Angles pour chaque catégorie
+            angles = np.linspace(0, 2 * np.pi, len(categories), endpoint=False).tolist()
+            values += values[:1]  # Fermer le polygone
+            angles += angles[:1]
+            
+            ax.plot(angles, values, 'o-', linewidth=2, color='#667eea')
+            ax.fill(angles, values, alpha=0.25, color='#667eea')
+            
+            # Configuration du graphique
+            ax.set_xticks(angles[:-1])
+            ax.set_xticklabels(categories, fontsize=10)
+            ax.set_ylim(0, 100)
+            ax.set_yticks([20, 40, 60, 80, 100])
+            ax.set_yticklabels(['20%', '40%', '60%', '80%', '100%'], fontsize=8)
+            ax.grid(True, alpha=0.3)
+            
+            plt.tight_layout()
+            st.pyplot(fig)
+            st.markdown('</div>', unsafe_allow_html=True)
+            plt.close()
         
         with col2:
-            # Jauge %GRR interactive
-            fig_gauge = go.Figure(go.Indicator(
-                mode="gauge+number+delta",
-                value=p_grr,
-                domain={'x': [0, 1], 'y': [0, 1]},
-                title={'text': "% Gage R&R", 'font': {'size': 20}},
-                delta={'reference': 30, 'increasing': {'color': "red"}},
-                gauge={
-                    'axis': {'range': [None, 100], 'tickwidth': 1},
-                    'bar': {'color': "#667eea"},
-                    'steps': [
-                        {'range': [0, 10], 'color': 'rgba(0, 176, 155, 0.3)'},
-                        {'range': [10, 30], 'color': 'rgba(247, 151, 30, 0.3)'},
-                        {'range': [30, 100], 'color': 'rgba(255, 65, 108, 0.3)'}
-                    ],
-                    'threshold': {
-                        'line': {'color': "red", 'width': 4},
-                        'thickness': 0.75,
-                        'value': 30
-                    }
-                }
-            ))
+            # Jauge %GRR avec matplotlib
+            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+            st.markdown('### 📊 Jauge %GRR')
             
-            fig_gauge.update_layout(
-                height=400,
-                paper_bgcolor='rgba(0,0,0,0)',
-                font={'color': "#1e293b"}
-            )
-            st.plotly_chart(fig_gauge, use_container_width=True)
+            fig, ax = plt.subplots(figsize=(10, 3))
+            
+            # Création de la jauge
+            ax.set_xlim(0, 100)
+            ax.set_ylim(0, 1)
+            ax.axis('off')
+            
+            # Zones de couleur
+            ax.barh(0.3, 10, left=0, color='#00b09b', alpha=0.3, height=0.4)
+            ax.barh(0.3, 20, left=10, color='#f7971e', alpha=0.3, height=0.4)
+            ax.barh(0.3, 70, left=30, color='#ff416c', alpha=0.3, height=0.4)
+            
+            # Aiguille
+            ax.plot([p_grr, p_grr], [0.1, 0.7], color='#667eea', linewidth=3)
+            ax.scatter(p_grr, 0.7, color='#667eea', s=100, zorder=5)
+            
+            # Texte de valeur
+            ax.text(p_grr, 0.8, f'{p_grr:.1f}%', 
+                   ha='center', va='center', fontsize=14, fontweight='bold',
+                   bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='#667eea'))
+            
+            # Graduations
+            for x in [0, 10, 30, 100]:
+                ax.text(x, 0.2, str(x), ha='center', va='center', fontsize=10)
+                ax.plot([x, x], [0.3, 0.35], color='gray', linewidth=1)
+            
+            ax.set_title('Niveau de performance du système', fontsize=12, pad=20)
+            plt.tight_layout()
+            st.pyplot(fig)
+            st.markdown('</div>', unsafe_allow_html=True)
+            plt.close()
     
     with tab2:
         col1, col2 = st.columns(2)
         
         with col1:
-            # Box plot par opérateur
+            # Box plot par opérateur avec matplotlib
+            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+            st.markdown('### 📦 Distribution par opérateur')
+            
             data_op1 = df[op1_cols].values.flatten()
             data_op2 = df[op2_cols].values.flatten()
             data_op3 = df[op3_cols].values.flatten()
             
-            fig_box = go.Figure()
+            fig, ax = plt.subplots(figsize=(10, 6))
             
-            fig_box.add_trace(go.Box(
-                y=data_op1,
-                name='Opérateur 1',
-                marker_color='#3498db',
-                boxmean='sd'
-            ))
+            # Création du boxplot
+            positions = [1, 2, 3]
+            box_data = [data_op1, data_op2, data_op3]
+            colors = ['#3498db', '#2ecc71', '#9b59b6']
             
-            fig_box.add_trace(go.Box(
-                y=data_op2,
-                name='Opérateur 2',
-                marker_color='#2ecc71',
-                boxmean='sd'
-            ))
+            bp = ax.boxplot(box_data, positions=positions, patch_artist=True,
+                          labels=['Opérateur 1', 'Opérateur 2', 'Opératerateur 3'])
             
-            fig_box.add_trace(go.Box(
-                y=data_op3,
-                name='Opérateur 3',
-                marker_color='#9b59b6',
-                boxmean='sd'
-            ))
+            # Personnalisation des couleurs
+            for patch, color in zip(bp['boxes'], colors):
+                patch.set_facecolor(color)
+                patch.set_alpha(0.6)
             
-            fig_box.update_layout(
-                title="📦 Distribution par opérateur",
-                yaxis_title="Valeurs mesurées",
-                showlegend=True,
-                height=400,
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)'
-            )
-            st.plotly_chart(fig_box, use_container_width=True)
+            # Personnalisation des médianes
+            for median in bp['medians']:
+                median.set_color('white')
+                median.set_linewidth(2)
+            
+            ax.set_ylabel('Valeurs mesurées', fontsize=12)
+            ax.grid(True, alpha=0.3, axis='y')
+            
+            plt.tight_layout()
+            st.pyplot(fig)
+            st.markdown('</div>', unsafe_allow_html=True)
+            plt.close()
         
         with col2:
-            # Graphique des composantes
+            # Graphique des composantes avec matplotlib
+            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+            st.markdown('### 🥧 Répartition des variations')
+            
             labels = ['Répétabilité (EV)', 'Reproductibilité (AV)', 'Variation pièces (PV)']
             values = [ev**2, av**2, vp**2] if vt > 0 else [0, 0, 0]
             colors = ['#3498db', '#2ecc71', '#e74c3c']
             
-            fig_pie = go.Figure(data=[go.Pie(
-                labels=labels,
-                values=values,
-                hole=.5,
-                marker_colors=colors,
-                textinfo='label+percent',
-                textposition='outside',
-                textfont=dict(size=12)
-            )])
+            fig, ax = plt.subplots(figsize=(8, 6))
             
-            fig_pie.update_layout(
-                title="🥧 Répartition des variations",
-                showlegend=False,
-                height=400,
-                paper_bgcolor='rgba(0,0,0,0)'
+            # Création du camembert
+            wedges, texts, autotexts = ax.pie(
+                values, 
+                labels=labels, 
+                colors=colors,
+                autopct='%1.1f%%',
+                startangle=90,
+                textprops={'fontsize': 11, 'fontweight': 'bold'},
+                wedgeprops={'edgecolor': 'white', 'linewidth': 2}
             )
-            st.plotly_chart(fig_pie, use_container_width=True)
+            
+            # Personnalisation des pourcentages
+            for autotext in autotexts:
+                autotext.set_color('white')
+                autotext.set_fontweight('bold')
+                autotext.set_fontsize(12)
+            
+            # Ajouter un cercle au centre pour un effet donut
+            centre_circle = plt.Circle((0,0), 0.70, fc='white', edgecolor='white', linewidth=2)
+            fig.gca().add_artist(centre_circle)
+            
+            ax.axis('equal')
+            plt.tight_layout()
+            st.pyplot(fig)
+            st.markdown('</div>', unsafe_allow_html=True)
+            plt.close()
     
     with tab3:
-        # Heatmap des corrélations
+        # Heatmap des corrélations avec matplotlib
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        st.markdown('### 🔥 Heatmap des corrélations')
+        
         all_data = pd.concat([df[op1_cols], df[op2_cols], df[op3_cols]], axis=1)
         correlation_matrix = all_data.corr()
         
-        fig_heatmap = px.imshow(
-            correlation_matrix,
-            text_auto='.2f',
-            aspect="auto",
-            color_continuous_scale='RdBu_r',
-            title="🔥 Heatmap des corrélations"
-        )
+        fig, ax = plt.subplots(figsize=(12, 8))
         
-        fig_heatmap.update_layout(
-            height=500,
-            xaxis_title="Mesures",
-            yaxis_title="Mesures"
-        )
-        st.plotly_chart(fig_heatmap, use_container_width=True)
+        # Création de la heatmap
+        im = ax.imshow(correlation_matrix, cmap='RdBu_r', vmin=-1, vmax=1)
+        
+        # Ajouter les valeurs dans les cellules
+        for i in range(len(correlation_matrix)):
+            for j in range(len(correlation_matrix)):
+                text = ax.text(j, i, f'{correlation_matrix.iloc[i, j]:.2f}',
+                             ha="center", va="center", color="black", fontsize=9)
+        
+        # Configuration des axes
+        ax.set_xticks(range(len(correlation_matrix.columns)))
+        ax.set_yticks(range(len(correlation_matrix.columns)))
+        ax.set_xticklabels(correlation_matrix.columns, rotation=45, ha='right')
+        ax.set_yticklabels(correlation_matrix.columns)
+        
+        # Barre de couleur
+        cbar = ax.figure.colorbar(im, ax=ax)
+        cbar.ax.set_ylabel('Corrélation', rotation=-90, va="bottom")
+        
+        plt.tight_layout()
+        st.pyplot(fig)
+        st.markdown('</div>', unsafe_allow_html=True)
+        plt.close()
 
     # ------------------------- RÉSULTATS PRINCIPAUX -------------------------
     st.markdown('<div class="section-title"><span>📊 Résultats synthétiques</span></div>', unsafe_allow_html=True)
@@ -772,10 +787,10 @@ if uploaded_file:
     col1, col2, col3, col4 = st.columns(4)
     
     metrics = [
-        ("EV", ev, "#3498db", "Répétabilité", "repeatability"),
-        ("AV", av, "#2ecc71", "Reproductibilité", "reproducibility"),
-        ("GRR", grr, "#9b59b6", "Variation système", "system_variation"),
-        ("%GRR", p_grr, "#ff416c", "Score final", "final_score")
+        ("EV", ev, "#3498db", "Répétabilité", "📏"),
+        ("AV", av, "#2ecc71", "Reproductibilité", "👥"),
+        ("GRR", grr, "#9b59b6", "Variation système", "⚙️"),
+        ("%GRR", p_grr, "#ff416c", "Score final", "📊")
     ]
     
     for col, (label, value, color, desc, icon) in zip([col1, col2, col3, col4], metrics):
