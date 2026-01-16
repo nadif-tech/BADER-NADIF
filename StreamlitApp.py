@@ -4,10 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from io import BytesIO
 
+# --- Configuration page ---
 st.set_page_config(page_title="Gage R&R – Étendues", layout="wide")
 st.title("📊 Étude Gage R&R – Méthode des Étendues (AIAG)")
 
-# ---------------- FONCTION d2 ----------------
+# --- Fonction d2 ---
 def get_d2(z, w):
     if z > 15 and w == 3:
         return 1.693
@@ -17,12 +18,12 @@ def get_d2(z, w):
         return 3.18
     return 1.0
 
-# ---------------- PARAMÈTRES ----------------
+# --- Paramètres ---
 with st.sidebar:
     st.header("⚙️ Paramètres")
     confidence_factor = 5.15
 
-# ---------------- IMPORT EXCEL ----------------
+# --- Import Excel ---
 uploaded_file = st.file_uploader(
     "📥 Importer le fichier Excel Gage R&R",
     type=["xlsx"]
@@ -30,11 +31,10 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
-
     st.subheader("📄 Aperçu des données")
     st.dataframe(df, use_container_width=True)
 
-    # Colonnes exactes du fichier
+    # Colonnes exactes
     op1_cols = ["OP1-1", "OP1-2", "OP1-3"]
     op2_cols = ["OP2-1", "OP2-2", "OP2-3"]
     op3_cols = ["OP3-1", "OP3-2", "OP3-3"]
@@ -43,7 +43,7 @@ if uploaded_file:
     n_operateurs = 3
     n_essais = 3
 
-    # ---------------- MOYENNES & ÉTENDUES ----------------
+    # --- Moyennes et Étendues ---
     df["R_OP1"] = df[op1_cols].max(axis=1) - df[op1_cols].min(axis=1)
     df["R_OP2"] = df[op2_cols].max(axis=1) - df[op2_cols].min(axis=1)
     df["R_OP3"] = df[op3_cols].max(axis=1) - df[op3_cols].min(axis=1)
@@ -56,7 +56,7 @@ if uploaded_file:
     x_bar_op2 = df[op2_cols].values.mean()
     x_bar_op3 = df[op3_cols].values.mean()
 
-    # ---------------- CALCULS GAGE R&R ----------------
+    # --- Calculs Gage R&R ---
     r_double_bar = (r_bar_op1 + r_bar_op2 + r_bar_op3) / n_operateurs
     d2_ev = get_d2(n_pieces * n_operateurs, n_essais)
     ev = (confidence_factor * r_double_bar) / d2_ev
@@ -71,26 +71,24 @@ if uploaded_file:
 
     grr = np.sqrt(ev ** 2 + av ** 2)
 
-    # ---------------- VARIABILITÉ PIÈCES ----------------
+    # --- Variabilité pièces ---
     df["Moy_Piece"] = df[op1_cols + op2_cols + op3_cols].mean(axis=1)
     rp = df["Moy_Piece"].max() - df["Moy_Piece"].min()
-
     d2_vp = get_d2(1, n_pieces)
     vp = (confidence_factor * rp) / d2_vp
 
     vt = np.sqrt(grr ** 2 + vp ** 2)
 
-    # ---------------- STATISTIQUES ----------------
+    # --- Statistiques ---
     p_ev = (ev / vt) * 100
     p_av = (av / vt) * 100
     p_vp = (vp / vt) * 100
     p_grr = (grr / vt) * 100
     ndc = 1.41 * (vp / grr) if grr != 0 else 0
 
-    # ---------------- AFFICHAGE RÉSULTATS ----------------
+    # --- Affichage résultats ---
     st.divider()
     st.subheader("📊 Résultats Gage R&R")
-
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("EV", f"{ev:.4f}")
     c2.metric("AV", f"{av:.4f}")
@@ -111,46 +109,74 @@ if uploaded_file:
     else:
         st.error("❌ Système de mesure non acceptable")
 
-    # ---------------- GRAPHE CONTRIBUTION ----------------
+    # --- Graphique contribution ---
     st.subheader("📊 Contribution des sources de variation (%)")
     contrib_df = pd.DataFrame({
         "Source": ["EV", "AV", "VP"],
         "Pourcentage": [p_ev, p_av, p_vp]
     })
-    st.bar_chart(contrib_df.set_index("Source"))
+    fig_contrib, ax = plt.subplots(figsize=(6,4))
+    bars = ax.bar(contrib_df["Source"], contrib_df["Pourcentage"], color=['skyblue','salmon','lightgreen'])
+    ax.set_ylim(0,100)
+    ax.set_ylabel("Pourcentage (%)")
+    ax.set_title("Contribution des sources de variation (%)")
+    for bar in bars:
+        yval = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center', fontweight='bold')
+    st.pyplot(fig_contrib)
 
-    # ---------------- BOXPLOT (MATPLOTLIB) ----------------
+    # --- Boxplot ---
     st.subheader("📦 Distribution des mesures par opérateur")
-
-    fig, ax = plt.subplots()
+    fig_box, ax = plt.subplots(figsize=(8,5))
     ax.boxplot(
-        [
-            df[op1_cols].values.flatten(),
-            df[op2_cols].values.flatten(),
-            df[op3_cols].values.flatten()
-        ],
+        [df[op1_cols].values.flatten(),
+         df[op2_cols].values.flatten(),
+         df[op3_cols].values.flatten()],
         labels=["OP1", "OP2", "OP3"],
-        showmeans=True
+        patch_artist=True,
+        boxprops=dict(facecolor='lightblue', color='blue'),
+        medianprops=dict(color='red', linewidth=2),
+        whiskerprops=dict(color='blue'),
+        capprops=dict(color='blue')
     )
     ax.set_title("Boxplot des mesures par opérateur")
     ax.set_ylabel("Valeur mesurée")
-    ax.grid(True)
+    ax.grid(True, linestyle='--', alpha=0.5)
+    st.pyplot(fig_box)
 
-    st.pyplot(fig)
+    # --- Histogramme ---
+    st.subheader("📊 Histogramme des mesures par opérateur")
+    fig_hist, ax = plt.subplots(figsize=(8,5))
+    ax.hist(df[op1_cols].values.flatten(), bins=10, alpha=0.5, color='skyblue', label='OP1')
+    ax.hist(df[op2_cols].values.flatten(), bins=10, alpha=0.5, color='salmon', label='OP2')
+    ax.hist(df[op3_cols].values.flatten(), bins=10, alpha=0.5, color='lightgreen', label='OP3')
+    ax.set_title("Histogramme des mesures par opérateur")
+    ax.set_xlabel("Valeur mesurée")
+    ax.set_ylabel("Fréquence")
+    ax.legend()
+    ax.grid(True, linestyle='--', alpha=0.5)
+    st.pyplot(fig_hist)
 
-    # ---------------- INTERACTION PIÈCE × OPÉRATEUR ----------------
+    # --- Interaction Pièce × Opérateur ---
     st.subheader("🔁 Interaction Pièce × Opérateur")
-
     interaction_df = pd.DataFrame({
         "Pièce": df["N° Pièce"],
         "OP1": df[op1_cols].mean(axis=1),
         "OP2": df[op2_cols].mean(axis=1),
         "OP3": df[op3_cols].mean(axis=1)
     })
+    fig_line, ax = plt.subplots(figsize=(8,5))
+    ax.plot(interaction_df["Pièce"], interaction_df["OP1"], marker='o', label='OP1', color='skyblue')
+    ax.plot(interaction_df["Pièce"], interaction_df["OP2"], marker='s', label='OP2', color='salmon')
+    ax.plot(interaction_df["Pièce"], interaction_df["OP3"], marker='^', label='OP3', color='lightgreen')
+    ax.set_title("Interaction Pièce × Opérateur")
+    ax.set_xlabel("Pièce")
+    ax.set_ylabel("Valeur mesurée")
+    ax.grid(True, linestyle='--', alpha=0.5)
+    ax.legend()
+    st.pyplot(fig_line)
 
-    st.line_chart(interaction_df.set_index("Pièce"))
-
-    # ---------------- EXPORT EXCEL ----------------
+    # --- Export Excel ---
     export_df = pd.DataFrame({
         "EV": [ev],
         "AV": [av],
