@@ -4,9 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from io import BytesIO
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
 
 # --- Configuration page ---
 st.set_page_config(
@@ -35,17 +32,7 @@ st.markdown("""
         border-radius: 15px;
         color: white;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    
-    .metric-value {
-        font-size: 2rem;
-        font-weight: bold;
-        margin: 0.5rem 0;
-    }
-    
-    .metric-label {
-        font-size: 1rem;
-        opacity: 0.9;
+        margin-bottom: 1rem;
     }
     
     .good-metric {
@@ -58,6 +45,17 @@ st.markdown("""
     
     .bad-metric {
         background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0.5rem 0;
+    }
+    
+    .metric-label {
+        font-size: 1rem;
+        opacity: 0.9;
     }
     
     .section-header {
@@ -86,6 +84,19 @@ st.markdown("""
     .stButton button:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2rem;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: #F3F4F6;
+        border-radius: 4px 4px 0px 0px;
+        gap: 1rem;
+        padding: 10px 20px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -126,13 +137,7 @@ with st.sidebar:
     with st.expander("Personnalisation graphique", expanded=True):
         theme_color = st.selectbox(
             "Couleur du thème",
-            ["Blues", "Viridis", "Plasma", "Inferno", "Magma"],
-            index=0
-        )
-        
-        chart_style = st.selectbox(
-            "Style des graphiques",
-            ["Plotly", "Matplotlib", "Seaborn"],
+            ["Blues", "viridis", "plasma", "coolwarm", "Spectral"],
             index=0
         )
     
@@ -165,19 +170,20 @@ if uploaded_file:
     tab1, tab2, tab3 = st.tabs(["Aperçu des données", "Statistiques descriptives", "Vue détaillée"])
     
     with tab1:
-        st.dataframe(
-            df.style
-            .background_gradient(subset=pd.IndexSlice[:, df.columns.str.contains('OP')], cmap='Blues')
-            .format(precision=3),
-            use_container_width=True,
-            height=300
-        )
+        # Appliquer un style coloré au dataframe
+        styled_df = df.style.background_gradient(
+            subset=[col for col in df.columns if 'OP' in col], 
+            cmap='Blues'
+        ).format(precision=3)
+        
+        st.dataframe(styled_df, use_container_width=True, height=300)
     
     with tab2:
-        if 'OP' in ''.join(df.columns):
+        if any('OP' in col for col in df.columns):
             op_cols = [col for col in df.columns if 'OP' in col]
-            stats_df = df[op_cols].agg(['mean', 'std', 'min', 'max', 'count']).round(3)
-            st.dataframe(stats_df, use_container_width=True)
+            if op_cols:
+                stats_df = df[op_cols].agg(['mean', 'std', 'min', 'max', 'count']).round(3)
+                st.dataframe(stats_df, use_container_width=True)
     
     with tab3:
         col1, col2, col3 = st.columns(3)
@@ -195,6 +201,16 @@ if uploaded_file:
     n_pieces = df.shape[0]
     n_operateurs = 3
     n_essais = 3
+    
+    # --- Vérification des colonnes ---
+    missing_cols = []
+    for col in op1_cols + op2_cols + op3_cols:
+        if col not in df.columns:
+            missing_cols.append(col)
+    
+    if missing_cols:
+        st.error(f"❌ Colonnes manquantes dans le fichier : {', '.join(missing_cols)}")
+        st.stop()
     
     # --- Calculs ---
     with st.spinner('Calcul des indicateurs Gage R&R...'):
@@ -306,106 +322,104 @@ if uploaded_file:
     
     with tab_graph1:
         # Diagramme en barres des contributions
-        fig1 = go.Figure(data=[
-            go.Bar(
-                name='Contribution',
-                x=['Équipement (EV)', 'Opérateurs (AV)', 'Pièces (VP)', 'GRR'],
-                y=[p_ev, p_av, p_vp, p_grr],
-                text=[f'{p_ev:.1f}%', f'{p_av:.1f}%', f'{p_vp:.1f}%', f'{p_grr:.1f}%'],
-                textposition='auto',
-                marker_color=['#3B82F6', '#10B981', '#8B5CF6', '#EF4444']
-            )
-        ])
+        fig1, ax1 = plt.subplots(figsize=(10, 6))
+        categories = ['Équipement (EV)', 'Opérateurs (AV)', 'Pièces (VP)', 'GRR']
+        values = [p_ev, p_av, p_vp, p_grr]
+        colors = ['#3B82F6', '#10B981', '#8B5CF6', '#EF4444']
         
-        fig1.update_layout(
-            title='Analyse de Variance (% Contribution)',
-            yaxis_title='Pourcentage (%)',
-            template='plotly_white',
-            height=400
-        )
-        st.plotly_chart(fig1, use_container_width=True)
+        bars = ax1.bar(categories, values, color=colors, edgecolor='black')
+        ax1.set_ylabel('Pourcentage (%)', fontsize=12, fontweight='bold')
+        ax1.set_title('Analyse de Variance (% Contribution)', fontsize=14, fontweight='bold')
+        
+        # Ajouter les valeurs sur les barres
+        for bar, val in zip(bars, values):
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width()/2., height + 0.5,
+                    f'{val:.1f}%', ha='center', va='bottom', fontweight='bold')
+        
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        st.pyplot(fig1)
     
     with tab_graph2:
         # Graphique par opérateur
-        fig2 = make_subplots(
-            rows=1, cols=3,
-            subplot_titles=('Opérateur 1', 'Opérateur 2', 'Opérateur 3'),
-            shared_yaxes=True
-        )
+        fig2, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
+        fig2.suptitle('Mesures par Opérateur', fontsize=14, fontweight='bold')
         
-        for i, (op_cols, op_name) in enumerate(zip([op1_cols, op2_cols, op3_cols], ['OP1', 'OP2', 'OP3']), 1):
-            for j, col in enumerate(op_cols, 1):
-                fig2.add_trace(
-                    go.Scatter(
-                        x=df.index + 1,
-                        y=df[col],
-                        mode='markers+lines',
-                        name=f'{op_name}-{j}',
-                        showlegend=(i==1)
-                    ),
-                    row=1, col=i
-                )
+        operators_data = [(op1_cols, 'OP1', axes[0]), 
+                         (op2_cols, 'OP2', axes[1]), 
+                         (op3_cols, 'OP3', axes[2])]
         
-        fig2.update_layout(
-            title='Mesures par Opérateur',
-            height=400,
-            template='plotly_white'
-        )
-        fig2.update_xaxes(title_text='Numéro de pièce')
-        fig2.update_yaxes(title_text='Valeur mesurée', row=1, col=1)
+        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
         
-        st.plotly_chart(fig2, use_container_width=True)
+        for (op_cols, op_name, ax), color in zip(operators_data, colors):
+            for i, col in enumerate(op_cols):
+                ax.plot(df.index + 1, df[col], 
+                       marker='o', 
+                       linestyle='-', 
+                       linewidth=2, 
+                       markersize=5,
+                       alpha=0.7,
+                       label=f'{op_name}-{i+1}')
+            
+            ax.set_xlabel('Numéro de pièce', fontsize=10)
+            ax.set_title(op_name, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            if op_name == 'OP1':
+                ax.set_ylabel('Valeur mesurée', fontsize=10)
+            ax.legend(loc='upper right')
+        
+        plt.tight_layout()
+        st.pyplot(fig2)
     
     with tab_graph3:
         col_hist1, col_hist2 = st.columns(2)
         
         with col_hist1:
             # Histogramme des moyennes par pièce
-            fig3 = go.Figure()
-            fig3.add_trace(go.Histogram(
-                x=df["Moy_Piece"],
-                nbinsx=bins_hist,
-                name='Distribution',
-                marker_color='#3B82F6',
-                opacity=0.7
-            ))
-            
-            fig3.update_layout(
-                title='Distribution des moyennes par pièce',
-                xaxis_title='Valeur moyenne',
-                yaxis_title='Fréquence',
-                template='plotly_white',
-                height=400
-            )
-            st.plotly_chart(fig3, use_container_width=True)
+            fig3, ax3 = plt.subplots(figsize=(8, 5))
+            ax3.hist(df["Moy_Piece"], 
+                    bins=bins_hist, 
+                    color='#3B82F6', 
+                    edgecolor='black', 
+                    alpha=0.7)
+            ax3.set_xlabel('Valeur moyenne', fontweight='bold')
+            ax3.set_ylabel('Fréquence', fontweight='bold')
+            ax3.set_title('Distribution des moyennes par pièce', fontweight='bold')
+            ax3.grid(True, alpha=0.3)
+            plt.tight_layout()
+            st.pyplot(fig3)
         
         with col_hist2:
             # Box plot par opérateur
-            fig4 = go.Figure()
+            fig4, ax4 = plt.subplots(figsize=(8, 5))
             
-            all_data = []
+            # Préparer les données pour le boxplot
+            box_data = []
             labels = []
+            
             for op_cols, op_name in zip([op1_cols, op2_cols, op3_cols], ['OP1', 'OP2', 'OP3']):
                 for col in op_cols:
-                    all_data.append(df[col])
+                    box_data.append(df[col].values)
                     labels.append(op_name)
             
-            fig4.add_trace(go.Box(
-                y=pd.concat(all_data),
-                x=labels,
-                name='Mesures',
-                boxpoints='outliers',
-                marker_color='#10B981'
-            ))
+            # Créer le boxplot avec seaborn pour plus de style
+            plt.figure(figsize=(8, 5))
+            boxplot_df = pd.DataFrame({
+                'Valeur': pd.concat([df[col] for col in op1_cols + op2_cols + op3_cols]),
+                'Opérateur': ['OP1']*len(df)*3 + ['OP2']*len(df)*3 + ['OP3']*len(df)*3
+            })
             
-            fig4.update_layout(
-                title='Box Plot par Opérateur',
-                xaxis_title='Opérateur',
-                yaxis_title='Valeur mesurée',
-                template='plotly_white',
-                height=400
-            )
-            st.plotly_chart(fig4, use_container_width=True)
+            sns.boxplot(x='Opérateur', y='Valeur', data=boxplot_df, 
+                       palette=['#FF6B6B', '#4ECDC4', '#45B7D1'],
+                       ax=ax4)
+            
+            ax4.set_xlabel('Opérateur', fontweight='bold')
+            ax4.set_ylabel('Valeur mesurée', fontweight='bold')
+            ax4.set_title('Box Plot par Opérateur', fontweight='bold')
+            ax4.grid(True, alpha=0.3)
+            plt.tight_layout()
+            st.pyplot(fig4)
     
     # --- Tableaux détaillés ---
     st.markdown('<h2 class="section-header">📋 Résultats Détailés</h2>', unsafe_allow_html=True)
@@ -459,70 +473,42 @@ if uploaded_file:
         with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
             export_df.to_excel(writer, sheet_name='Résultats', index=False)
             df.to_excel(writer, sheet_name='Données brutes', index=False)
-            
-            # Ajouter un graphique dans Excel
-            workbook = writer.book
-            worksheet = writer.sheets['Résultats']
-            
-            # Créer un graphique pour Excel
-            chart = workbook.add_chart({'type': 'column'})
-            chart.add_series({
-                'values': 'Résultats!$B$2:$B$5',
-                'categories': 'Résultats!$A$2:$A$5',
-                'name': 'Valeurs absolues'
-            })
-            worksheet.insert_chart('F2', chart)
         
         buffer.seek(0)
         
         st.download_button(
-            label="📥 Télécharger rapport complet Excel",
+            label="📥 Télécharger rapport Excel",
             data=buffer,
-            file_name="rapport_gage_rr_complet.xlsx",
+            file_name="rapport_gage_rr.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     
     with col_export2:
-        # Export PDF simulé (rapport HTML)
-        html_report = f"""
-        <html>
-        <head><title>Rapport Gage R&R</title></head>
-        <body>
-            <h1>Rapport d'Analyse Gage R&R</h1>
-            <h2>Résumé des résultats</h2>
-            <p>%GRR: {p_grr:.1f}% - {'Acceptable' if p_grr < 10 else 'À considérer' if p_grr <= 30 else 'Inacceptable'}</p>
-            <p>NdC: {ndc:.1f} - {'Acceptable' if ndc >= 5 else 'Inacceptable'}</p>
-            <h3>Détails:</h3>
-            <p>%EV: {p_ev:.1f}%</p>
-            <p>%AV: {p_av:.1f}%</p>
-            <p>%VP: {p_vp:.1f}%</p>
-        </body>
-        </html>
-        """
+        # Export CSV
+        csv_buffer = BytesIO()
+        export_df.to_csv(csv_buffer, index=False, sep=';')
+        csv_buffer.seek(0)
         
         st.download_button(
-            label="📄 Générer rapport PDF",
-            data=html_report,
-            file_name="rapport_gage_rr.html",
-            mime="text/html"
+            label="📄 Télécharger CSV",
+            data=csv_buffer,
+            file_name="resultats_gage_rr.csv",
+            mime="text/csv"
         )
     
     with col_export3:
         # Copier les résultats
-        if st.button("📋 Copier les résultats"):
-            results_text = f"""
-            RÉSULTATS GAGE R&R
-            ------------------
-            %GRR: {p_grr:.1f}%
-            NdC: {ndc:.1f}
-            %EV: {p_ev:.1f}%
-            %AV: {p_av:.1f}%
-            %VP: {p_vp:.1f}%
-            
-            Conclusion: {'✅ ACCEPTABLE' if p_grr < 10 and ndc >= 5 else '⚠️ À CONSIDÉRER' if p_grr <= 30 else '❌ INACCEPTABLE'}
-            """
-            st.code(results_text)
-            st.success("Résultats copiables dans le code ci-dessus")
+        results_text = f"""RÉSULTATS GAGE R&R
+------------------
+%GRR: {p_grr:.1f}%
+NdC: {ndc:.1f}
+%EV: {p_ev:.1f}%
+%AV: {p_av:.1f}%
+%VP: {p_vp:.1f}%
+
+Conclusion: {'✅ ACCEPTABLE' if p_grr < 10 and ndc >= 5 else '⚠️ À CONSIDÉRER' if p_grr <= 30 else '❌ INACCEPTABLE'}"""
+        
+        st.code(results_text)
     
     # --- Conclusion avec recommandations ---
     st.markdown("---")
@@ -556,6 +542,37 @@ if uploaded_file:
         - Refaire l'étude après corrections
         """)
     
+    # --- Graphique radar pour synthèse ---
+    st.markdown('<h3 class="section-header">🎯 Synthèse visuelle</h3>', unsafe_allow_html=True)
+    
+    # Création d'un graphique radar simple
+    fig_radar, ax_radar = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection='polar'))
+    
+    # Données pour le radar (normalisées)
+    categories = ['%GRR', 'NdC', '%EV', '%AV', '%VP']
+    values_norm = [
+        min(p_grr / 30, 1),  # Normalisé par rapport à 30%
+        min(ndc / 10, 1),    # Normalisé par rapport à 10
+        min(p_ev / 30, 1),   # Normalisé par rapport à 30%
+        min(p_av / 30, 1),   # Normalisé par rapport à 30%
+        min(p_vp / 100, 1)   # Normalisé par rapport à 100%
+    ]
+    
+    N = len(categories)
+    angles = [n / float(N) * 2 * np.pi for n in range(N)]
+    values_norm += values_norm[:1]
+    angles += angles[:1]
+    
+    ax_radar.plot(angles, values_norm, 'o-', linewidth=2, color='#3B82F6')
+    ax_radar.fill(angles, values_norm, alpha=0.25, color='#3B82F6')
+    ax_radar.set_xticks(angles[:-1])
+    ax_radar.set_xticklabels(categories)
+    ax_radar.set_ylim(0, 1)
+    ax_radar.set_title('Synthèse des indicateurs (normalisés)', fontweight='bold', pad=20)
+    ax_radar.grid(True)
+    
+    st.pyplot(fig_radar)
+    
 else:
     # Écran d'accueil sans fichier
     st.info("👆 Veuillez importer un fichier Excel pour commencer l'analyse Gage R&R")
@@ -564,15 +581,19 @@ else:
     
     with col_info1:
         st.markdown("### 📋 Format de fichier attendu")
-        st.markdown("""
-        Votre fichier Excel doit contenir les colonnes suivantes:
-        
-        | Pièce | OP1-1 | OP1-2 | OP1-3 | OP2-1 | OP2-2 | OP2-3 | OP3-1 | OP3-2 | OP3-3 |
-        |-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
-        | 1     | 10.1  | 10.2  | 10.0  | 10.3  | 10.1  | 10.2  | 10.0  | 10.1  | 10.2  |
-        | 2     | 20.2  | 20.3  | 20.1  | 20.4  | 20.2  | 20.3  | 20.1  | 20.2  | 20.3  |
-        | ...   | ...   | ...   | ...   | ...   | ...   | ...   | ...   | ...   | ...   |
-        """)
+        example_df = pd.DataFrame({
+            'Pièce': [1, 2, 3, 4, 5],
+            'OP1-1': [10.1, 20.2, 30.1, 40.2, 50.1],
+            'OP1-2': [10.2, 20.3, 30.2, 40.3, 50.2],
+            'OP1-3': [10.0, 20.1, 30.0, 40.1, 50.0],
+            'OP2-1': [10.3, 20.4, 30.3, 40.4, 50.3],
+            'OP2-2': [10.1, 20.2, 30.1, 40.2, 50.1],
+            'OP2-3': [10.2, 20.3, 30.2, 40.3, 50.2],
+            'OP3-1': [10.0, 20.1, 30.0, 40.1, 50.0],
+            'OP3-2': [10.1, 20.2, 30.1, 40.2, 50.1],
+            'OP3-3': [10.2, 20.3, 30.2, 40.3, 50.2]
+        })
+        st.dataframe(example_df, use_container_width=True)
     
     with col_info2:
         st.markdown("### 🎯 Objectifs de l'analyse")
@@ -587,6 +608,12 @@ else:
         - 10-30% : À considérer
         - >30% : Inacceptable
         - NdC ≥ 5 : Acceptable
+        
+        **Fonctionnalités:**
+        - 📊 Analyse statistique complète
+        - 📈 Visualisations graphiques
+        - 📋 Rapports détaillés
+        - 💾 Export des résultats
         """)
 
 # --- Footer ---
@@ -600,3 +627,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+# Nettoyer les figures matplotlib pour éviter les fuites mémoire
+plt.close('all')
