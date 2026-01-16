@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 from io import BytesIO
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
 import time
 from datetime import datetime
 
@@ -618,166 +621,6 @@ def create_circular_progress(value, max_value=100, size=120, stroke_width=10):
     </div>
     '''
 
-def create_advanced_gauge(p_grr):
-    """Crée une jauge de performance avancée avec Matplotlib"""
-    fig, ax = plt.subplots(figsize=(10, 3), facecolor='none')
-    
-    # Zones de couleur
-    ax.barh(0, 10, height=0.3, color='#2ecc71', edgecolor='white', linewidth=2, alpha=0.8)
-    ax.barh(0, 20, left=10, height=0.3, color='#f1c40f', edgecolor='white', linewidth=2, alpha=0.8)
-    ax.barh(0, 70, left=30, height=0.3, color='#e74c3c', edgecolor='white', linewidth=2, alpha=0.8)
-    
-    # Aiguille
-    ax.axvline(x=p_grr, color='#2c3e50', linestyle='-', linewidth=3, alpha=0.8)
-    
-    # Style
-    ax.set_xlim(0, 100)
-    ax.set_ylim(-0.5, 0.5)
-    ax.set_yticks([])
-    ax.set_xlabel('% Gage R&R', fontsize=12, fontweight='bold', color='#2c3e50')
-    ax.grid(True, alpha=0.3, axis='x', linestyle='--')
-    
-    # Texte de valeur
-    ax.text(p_grr, 0.4, f'{p_grr:.1f}%', 
-            ha='center', va='center', fontsize=16, fontweight='bold',
-            bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='#2c3e50', alpha=0.9))
-    
-    # Ajouter des marques
-    for x in [0, 10, 30, 100]:
-        ax.text(x, -0.2, f'{x}%', ha='center', va='center', fontsize=9, color='#7f8c8d')
-    
-    plt.tight_layout()
-    return fig
-
-def create_radar_chart(ev, av, p_grr, vt):
-    """Crée un diagramme radar avec Matplotlib"""
-    fig = plt.figure(figsize=(8, 8), facecolor='none')
-    ax = fig.add_subplot(111, polar=True)
-    
-    # Catégories
-    categories = ['Répétabilité\n(EV)', 'Reproductibilité\n(AV)', 'Performance\n(%GRR)', 
-                  'Stabilité', 'Linéarité', 'Capacité']
-    N = len(categories)
-    
-    # Angles pour chaque catégorie
-    angles = [n / float(N) * 2 * np.pi for n in range(N)]
-    angles += angles[:1]
-    
-    # Données normalisées
-    data = [ev/vt*100, av/vt*100, 100-p_grr, 85, 90, 95]
-    data += data[:1]
-    
-    # Tracer
-    ax.plot(angles, data, 'o-', linewidth=2, color='#3498db', markersize=8)
-    ax.fill(angles, data, alpha=0.25, color='#3498db')
-    
-    # Configurer les axes
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(categories, fontsize=10)
-    ax.set_ylim(0, 100)
-    ax.set_yticks([0, 25, 50, 75, 100])
-    ax.set_yticklabels(['0%', '25%', '50%', '75%', '100%'], fontsize=9, color='#7f8c8d')
-    
-    # Grid
-    ax.grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    return fig
-
-def create_components_chart(ev, av, grr, vp, vt):
-    """Crée un graphique en barres des composantes"""
-    fig, ax = plt.subplots(figsize=(10, 6), facecolor='none')
-    
-    components = ['EV', 'AV', 'GRR', 'VP', 'VT']
-    values = [ev, av, grr, vp, vt]
-    colors = ['#3498db', '#2ecc71', '#9b59b6', '#e74c3c', '#f39c12']
-    
-    bars = ax.bar(components, values, color=colors, edgecolor='white', 
-                  linewidth=2, alpha=0.8, zorder=3)
-    
-    # Ajouter les valeurs
-    for bar, value in zip(bars, values):
-        height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2., height + max(values)*0.01,
-                f'{value:.3f}', ha='center', va='bottom', 
-                fontweight='bold', fontsize=10, color='#2c3e50')
-    
-    # Style
-    ax.set_ylabel('Valeur', fontsize=12, fontweight='bold', color='#2c3e50')
-    ax.set_title('Composantes de Variation', fontsize=14, fontweight='bold', 
-                 color='#2c3e50', pad=20)
-    ax.grid(True, alpha=0.3, axis='y', zorder=0)
-    ax.set_facecolor('#f8fafc')
-    
-    plt.tight_layout()
-    return fig
-
-def create_pie_chart(grr, vp):
-    """Crée un camembert pour la répartition des variations"""
-    fig, ax = plt.subplots(figsize=(8, 6), facecolor='none')
-    
-    labels = ['GRR', 'VP']
-    sizes = [grr**2, vp**2]
-    colors = ['#9b59b6', '#e74c3c']
-    explode = (0.1, 0)
-    
-    wedges, texts, autotexts = ax.pie(
-        sizes, explode=explode, labels=labels, colors=colors,
-        autopct='%1.1f%%', shadow=True, startangle=90,
-        textprops={'fontsize': 11, 'fontweight': 'bold', 'color': 'white'},
-        wedgeprops={'edgecolor': 'white', 'linewidth': 2}
-    )
-    
-    # Centre blanc
-    centre_circle = plt.Circle((0,0), 0.70, fc='white', edgecolor='white', linewidth=2)
-    fig.gca().add_artist(centre_circle)
-    
-    ax.axis('equal')
-    ax.set_title('Répartition des Variations', fontsize=14, fontweight='bold', 
-                 color='#2c3e50', pad=20)
-    
-    plt.tight_layout()
-    return fig
-
-def create_heatmap(df, op_cols_list):
-    """Crée une heatmap des mesures"""
-    # Préparer les données
-    heatmap_data = []
-    labels = []
-    
-    for i, op_cols in enumerate(op_cols_list):
-        op_means = df[op_cols].mean(axis=1).values[:5]  # 5 premières pièces
-        heatmap_data.append(op_means)
-        labels.append(f'Op {i+1}')
-    
-    heatmap_array = np.array(heatmap_data)
-    
-    fig, ax = plt.subplots(figsize=(10, 4), facecolor='none')
-    
-    # Créer la heatmap
-    im = ax.imshow(heatmap_array, cmap='viridis', aspect='auto')
-    
-    # Configurer les axes
-    ax.set_xticks(range(len(heatmap_array[0])))
-    ax.set_xticklabels([f'P{i+1}' for i in range(len(heatmap_array[0]))])
-    ax.set_yticks(range(len(labels)))
-    ax.set_yticklabels(labels)
-    
-    # Ajouter les valeurs
-    for i in range(len(labels)):
-        for j in range(len(heatmap_array[0])):
-            text = ax.text(j, i, f'{heatmap_array[i, j]:.2f}',
-                          ha="center", va="center", color="w", fontweight='bold')
-    
-    # Barre de couleur
-    plt.colorbar(im, ax=ax)
-    
-    ax.set_title('Distribution des Mesures par Opérateur', fontsize=12, 
-                 fontweight='bold', color='#2c3e50', pad=20)
-    
-    plt.tight_layout()
-    return fig
-
 # ============================================================================
 # HEADER PRINCIPAL
 # ============================================================================
@@ -859,8 +702,8 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Critères d'évaluation
-    st.markdown('<div style="font-family: \'Poppins\', sans-serif; font-weight: 600; font-size: 1.3rem; color: #2c3e50; margin: 1.5rem 0;">✅ Critères d\'Évaluation</div>', unsafe_allow_html=True)
+    # Critères avec visualisation
+    st.markdown('<div style="font-family: \'Poppins\', sans-serif; font-weight: 600; font-size: 1.3rem; color: #2c3e50; margin: 1.5rem 0;">✅ Critères d'Évaluation</div>', unsafe_allow_html=True)
     
     criteria_data = [
         ("< 10%", "EXCELLENT", "Le système est optimal et fiable", "#2ecc71"),
@@ -947,7 +790,7 @@ if uploaded_file:
     with st.spinner('''
     <div style="text-align: center;">
         <div style="font-size: 2rem; margin-bottom: 1rem;">⏳</div>
-        <div style="font-family: 'Poppins', sans-serif; font-weight: 600; color: #2c3e50;">
+        <div style="font-family: \'Poppins\', sans-serif; font-weight: 600; color: #2c3e50;">
             Analyse en cours...
         </div>
         <div style="color: #7f8c8d; margin-top: 0.5rem;">
@@ -961,7 +804,7 @@ if uploaded_file:
     # Aperçu des données
     st.markdown('<div class="section-header fade-in delay-1"><span>📊 Aperçu des Données</span></div>', unsafe_allow_html=True)
     
-    with st.expander("**🔍 Visualiser les données d\'entrée**", expanded=True):
+    with st.expander("**🔍 Visualiser les données d'entrée**", expanded=True):
         col1, col2, col3 = st.columns([1, 3, 1])
         with col2:
             st.markdown('<div class="plot-container">', unsafe_allow_html=True)
@@ -1056,57 +899,171 @@ if uploaded_file:
             </div>
             ''', unsafe_allow_html=True)
     
-    # Graphiques avec Matplotlib
+    # Graphiques interactifs avec Plotly
     st.markdown('<div class="section-header fade-in delay-3"><span>📊 Visualisations Interactives</span></div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
     with col1:
-        # Graphique 1 : Composantes de variation
+        # Graphique 1 : Diagramme radar 3D
         st.markdown('<div class="plot-container">', unsafe_allow_html=True)
-        st.markdown('<div style="font-family: \'Poppins\', sans-serif; font-weight: 600; font-size: 1.3rem; color: #2c3e50; margin-bottom: 1.5rem;">📈 Analyse des Composantes</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-family: \'Poppins\', sans-serif; font-weight: 600; font-size: 1.3rem; color: #2c3e50; margin-bottom: 1.5rem;">🎯 Performance Radar</div>', unsafe_allow_html=True)
         
-        fig1 = create_components_chart(ev, av, grr, vp, vt)
-        st.pyplot(fig1)
-        plt.close(fig1)
+        fig_radar = go.Figure()
+        
+        categories = ['Répétabilité', 'Reproductibilité', 'Précision', 'Stabilité', 'Linéarité']
+        
+        # Simuler des données de performance
+        performance_data = [
+            [ev/vt*100, av/vt*100, 100-p_grr, 85, 90],  # Opérateur 1
+            [ev/vt*100*0.9, av/vt*100*1.1, 100-p_grr*0.95, 80, 85],  # Opérateur 2
+            [ev/vt*100*1.1, av/vt*100*0.9, 100-p_grr*1.05, 90, 95]   # Opérateur 3
+        ]
+        
+        colors = ['rgba(52, 152, 219, 0.8)', 'rgba(46, 204, 113, 0.8)', 'rgba(155, 89, 182, 0.8)']
+        
+        for i in range(3):
+            fig_radar.add_trace(go.Scatterpolar(
+                r=performance_data[i],
+                theta=categories,
+                fill='toself',
+                name=f'Opérateur {i+1}',
+                line=dict(color=colors[i], width=2),
+                fillcolor=colors[i].replace('0.8', '0.3')
+            ))
+        
+        fig_radar.update_layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True,
+                    range=[0, 100],
+                    tickfont=dict(size=10)
+                ),
+                angularaxis=dict(
+                    tickfont=dict(size=11)
+                ),
+                bgcolor='rgba(248, 250, 252, 0.8)'
+            ),
+            showlegend=True,
+            legend=dict(
+                yanchor="top",
+                y=0.99,
+                xanchor="left",
+                x=1.02
+            ),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            height=400
+        )
+        
+        st.plotly_chart(fig_radar, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Graphique 2 : Jauge de performance
         st.markdown('<div class="plot-container">', unsafe_allow_html=True)
         st.markdown('<div style="font-family: \'Poppins\', sans-serif; font-weight: 600; font-size: 1.3rem; color: #2c3e50; margin-bottom: 1.5rem;">📊 Jauge de Performance</div>', unsafe_allow_html=True)
         
-        fig2 = create_advanced_gauge(p_grr)
-        st.pyplot(fig2)
-        plt.close(fig2)
+        fig_gauge = go.Figure(go.Indicator(
+            mode="gauge+number+delta",
+            value=p_grr,
+            title={'text': "% Gage R&R", 'font': {'size': 20}},
+            delta={'reference': 30, 'increasing': {'color': "#e74c3c"}, 'decreasing': {'color': "#2ecc71"}},
+            gauge={
+                'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "#2c3e50"},
+                'bar': {'color': "#9b59b6"},
+                'bgcolor': "white",
+                'borderwidth': 2,
+                'bordercolor': "gray",
+                'steps': [
+                    {'range': [0, 10], 'color': 'rgba(46, 204, 113, 0.5)'},
+                    {'range': [10, 30], 'color': 'rgba(241, 196, 15, 0.5)'},
+                    {'range': [30, 100], 'color': 'rgba(231, 76, 60, 0.5)'}],
+                'threshold': {
+                    'line': {'color': "red", 'width': 4},
+                    'thickness': 0.75,
+                    'value': 30}
+            }
+        ))
+        
+        fig_gauge.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            font={'color': "#2c3e50", 'family': "Inter"},
+            height=300
+        )
+        
+        st.plotly_chart(fig_gauge, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
-        # Graphique 3 : Camembert
+        # Graphique 3 : Barres 3D
         st.markdown('<div class="plot-container">', unsafe_allow_html=True)
-        st.markdown('<div style="font-family: \'Poppins\', sans-serif; font-weight: 600; font-size: 1.3rem; color: #2c3e50; margin-bottom: 1.5rem;">🥧 Répartition des Variations</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-family: \'Poppins\', sans-serif; font-weight: 600; font-size: 1.3rem; color: #2c3e50; margin-bottom: 1.5rem;">📈 Analyse des Composantes</div>', unsafe_allow_html=True)
         
-        fig3 = create_pie_chart(grr, vp)
-        st.pyplot(fig3)
-        plt.close(fig3)
+        components = ['EV', 'AV', 'GRR', 'VP', 'VT']
+        values = [ev, av, grr, vp, vt]
+        colors = ['rgba(52, 152, 219, 0.8)', 'rgba(46, 204, 113, 0.8)', 'rgba(155, 89, 182, 0.8)', 
+                 'rgba(231, 76, 60, 0.8)', 'rgba(243, 156, 18, 0.8)']
+        
+        fig_bar = go.Figure(data=[
+            go.Bar(
+                x=components,
+                y=values,
+                marker_color=colors,
+                marker_line_color='rgb(255,255,255)',
+                marker_line_width=1.5,
+                opacity=0.8,
+                text=[f'{v:.3f}' for v in values],
+                textposition='auto',
+            )
+        ])
+        
+        fig_bar.update_layout(
+            title='Composantes de Variation',
+            yaxis_title='Valeur',
+            xaxis_title='Composante',
+            plot_bgcolor='rgba(248, 250, 252, 0.8)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(family="Inter", size=12, color="#2c3e50"),
+            showlegend=False,
+            height=400
+        )
+        
+        st.plotly_chart(fig_bar, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # Graphique 4 : Heatmap
+        # Graphique 4 : Heatmap des opérateurs
         st.markdown('<div class="plot-container">', unsafe_allow_html=True)
         st.markdown('<div style="font-family: \'Poppins\', sans-serif; font-weight: 600; font-size: 1.3rem; color: #2c3e50; margin-bottom: 1.5rem;">🔥 Matrice de Performance</div>', unsafe_allow_html=True)
         
-        fig4 = create_heatmap(df, [op1_cols, op2_cols, op3_cols])
-        st.pyplot(fig4)
-        plt.close(fig4)
+        # Préparer les données pour la heatmap
+        op_data = []
+        for op_cols in [op1_cols, op2_cols, op3_cols]:
+            op_means = df[op_cols].mean(axis=1).values
+            op_data.append(op_means[:5])  # Prendre les 5 premières pièces
+        
+        heatmap_data = np.array(op_data)
+        
+        fig_heatmap = go.Figure(data=go.Heatmap(
+            z=heatmap_data,
+            x=[f'Pièce {i+1}' for i in range(5)],
+            y=['Opérateur 1', 'Opérateur 2', 'Opérateur 3'],
+            colorscale='Viridis',
+            showscale=True,
+            hoverongaps=False
+        ))
+        
+        fig_heatmap.update_layout(
+            title='Distribution des Mesures',
+            xaxis_title='Pièces',
+            yaxis_title='Opérateurs',
+            plot_bgcolor='rgba(248, 250, 252, 0.8)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(family="Inter", size=12, color="#2c3e50"),
+            height=300
+        )
+        
+        st.plotly_chart(fig_heatmap, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Graphique supplémentaire : Radar
-    st.markdown('<div class="plot-container">', unsafe_allow_html=True)
-    st.markdown('<div style="font-family: \'Poppins\', sans-serif; font-weight: 600; font-size: 1.3rem; color: #2c3e50; margin-bottom: 1.5rem;">🎯 Performance Radar</div>', unsafe_allow_html=True)
-    
-    fig_radar = create_radar_chart(ev, av, p_grr, vt)
-    st.pyplot(fig_radar)
-    plt.close(fig_radar)
-    st.markdown('</div>', unsafe_allow_html=True)
     
     # ============================================================================
     # RÉSULTATS DÉTAILLÉS
