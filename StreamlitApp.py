@@ -3,25 +3,25 @@ import pandas as pd
 import numpy as np
 from io import BytesIO
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
 import seaborn as sns
+from matplotlib import cm
+import matplotlib.gridspec as gridspec
+from matplotlib.patches import Patch, FancyBboxPatch
+import matplotlib.patheffects as path_effects
 import time
 from scipy import stats
 
 st.set_page_config(
-    page_title="Gage R&R - Étendues | Dashboard Pro",
+    page_title="Gage R&R Pro - Méthode des Étendues",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# CSS personnalisé amélioré avec design system moderne
+# CSS personnalisé avec design moderne
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
     :root {
         --primary: #4361ee;
@@ -93,7 +93,6 @@ st.markdown("""
         transition: var(--transition);
         position: relative;
         overflow: hidden;
-        backdrop-filter: blur(10px);
     }
     
     .metric-card-pro:hover {
@@ -120,7 +119,6 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0.5rem 0;
-        font-family: 'JetBrains Mono', monospace;
         letter-spacing: -1px;
     }
     
@@ -178,21 +176,6 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(247, 37, 133, 0.3);
     }
     
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
-        margin: 2rem 0;
-    }
-    
-    .analytics-panel {
-        background: linear-gradient(135deg, #1a1a2e, #16213e);
-        color: white;
-        padding: 2rem;
-        border-radius: var(--border-radius);
-        margin: 2rem 0;
-    }
-    
     @keyframes slideDown {
         from {
             opacity: 0;
@@ -209,15 +192,6 @@ st.markdown("""
         100% { transform: translateX(100%); }
     }
     
-    @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
-    }
-    
-    .floating-icon {
-        animation: float 3s ease-in-out infinite;
-    }
-    
     .stProgress > div > div > div > div {
         background: linear-gradient(90deg, #4cc9f0, #f72585, #4361ee);
     }
@@ -229,143 +203,127 @@ st.markdown("""
         box-shadow: var(--shadow);
     }
     
-    .data-table table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-    }
-    
-    .data-table th {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        color: white;
-        padding: 1rem;
-        font-weight: 600;
-        text-align: left;
-    }
-    
-    .data-table td {
-        padding: 1rem;
-        border-bottom: 1px solid #f1f3f4;
-        transition: var(--transition);
-    }
-    
-    .data-table tr:hover td {
-        background: rgba(67, 97, 238, 0.05);
-    }
-    
     .glassmorphism {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.2);
         box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
     }
+    
+    .floating-icon {
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    /* Amélioration des boutons Streamlit */
+    .stButton > button {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: var(--transition);
+        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Header principal avec animation
+# Header principal
 st.markdown("""
 <div class="main-header">
     <div class="main-title">📊 Gage R&R Analytics Pro</div>
-    <div class="main-subtitle">Analyse avancée de la capacité du système de mesure avec visualisations interactives et rapports détaillés</div>
+    <div class="main-subtitle">Analyse avancée de la capacité du système de mesure avec visualisations professionnelles</div>
 </div>
 """, unsafe_allow_html=True)
 
 # ---------------- d2 FUNCTION ----------------
 def get_d2(z, w):
     d2_table = {
-        (1, 3): 1.91,
-        (1, 10): 3.18,
-        (2, 3): 1.81,
-        (2, 10): 2.52,
-        (3, 3): 1.77,
-        (3, 10): 2.26,
-        (4, 3): 1.75,
-        (4, 10): 2.09,
-        (5, 3): 1.74,
-        (5, 10): 1.96,
-        (6, 3): 1.73,
-        (6, 10): 1.87,
-        (7, 3): 1.72,
-        (7, 10): 1.81,
-        (8, 3): 1.72,
-        (8, 10): 1.77,
-        (9, 3): 1.71,
-        (9, 10): 1.74,
-        (10, 3): 1.71,
-        (10, 10): 1.72,
-        (15, 3): 1.693,
-        (15, 10): 1.67,
-        (20, 3): 1.68,
-        (20, 10): 1.64
+        (1, 3): 1.91, (1, 10): 3.18,
+        (2, 3): 1.81, (2, 10): 2.52,
+        (3, 3): 1.77, (3, 10): 2.26,
+        (4, 3): 1.75, (4, 10): 2.09,
+        (5, 3): 1.74, (5, 10): 1.96,
+        (6, 3): 1.73, (6, 10): 1.87,
+        (7, 3): 1.72, (7, 10): 1.81,
+        (8, 3): 1.72, (8, 10): 1.77,
+        (9, 3): 1.71, (9, 10): 1.74,
+        (10, 3): 1.71, (10, 10): 1.72,
+        (15, 3): 1.693, (15, 10): 1.67,
+        (20, 3): 1.68, (20, 10): 1.64
     }
     return d2_table.get((z, w), 1.693)
 
-# ---------------- SIDEBAR AVANCÉE ----------------
+# ---------------- SIDEBAR ----------------
 with st.sidebar:
     st.markdown('<div class="glassmorphism" style="padding: 2rem; border-radius: var(--border-radius);">', unsafe_allow_html=True)
     
-    st.markdown('<div style="font-size: 1.8rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 10px;">⚙️ <span>Configuration Pro</span></div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size: 1.8rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem;">⚙️ Configuration</div>', unsafe_allow_html=True)
     
-    # Paramètres avancés
-    col1, col2 = st.columns(2)
-    with col1:
-        confidence_factor = st.number_input(
-            "**Facteur K**",
-            min_value=4.0,
-            max_value=6.0,
-            value=5.15,
-            step=0.05,
-            help="Facteur de confiance statistique"
-        )
+    confidence_factor = st.slider(
+        "**Facteur de Confiance (k)**",
+        min_value=4.0,
+        max_value=6.0,
+        value=5.15,
+        step=0.05,
+        help="Facteur pour le niveau de confiance des calculs"
+    )
     
-    with col2:
-        tolerance = st.number_input(
-            "**Tolérance**",
-            min_value=0.1,
-            max_value=100.0,
-            value=10.0,
-            step=0.1,
-            help="Tolérance du processus"
-        )
-    
-    st.markdown("---")
-    
-    # Options d'affichage
-    st.markdown('<div style="font-size: 1.2rem; font-weight: 600; color: var(--dark); margin: 1.5rem 0 1rem 0;">🎨 Options Graphiques</div>', unsafe_allow_html=True)
-    
-    show_3d = st.checkbox("📊 Graphiques 3D", value=True)
-    show_interactive = st.checkbox("🔄 Graphiques interactifs", value=True)
-    theme = st.selectbox(
-        "🎭 Thème",
-        ["Light", "Dark", "Corporate"],
-        index=0
+    tolerance = st.number_input(
+        "**Tolérance du Processus**",
+        min_value=0.1,
+        max_value=100.0,
+        value=10.0,
+        step=0.1,
+        help="Valeur de tolérance pour le calcul %Tolérance"
     )
     
     st.markdown("---")
     
-    # Métriques rapides
-    st.markdown('<div style="font-size: 1.2rem; font-weight: 600; color: var(--dark); margin: 1.5rem 0 1rem 0;">📈 KPI Standards</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size: 1.2rem; font-weight: 600; color: var(--dark); margin: 1.5rem 0 1rem 0;">🎯 Critères d'Évaluation</div>', unsafe_allow_html=True)
     
-    st.markdown("""
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem;">
-        <div class="status-indicator status-excellent">&lt; 10%</div>
-        <div style="color: var(--gray); font-size: 0.9rem;">Excellent</div>
-        <div class="status-indicator status-acceptable">10-30%</div>
-        <div style="color: var(--gray); font-size: 0.9rem;">Acceptable</div>
-        <div class="status-indicator status-unacceptable">&gt; 30%</div>
-        <div style="color: var(--gray); font-size: 0.9rem;">Inacceptable</div>
-    </div>
-    """, unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown('<div class="status-indicator status-excellent">Excellent</div>', unsafe_allow_html=True)
+        st.caption("< 10%")
+    with col2:
+        st.markdown('<div class="status-indicator status-acceptable">Acceptable</div>', unsafe_allow_html=True)
+        st.caption("10-30%")
+    with col3:
+        st.markdown('<div class="status-indicator status-unacceptable">Inacceptable</div>', unsafe_allow_html=True)
+        st.caption("> 30%")
+    
+    st.markdown("---")
+    
+    st.markdown('<div style="font-size: 1.2rem; font-weight: 600; color: var(--dark); margin: 1.5rem 0 1rem 0;">📊 Paramètres Graphiques</div>', unsafe_allow_html=True)
+    
+    theme = st.selectbox(
+        "Thème des Graphiques",
+        ["Modern", "Corporate", "Technical"],
+        index=0
+    )
+    
+    show_advanced = st.checkbox("Afficher les graphiques avancés", value=True)
     
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ---------------- ZONE D'UPLOAD STYLÉE ----------------
+# ---------------- ZONE D'UPLOAD ----------------
 st.markdown('<div class="section-header-pro">📥 Importation des Données</div>', unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader(
     "",
-    type=["xlsx", "csv"],
-    help="Téléversez votre fichier de données (Excel ou CSV)",
+    type=["xlsx"],
+    help="Téléversez votre fichier Excel contenant les mesures",
     label_visibility="collapsed"
 )
 
@@ -375,76 +333,48 @@ if uploaded_file is None:
                 border-radius: var(--border-radius); border: 2px dashed var(--primary); margin: 2rem 0;">
         <div class="floating-icon" style="font-size: 5rem; margin-bottom: 1rem;">📁</div>
         <div style="font-size: 1.8rem; font-weight: 700; color: var(--dark); margin-bottom: 0.5rem;">
-            Glissez-déposez votre fichier
+            Glissez-déposez votre fichier Excel
         </div>
-        <div style="color: var(--gray); margin-bottom: 2rem; max-width: 600px; margin: 0 auto;">
-            Formats supportés : Excel (.xlsx) • CSV (.csv)
+        <div style="color: var(--gray); margin-bottom: 2rem;">
+            Format requis : 3 opérateurs × 3 essais
         </div>
         <div style="background: rgba(67, 97, 238, 0.1); padding: 1.5rem; border-radius: var(--border-radius); 
-                    display: inline-block; text-align: left; max-width: 500px;">
-            <div style="font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">📋 Structure recommandée :</div>
-            <div style="color: var(--gray); font-size: 0.9rem; line-height: 1.6;">
-                • 3 opérateurs × 3 essais chacun<br>
-                • Colonnes : OP1-1, OP1-2, OP1-3, OP2-1, OP2-2, OP2-3, OP3-1, OP3-2, OP3-3<br>
-                • 10-30 pièces recommandées<br>
-                • Données numériques uniquement
+                    display: inline-block; text-align: left;">
+            <div style="font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">📋 Structure :</div>
+            <div style="color: var(--gray); font-size: 0.9rem;">
+                OP1-1, OP1-2, OP1-3<br>
+                OP2-1, OP2-2, OP2-3<br>
+                OP3-1, OP3-2, OP3-3
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
 if uploaded_file:
-    # Animation de chargement avec progression
+    # Animation de chargement
     with st.spinner('🔄 Traitement des données en cours...'):
         progress_bar = st.progress(0)
         for i in range(100):
             time.sleep(0.01)
             progress_bar.progress(i + 1)
         
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
-    
-    # ---------------- APERÇU DES DONNÉES AVANCÉ ----------------
-    st.markdown('<div class="section-header-pro">📊 Explorateur de Données</div>', unsafe_allow_html=True)
+        df = pd.read_excel(uploaded_file)
+
+    # ---------------- APERÇU DES DONNÉES ----------------
+    st.markdown('<div class="section-header-pro">📄 Aperçu des Données</div>', unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("📈 Pièces", df.shape[0])
+        st.metric("📈 Nombre de Pièces", df.shape[0])
     with col2:
         st.metric("👥 Opérateurs", 3)
     with col3:
-        st.metric("🎯 Essais", 3)
+        st.metric("🎯 Essais par Opérateur", 3)
     
     with st.expander("📋 Données Détailées", expanded=True):
-        # Statistiques descriptives
-        st.markdown("**📊 Statistiques Descriptives**")
-        desc_stats = df.describe().T
-        desc_stats['CV%'] = (desc_stats['std'] / desc_stats['mean'] * 100).round(2)
-        st.dataframe(desc_stats.style.format("{:.4f}"), use_container_width=True)
-        
-        # Visualisation de la distribution des données
-        st.markdown("**📈 Distribution des Mesures**")
-        fig_dist = make_subplots(
-            rows=1, cols=3,
-            subplot_titles=['Opérateur 1', 'Opérateur 2', 'Opérateur 3']
-        )
-        
-        op_cols_groups = [["OP1-1", "OP1-2", "OP1-3"], 
-                         ["OP2-1", "OP2-2", "OP2-3"], 
-                         ["OP3-1", "OP3-2", "OP3-3"]]
-        
-        for i, op_cols in enumerate(op_cols_groups, 1):
-            data = df[op_cols].values.flatten()
-            fig_dist.add_trace(
-                go.Violin(y=data, name=f'Op {i}', box_visible=True, 
-                         line_color=f'rgba({i*80}, {150-i*40}, 238, 0.8)'),
-                row=1, col=i
-            )
-        
-        fig_dist.update_layout(height=400, showlegend=False)
-        st.plotly_chart(fig_dist, use_container_width=True)
+        st.markdown('<div class="data-table">', unsafe_allow_html=True)
+        st.dataframe(df.style.format("{:.4f}"), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # Colonnes opérateurs
     op1_cols = ["OP1-1", "OP1-2", "OP1-3"]
@@ -455,7 +385,7 @@ if uploaded_file:
     n_operateurs = 3
     n_essais = 3
 
-    # ---------------- CALCULS AVANCÉS ----------------
+    # ---------------- CALCULS ----------------
     with st.spinner('🧮 Calculs statistiques en cours...'):
         df["R_OP1"] = df[op1_cols].max(axis=1) - df[op1_cols].min(axis=1)
         df["R_OP2"] = df[op2_cols].max(axis=1) - df[op2_cols].min(axis=1)
@@ -495,26 +425,25 @@ if uploaded_file:
         p_grr = (grr / vt) * 100
         
         # Calculs supplémentaires
-        ndc = 1.41 * (vp / grr)  # Discrimination
+        ndc = 1.41 * (vp / grr) if grr > 0 else 0
         p_tv = (grr / tolerance) * 100 if tolerance > 0 else 0
         
-        # Tests statistiques
+        # Test ANOVA
         f_stat, p_value = stats.f_oneway(
             df[op1_cols].values.flatten(),
             df[op2_cols].values.flatten(),
             df[op3_cols].values.flatten()
         )
 
-    # ---------------- DASHBOARD INTERACTIF ----------------
-    st.markdown('<div class="section-header-pro">🎯 Dashboard Analytics</div>', unsafe_allow_html=True)
+    # ---------------- DASHBOARD DES KPIs ----------------
+    st.markdown('<div class="section-header-pro">📊 Tableau de Bord</div>', unsafe_allow_html=True)
     
-    # KPI Principaux
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown(f"""
         <div class="metric-card-pro">
-            <div style="color: var(--gray); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">% Gage R&R</div>
+            <div style="color: var(--gray); font-size: 0.9rem; font-weight: 600;">% Gage R&R</div>
             <div class="metric-value-pro">{p_grr:.1f}%</div>
             <div style="margin-top: 1rem;">
                 {"<span class='status-indicator status-excellent'>EXCELLENT</span>" if p_grr < 10 else 
@@ -527,7 +456,7 @@ if uploaded_file:
     with col2:
         st.markdown(f"""
         <div class="metric-card-pro">
-            <div style="color: var(--gray); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Discrimination</div>
+            <div style="color: var(--gray); font-size: 0.9rem; font-weight: 600;">Discrimination (ndc)</div>
             <div class="metric-value-pro">{ndc:.1f}</div>
             <div style="color: var(--gray); font-size: 0.85rem; margin-top: 0.5rem;">
                 {"✅ > 5" if ndc > 5 else "⚠️ ≤ 5"}
@@ -538,10 +467,10 @@ if uploaded_file:
     with col3:
         st.markdown(f"""
         <div class="metric-card-pro">
-            <div style="color: var(--gray); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Répétabilité (EV)</div>
+            <div style="color: var(--gray); font-size: 0.9rem; font-weight: 600;">Répétabilité (EV)</div>
             <div class="metric-value-pro">{ev:.4f}</div>
             <div style="color: var(--gray); font-size: 0.85rem; margin-top: 0.5rem;">
-                Contribution: {(ev/vt*100):.1f}%
+                {(ev/vt*100):.1f}% du total
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -549,10 +478,10 @@ if uploaded_file:
     with col4:
         st.markdown(f"""
         <div class="metric-card-pro">
-            <div style="color: var(--gray); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Reproductibilité (AV)</div>
+            <div style="color: var(--gray); font-size: 0.9rem; font-weight: 600;">Reproductibilité (AV)</div>
             <div class="metric-value-pro">{av:.4f}</div>
             <div style="color: var(--gray); font-size: 0.85rem; margin-top: 0.5rem;">
-                Contribution: {(av/vt*100):.1f}%
+                {(av/vt*100):.1f}% du total
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -560,407 +489,370 @@ if uploaded_file:
     # ---------------- VISUALISATIONS PROFESSIONNELLES ----------------
     st.markdown('<div class="section-header-pro">📈 Visualisations Avancées</div>', unsafe_allow_html=True)
     
-    # Graphique 1: Sunburst Chart interactif
+    # Configuration du style des graphiques
+    plt.style.use('seaborn-v0_8-darkgrid')
+    colors = ['#4361ee', '#4cc9f0', '#7209b7', '#f8961e', '#f72585']
+    
+    # Graphique 1: Composantes de Variation (barres 3D)
     st.markdown('<div class="plot-container-pro">', unsafe_allow_html=True)
-    st.markdown("**🌳 Carte des Variations - Sunburst Chart**")
+    fig1, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6), gridspec_kw={'width_ratios': [2, 1]})
     
-    labels = ["Variation Totale", "Variation Système", "Répétabilité (EV)", 
-              "Reproductibilité (AV)", "Variation Pièces (VP)"]
-    parents = ["", "Variation Totale", "Variation Système", "Variation Système", "Variation Totale"]
-    values = [vt**2, grr**2, ev**2, av**2, vp**2]
+    # Graphique à barres avec effet 3D
+    components = ['EV\nRépétabilité', 'AV\nReproductibilité', 'GRR\nSystème', 'VP\nPièces', 'VT\nTotale']
+    values = [ev, av, grr, vp, vt]
+    contributions = [v/vt*100 for v in values[:4]] + [100]
     
-    fig_sunburst = go.Figure(go.Sunburst(
-        labels=labels,
-        parents=parents,
-        values=values,
-        branchvalues="total",
-        textinfo="label+percent entry",
-        hoverinfo="label+value+percent parent",
-        marker=dict(
-            colors=['#1a1a2e', '#4361ee', '#4cc9f0', '#4895ef', '#7209b7'],
-            line=dict(color='white', width=2)
-        ),
-        textfont=dict(size=14)
-    ))
+    bars = ax1.bar(components, values, color=colors, edgecolor='white', linewidth=2, alpha=0.9, zorder=3)
     
-    fig_sunburst.update_layout(
-        height=600,
-        margin=dict(t=0, l=0, r=0, b=0),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
-    )
+    # Ajout d'un effet d'ombre et de texture
+    for i, bar in enumerate(bars):
+        height = bar.get_height()
+        # Effet de dégradé
+        gradient = np.linspace(0.8, 0.3, 100).reshape(100, 1)
+        gradient = np.repeat(gradient, 3, axis=1)
+        gradient[:, 0] *= int(colors[i][1:3], 16) / 255
+        gradient[:, 1] *= int(colors[i][3:5], 16) / 255
+        gradient[:, 2] *= int(colors[i][5:7], 16) / 255
+        
+        # Annotation avec valeur
+        ax1.text(bar.get_x() + bar.get_width()/2, height + max(values)*0.01,
+                f'{values[i]:.3f}\n({contributions[i]:.1f}%)',
+                ha='center', va='bottom', fontweight='bold', fontsize=10,
+                color='#2c3e50')
     
-    st.plotly_chart(fig_sunburst, use_container_width=True)
+    ax1.set_title('📊 Composantes de Variation', fontsize=16, fontweight='bold', pad=20)
+    ax1.set_ylabel('Valeur', fontweight='bold')
+    ax1.grid(True, alpha=0.3, zorder=0)
+    ax1.set_facecolor('#f8fafc')
+    
+    # Camembert des contributions
+    pie_colors = ['#4361ee', '#4cc9f0', '#7209b7']
+    pie_sizes = [ev**2, av**2, vp**2]
+    pie_labels = [f'EV\n{ev**2/vt**2*100:.1f}%', 
+                  f'AV\n{av**2/vt**2*100:.1f}%', 
+                  f'VP\n{vp**2/vt**2*100:.1f}%']
+    
+    wedges, texts, autotexts = ax2.pie(pie_sizes, labels=pie_labels, colors=pie_colors,
+                                       autopct='', startangle=90,
+                                       wedgeprops={'edgecolor': 'white', 'linewidth': 2, 'width': 0.4})
+    
+    # Effet de relief sur le camembert
+    for wedge in wedges:
+        wedge.set_alpha(0.8)
+    
+    centre_circle = plt.Circle((0,0), 0.30, fc='white', edgecolor='white', linewidth=2)
+    ax2.add_artist(centre_circle)
+    ax2.text(0, 0, f'VT\n{vt:.3f}', ha='center', va='center', 
+             fontweight='bold', fontsize=12)
+    
+    ax2.set_title('🥧 Répartition des Variations', fontsize=16, fontweight='bold', pad=20)
+    
+    plt.tight_layout()
+    st.pyplot(fig1)
     st.markdown('</div>', unsafe_allow_html=True)
+    plt.close()
     
-    # Graphiques 2 et 3: Ligne et Radar
-    col1, col2 = st.columns(2)
+    # Graphique 2: Performance des Opérateurs
+    st.markdown('<div class="plot-container-pro">', unsafe_allow_html=True)
+    fig2 = plt.figure(figsize=(14, 10))
+    gs = gridspec.GridSpec(2, 2, figure=fig2, height_ratios=[1, 1], hspace=0.3, wspace=0.3)
     
-    with col1:
-        st.markdown('<div class="plot-container-pro">', unsafe_allow_html=True)
-        st.markdown("**📊 Performance par Pièce**")
-        
-        fig_line = go.Figure()
-        
-        for i, (op_cols, color, name) in enumerate(zip(
-            [op1_cols, op2_cols, op3_cols],
-            ['#4cc9f0', '#4895ef', '#4361ee'],
-            ['Opérateur 1', 'Opérateur 2', 'Opérateur 3']
-        ), 1):
-            means_by_piece = df[op_cols].mean(axis=1)
-            fig_line.add_trace(go.Scatter(
-                x=list(range(1, len(means_by_piece) + 1)),
-                y=means_by_piece,
-                mode='lines+markers',
-                name=name,
-                line=dict(color=color, width=3),
-                marker=dict(size=8),
-                hovertemplate=f'{name}<br>Pièce %{{x}}<br>Valeur: %{{y:.4f}}<extra></extra>'
-            ))
-        
-        fig_line.update_layout(
-            height=400,
-            xaxis_title="Numéro de Pièce",
-            yaxis_title="Valeur Mesurée",
-            hovermode='x unified',
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            showlegend=True,
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            )
-        )
-        
-        st.plotly_chart(fig_line, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Sous-graphique 1: Radar Chart
+    ax3 = fig2.add_subplot(gs[0, 0], projection='polar')
     
-    with col2:
-        st.markdown('<div class="plot-container-pro">', unsafe_allow_html=True)
-        st.markdown("**🎯 Radar des Opérateurs**")
-        
-        categories = ['Précision', 'Répétabilité', 'Biais', 'Linéarité', 'Stabilité']
-        
-        fig_radar = go.Figure()
-        
-        op_stats = []
-        for op_cols in [op1_cols, op2_cols, op3_cols]:
-            data = df[op_cols].values.flatten()
-            precision = 1 / np.std(data) * 100
-            repeatability = 1 / (df[[f"R_OP{i+1}" for i in range(3)][op_cols == op1_cols]].mean()[0]) * 100
-            bias = abs(np.mean(data) - df[op1_cols + op2_cols + op3_cols].values.flatten().mean())
-            linearity = 1 / (np.polyfit(range(len(data)), data, 1)[0] + 0.001)
-            stability = 1 / (np.std([data[:len(data)//3].mean(), 
-                                   data[len(data)//3:2*len(data)//3].mean(), 
-                                   data[2*len(data)//3:].mean()]) + 0.001)
-            
-            op_stats.append([precision, repeatability, bias, linearity, stability])
-        
+    categories = ['Précision', 'Répétabilité', 'Stabilité', 'Exactitude', 'Capacité']
+    N = len(categories)
+    
+    angles = [n / float(N) * 2 * np.pi for n in range(N)]
+    angles += angles[:1]
+    
+    # Données normalisées pour chaque opérateur
+    op_metrics = []
+    for op_cols, color in zip([op1_cols, op2_cols, op3_cols], colors[:3]):
+        data = df[op_cols].values.flatten()
+        metrics = [
+            1 / np.std(data) * 100,  # Précision
+            1 / df[[f"R_OP{i+1}" for i in range(3)][op_cols == op1_cols]].mean()[0] * 100,  # Répétabilité
+            1 / np.std([data[:len(data)//3].mean(), 
+                       data[len(data)//3:2*len(data)//3].mean(),
+                       data[2*len(data)//3:].mean()]) * 100,  # Stabilité
+            abs(np.mean(data) - df[op1_cols + op2_cols + op3_cols].values.flatten().mean()),  # Exactitude
+            1 / (np.std(data) / np.mean(data)) * 100 if np.mean(data) != 0 else 0  # Capacité
+        ]
         # Normalisation
-        op_stats_norm = []
-        for stats in op_stats:
-            max_val = max(stats)
-            op_stats_norm.append([s/max_val*100 for s in stats])
-        
-        for i, (stats_norm, color, name) in enumerate(zip(
-            op_stats_norm,
-            ['rgba(76, 201, 240, 0.8)', 'rgba(72, 149, 239, 0.8)', 'rgba(67, 97, 238, 0.8)'],
-            ['Opérateur 1', 'Opérateur 2', 'Opérateur 3']
-        )):
-            fig_radar.add_trace(go.Scatterpolar(
-                r=stats_norm + [stats_norm[0]],
-                theta=categories + [categories[0]],
-                name=name,
-                fill='toself',
-                fillcolor=color.replace('0.8', '0.3'),
-                line=dict(color=color, width=3)
-            ))
-        
-        fig_radar.update_layout(
-            polar=dict(
-                radialaxis=dict(
-                    visible=True,
-                    range=[0, 100]
-                )
-            ),
-            showlegend=True,
-            height=400,
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)'
-        )
-        
-        st.plotly_chart(fig_radar, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        metrics = [m/max(metrics) * 100 for m in metrics]
+        metrics += metrics[:1]
+        op_metrics.append(metrics)
     
-    # Graphique 4: Heatmap 3D
-    if show_3d:
+    for i, (metrics, color, label) in enumerate(zip(op_metrics, colors[:3], ['Opérateur 1', 'Opérateur 2', 'Opérateur 3'])):
+        ax3.plot(angles, metrics, 'o-', linewidth=2, label=label, color=color)
+        ax3.fill(angles, metrics, alpha=0.1, color=color)
+    
+    ax3.set_xticks(angles[:-1])
+    ax3.set_xticklabels(categories, fontsize=9)
+    ax3.set_ylim(0, 100)
+    ax3.set_title('🎯 Performance par Opérateur', fontsize=14, fontweight='bold', pad=20)
+    ax3.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
+    ax3.grid(True, alpha=0.3)
+    
+    # Sous-graphique 2: Jauge de Performance
+    ax4 = fig2.add_subplot(gs[0, 1])
+    
+    # Création d'une jauge moderne
+    gauge_colors = ['#4cc9f0', '#f8961e', '#f72585']
+    gauge_ranges = [(0, 10), (10, 30), (30, 100)]
+    
+    for (start, end), color in zip(gauge_ranges, gauge_colors):
+        ax4.barh(0, end-start, left=start, height=0.5, color=color, 
+                edgecolor='white', linewidth=2, alpha=0.8)
+    
+    # Aiguille
+    ax4.axvline(x=p_grr, color='#1a1a2e', linestyle='-', linewidth=4, alpha=0.8, 
+                path_effects=[path_effects.withStroke(linewidth=6, foreground="white")])
+    
+    # Style
+    ax4.set_xlim(0, 100)
+    ax4.set_ylim(-0.5, 0.5)
+    ax4.set_yticks([])
+    ax4.set_xlabel('% Gage R&R', fontsize=12, fontweight='bold')
+    ax4.grid(True, alpha=0.3, axis='x')
+    ax4.set_facecolor('#f8fafc')
+    
+    # Valeur courante
+    ax4.text(p_grr, 0.6, f'{p_grr:.1f}%', 
+             ha='center', va='center', fontsize=24, fontweight='bold',
+             bbox=dict(boxstyle='round,pad=0.5', facecolor='white', 
+                      edgecolor='#1a1a2e', alpha=0.9))
+    
+    ax4.set_title('📊 Jauge de Performance', fontsize=14, fontweight='bold', pad=20)
+    
+    # Sous-graphique 3: Courbes par pièce
+    ax5 = fig2.add_subplot(gs[1, :])
+    
+    for i, (op_cols, color, label) in enumerate(zip([op1_cols, op2_cols, op3_cols], 
+                                                   colors[:3], ['Opérateur 1', 'Opérateur 2', 'Opérateur 3'])):
+        means_by_piece = df[op_cols].mean(axis=1)
+        ax5.plot(range(1, len(means_by_piece) + 1), means_by_piece, 
+                marker='o', linewidth=2.5, markersize=6, label=label, color=color,
+                markerfacecolor='white', markeredgewidth=2)
+    
+    ax5.set_xlabel('Numéro de Pièce', fontweight='bold')
+    ax5.set_ylabel('Valeur Mesurée', fontweight='bold')
+    ax5.grid(True, alpha=0.3)
+    ax5.legend(loc='best')
+    ax5.set_title('📈 Mesures par Pièce et Opérateur', fontsize=14, fontweight='bold', pad=20)
+    ax5.set_facecolor('#f8fafc')
+    
+    plt.tight_layout()
+    st.pyplot(fig2)
+    st.markdown('</div>', unsafe_allow_html=True)
+    plt.close()
+    
+    # Graphique 3: Matrice de Corrélation (Heatmap)
+    if show_advanced:
         st.markdown('<div class="plot-container-pro">', unsafe_allow_html=True)
-        st.markdown("**🔥 Matrice de Corrélation 3D**")
+        fig3, ax6 = plt.subplots(figsize=(12, 8))
         
-        all_data = []
-        for i in range(n_pieces):
-            for j, op_cols in enumerate([op1_cols, op2_cols, op3_cols], 1):
-                for k, col in enumerate(op_cols, 1):
-                    all_data.append({
-                        'Pièce': i + 1,
-                        'Opérateur': j,
-                        'Essai': k,
-                        'Valeur': df.iloc[i][col]
-                    })
+        # Préparation des données
+        all_columns = op1_cols + op2_cols + op3_cols
+        corr_matrix = df[all_columns].corr()
         
-        heatmap_df = pd.DataFrame(all_data)
+        # Masque pour le triangle supérieur
+        mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
         
-        fig_3d = go.Figure(data=go.Volume(
-            x=heatmap_df['Pièce'],
-            y=heatmap_df['Opérateur'],
-            z=heatmap_df['Essai'],
-            value=heatmap_df['Valeur'],
-            isomin=heatmap_df['Valeur'].min(),
-            isomax=heatmap_df['Valeur'].max(),
-            opacity=0.1,
-            surface_count=20,
-            colorscale='Viridis',
-            caps=dict(x_show=False, y_show=False, z_show=False)
-        ))
+        # Heatmap avec Seaborn
+        sns.heatmap(corr_matrix, mask=mask, cmap='coolwarm', annot=True, 
+                   fmt='.2f', center=0, square=True, linewidths=1,
+                   cbar_kws={"shrink": .8}, ax=ax6)
         
-        fig_3d.update_layout(
-            scene=dict(
-                xaxis_title='Pièce',
-                yaxis_title='Opérateur',
-                zaxis_title='Essai',
-                camera=dict(
-                    eye=dict(x=1.5, y=1.5, z=1.5)
-                )
-            ),
-            height=500,
-            margin=dict(l=0, r=0, b=0, t=0)
-        )
+        # Amélioration du design
+        ax6.set_title('🔥 Matrice de Corrélation entre les Mesures', 
+                     fontsize=16, fontweight='bold', pad=20)
+        ax6.set_facecolor('#f8fafc')
         
-        st.plotly_chart(fig_3d, use_container_width=True)
+        plt.tight_layout()
+        st.pyplot(fig3)
         st.markdown('</div>', unsafe_allow_html=True)
+        plt.close()
     
-    # ---------------- ANALYTICS DÉTAILLÉS ----------------
-    st.markdown('<div class="section-header-pro">🔍 Analyse Statistique Approfondie</div>', unsafe_allow_html=True)
+    # ---------------- ANALYSE DÉTAILLÉE ----------------
+    st.markdown('<div class="section-header-pro">🔍 Analyse Statistique</div>', unsafe_allow_html=True)
     
-    tab1, tab2, tab3 = st.tabs(["📋 Résultats Complets", "📊 ANOVA", "🎯 Recommandations"])
+    tab1, tab2, tab3 = st.tabs(["📋 Résultats Complets", "📊 Statistiques", "🎯 Recommandations"])
     
     with tab1:
-        results_data = {
-            'Paramètre': ['EV (Répétabilité)', 'AV (Reproductibilité)', 'GRR (Système)', 
-                         'VP (Pièces)', 'VT (Totale)', '%GRR', 'Ndc', '%Tolérance'],
-            'Valeur': [f'{ev:.6f}', f'{av:.6f}', f'{grr:.6f}', 
-                      f'{vp:.6f}', f'{vt:.6f}', f'{p_grr:.2f}%', 
-                      f'{ndc:.2f}', f'{p_tv:.2f}%'],
-            'Contribution': [f'{ev/vt*100:.1f}%', f'{av/vt*100:.1f}%', f'{grr/vt*100:.1f}%',
-                           f'{vp/vt*100:.1f}%', '100%', '-', '-', '-'],
-            'Statut': [
-                '✅' if ev/vt*100 < 30 else '⚠️',
-                '✅' if av/vt*100 < 30 else '⚠️',
-                '✅' if p_grr < 10 else '⚠️' if p_grr <= 30 else '❌',
-                '📊',
-                '📊',
-                '✅' if p_grr < 10 else '⚠️' if p_grr <= 30 else '❌',
-                '✅' if ndc > 5 else '⚠️',
-                '✅' if p_tv < 10 else '⚠️' if p_tv <= 30 else '❌'
-            ]
-        }
-        
-        results_df = pd.DataFrame(results_data)
-        st.dataframe(results_df, use_container_width=True)
-    
-    with tab2:
         col1, col2 = st.columns(2)
+        
         with col1:
-            st.markdown("**📊 Test d'ANOVA**")
-            st.write(f"**F-statistique:** {f_stat:.4f}")
-            st.write(f"**P-value:** {p_value:.6f}")
-            st.write(f"**Significatif à 5%:** {'✅ Oui' if p_value < 0.05 else '❌ Non'}")
+            st.markdown("**📊 Résultats Principaux**")
+            results_data = {
+                'Paramètre': ['EV (Répétabilité)', 'AV (Reproductibilité)', 'GRR (Système)', 
+                             'VP (Pièces)', 'VT (Totale)', '%GRR', 'Ndc', '%Tolérance'],
+                'Valeur': [f'{ev:.6f}', f'{av:.6f}', f'{grr:.6f}', 
+                          f'{vp:.6f}', f'{vt:.6f}', f'{p_grr:.2f}%', 
+                          f'{ndc:.2f}', f'{p_tv:.2f}%'],
+                'Statut': [
+                    '✅' if ev/vt*100 < 30 else '⚠️',
+                    '✅' if av/vt*100 < 30 else '⚠️',
+                    '✅' if p_grr < 10 else '⚠️' if p_grr <= 30 else '❌',
+                    '📊',
+                    '📊',
+                    '✅' if p_grr < 10 else '⚠️' if p_grr <= 30 else '❌',
+                    '✅' if ndc > 5 else '⚠️',
+                    '✅' if p_tv < 10 else '⚠️' if p_tv <= 30 else '❌'
+                ]
+            }
             
-            # Diagramme de Pareto des variations
-            fig_pareto = go.Figure()
-            
-            sources = ['EV', 'AV', 'VP']
-            values = [ev**2, av**2, vp**2]
-            cum_sum = np.cumsum(values)
-            
-            fig_pareto.add_trace(go.Bar(
-                x=sources,
-                y=values,
-                name='Variation',
-                marker_color=['#4cc9f0', '#4895ef', '#4361ee']
-            ))
-            
-            fig_pareto.add_trace(go.Scatter(
-                x=sources,
-                y=cum_sum,
-                name='Cumulé',
-                yaxis='y2',
-                marker_color='#f72585',
-                mode='lines+markers'
-            ))
-            
-            fig_pareto.update_layout(
-                height=300,
-                yaxis=dict(title='Variation'),
-                yaxis2=dict(title='Cumulé (%)', overlaying='y', side='right',
-                           range=[0, max(cum_sum)*1.1]),
-                showlegend=True
-            )
-            
-            st.plotly_chart(fig_pareto, use_container_width=True)
+            results_df = pd.DataFrame(results_data)
+            st.dataframe(results_df, use_container_width=True)
         
         with col2:
-            st.markdown("**📈 Contrôle Statistique**")
+            st.markdown("**📈 Performance des Opérateurs**")
+            op_stats_data = {
+                'Opérateur': ['👤 Opérateur 1', '👤 Opérateur 2', '👤 Opérateur 3'],
+                'Moyenne': [f'{x_bar_op1:.4f}', f'{x_bar_op2:.4f}', f'{x_bar_op3:.4f}'],
+                'Étendue Moy.': [f'{r_bar_op1:.4f}', f'{r_bar_op2:.4f}', f'{r_bar_op3:.4f}'],
+                'σ': [f'{df[op1_cols].values.flatten().std():.4f}', 
+                      f'{df[op2_cols].values.flatten().std():.4f}', 
+                      f'{df[op3_cols].values.flatten().std():.4f}']
+            }
             
-            # Carte de contrôle X-bar R
-            fig_control = make_subplots(
-                rows=2, cols=1,
-                subplot_titles=('Carte X-bar', 'Carte R'),
-                vertical_spacing=0.15
-            )
+            op_stats_df = pd.DataFrame(op_stats_data)
+            st.dataframe(op_stats_df, use_container_width=True)
             
-            # X-bar chart
-            x_bar = df[op1_cols + op2_cols + op3_cols].mean(axis=1)
-            x_bar_mean = x_bar.mean()
-            x_bar_ucl = x_bar_mean + 3 * x_bar.std() / np.sqrt(n_essais)
-            x_bar_lcl = x_bar_mean - 3 * x_bar.std() / np.sqrt(n_essais)
-            
-            fig_control.add_trace(go.Scatter(
-                y=x_bar,
-                mode='lines+markers',
-                name='Moyenne',
-                line=dict(color='#4361ee', width=2)
-            ), row=1, col=1)
-            
-            fig_control.add_hline(y=x_bar_mean, line_dash="dash", 
-                                 line_color="green", row=1, col=1)
-            fig_control.add_hline(y=x_bar_ucl, line_dash="dot", 
-                                 line_color="red", row=1, col=1)
-            fig_control.add_hline(y=x_bar_lcl, line_dash="dot", 
-                                 line_color="red", row=1, col=1)
-            
-            # R chart
-            ranges = df[["R_OP1", "R_OP2", "R_OP3"]].mean(axis=1)
-            r_mean = ranges.mean()
-            r_ucl = r_mean * 2.574  # D4 pour n=3
-            
-            fig_control.add_trace(go.Scatter(
-                y=ranges,
-                mode='lines+markers',
-                name='Étendue',
-                line=dict(color='#f72585', width=2)
-            ), row=2, col=1)
-            
-            fig_control.add_hline(y=r_mean, line_dash="dash", 
-                                 line_color="green", row=2, col=1)
-            fig_control.add_hline(y=r_ucl, line_dash="dot", 
-                                 line_color="red", row=2, col=1)
-            
-            fig_control.update_layout(height=500, showlegend=False)
-            st.plotly_chart(fig_control, use_container_width=True)
+            # Test ANOVA
+            st.markdown("**🧪 Test ANOVA**")
+            st.write(f"**F-statistique:** {f_stat:.4f}")
+            st.write(f"**P-value:** {p_value:.6f}")
+            st.write(f"**Différence significative:** {'✅ Oui' if p_value < 0.05 else '❌ Non'}")
+    
+    with tab2:
+        # Statistiques descriptives détaillées
+        st.markdown("**📊 Statistiques Descriptives par Opérateur**")
+        
+        all_stats = []
+        for i, (op_cols, op_name) in enumerate(zip([op1_cols, op2_cols, op3_cols], 
+                                                  ['Opérateur 1', 'Opérateur 2', 'Opérateur 3']), 1):
+            data = df[op_cols].values.flatten()
+            stats_dict = {
+                'Opérateur': op_name,
+                'Moyenne': np.mean(data),
+                'Médiane': np.median(data),
+                'Écart-type': np.std(data),
+                'CV%': (np.std(data) / np.mean(data) * 100) if np.mean(data) != 0 else 0,
+                'Min': np.min(data),
+                'Max': np.max(data),
+                'Étendue': np.ptp(data)
+            }
+            all_stats.append(stats_dict)
+        
+        stats_df = pd.DataFrame(all_stats)
+        st.dataframe(stats_df.style.format("{:.4f}"), use_container_width=True)
     
     with tab3:
+        # Recommandations basées sur les résultats
         if p_grr < 10:
             st.success("""
-            ## 🎉 **EXCELLENT - Système Optimal**
+            ## 🎉 **SYSTÈME EXCELLENT**
             
             ### ✅ **Actions recommandées :**
-            - Maintenir les procédures actuelles
-            - Documenter les bonnes pratiques
-            - Effectuer un suivi périodique
+            1. **Maintenance**
+               - Continuer les procédures actuelles
+               - Maintenir le calendrier de calibration
+               - Documenter les bonnes pratiques
+            2. **Surveillance**
+               - Suivi périodique (trimestriel)
+               - Enregistrement des dérives
+            3. **Optimisation**
+               - Capitaliser sur l'excellence
+               - Étendre les bonnes pratiques
             
-            ### 📊 **Statistiques favorables :**
-            - Le système discrimine bien les pièces (ndc > 5)
-            - Variation système sous contrôle
-            - Processus mesurable avec confiance
+            ### 📊 **Points forts :**
+            - Système très fiable
+            - Bonne discrimination des pièces
+            - Variation système minimale
             """)
         elif p_grr <= 30:
             st.warning("""
-            ## ⚠️ **ACCEPTABLE - Améliorations Possibles**
+            ## ⚠️ **SYSTÈME ACCEPTABLE**
             
             ### 🔧 **Actions recommandées :**
-            1. **Formation des opérateurs**
-               - Standardiser les méthodes de mesure
-               - Vérifier la compréhension des procédures
-            2. **Amélioration de l'équipement**
-               - Calibration plus fréquente
+            1. **Formation**
+               - Recyclage des opérateurs
+               - Standardisation des méthodes
+               - Vérification des compétences
+            2. **Équipement**
+               - Vérification de calibration
                - Maintenance préventive
-            3. **Optimisation du processus**
-               - Améliorer les fixations
-               - Standardiser les conditions de mesure
+               - Nettoyage et étalonnage
+            3. **Processus**
+               - Amélioration des fixations
+               - Conditions de mesure stables
+               - Documentation précise
+            
+            ### 📈 **Points à améliorer :**
+            - Réduire la variation entre opérateurs
+            - Améliorer la répétabilité
+            - Standardiser les procédures
             """)
         else:
             st.error("""
-            ## ❌ **INACCEPTABLE - Action Corrective Requise**
+            ## ❌ **SYSTÈME INACCEPTABLE**
             
             ### 🚨 **Actions prioritaires :**
-            1. **Équipement**
-               - Recalibrer l'équipement
-               - Vérifier l'usure
-               - Considérer un remplacement
-            2. **Méthodes**
-               - Redéfinir les procédures de mesure
-               - Améliorer les fixations
-               - Standardiser les conditions
-            3. **Personnel**
+            1. **Équipement (Urgent)**
+               - Recalibration immédiate
+               - Vérification de l'usure
+               - Remplacement si nécessaire
+            2. **Formation (Urgent)**
                - Formation intensive
-               - Certification des opérateurs
-               - Supervision renforcée
-            4. **Analyse approfondie**
-               - Identifier la source principale de variation
-               - Mener une étude complémentaire
-               - Établir un plan d'action détaillé
+               - Certification obligatoire
+               - Supervision rapprochée
+            3. **Processus (Urgent)**
+               - Redéfinition complète
+               - Amélioration des fixations
+               - Conditions contrôlées
+            4. **Investigation**
+               - Étude approfondie des causes
+               - Plan d'action détaillé
+               - Suivi rigoureux
+            
+            ### ⚠️ **Risques identifiés :**
+            - Mesures non fiables
+            - Décisions erronées
+            - Qualité compromise
             """)
-        
-        # Matrice de décision
-        st.markdown("### 📋 Matrice de Décision")
-        
-        decision_data = {
-            'Critère': ['%GRR', 'Discrimination (ndc)', '% Tolérance', 'Statistiques'],
-            'Valeur': [f'{p_grr:.1f}%', f'{ndc:.1f}', f'{p_tv:.1f}%', 
-                      'ANOVA ' + ('✅' if p_value < 0.05 else '❌')],
-            'Seuil': ['< 10%', '> 5', '< 30%', 'p < 0.05'],
-            'Statut': [
-                '✅' if p_grr < 10 else '⚠️' if p_grr <= 30 else '❌',
-                '✅' if ndc > 5 else '❌',
-                '✅' if p_tv < 30 else '❌',
-                '✅' if p_value < 0.05 else '❌'
-            ]
-        }
-        
-        st.dataframe(pd.DataFrame(decision_data), use_container_width=True)
     
     # ---------------- EXPORT PROFESSIONNEL ----------------
-    st.markdown('<div class="section-header-pro">💾 Rapport Complet</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header-pro">💾 Export des Résultats</div>', unsafe_allow_html=True)
     
-    # Création du rapport
+    # Création du fichier Excel
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        # Feuille de résultats
-        results_export = pd.DataFrame({
-            'Paramètre': ['EV', 'AV', 'GRR', 'VP', 'VT', '%GRR', 'Ndc', '%Tolérance'],
-            'Valeur': [ev, av, grr, vp, vt, p_grr, ndc, p_tv],
-            'Unité': ['unité', 'unité', 'unité', 'unité', 'unité', '%', 'sans', '%'],
-            'Statut': [
-                'Excellent' if ev/vt*100 < 10 else 'Acceptable' if ev/vt*100 < 30 else 'Inacceptable',
-                'Excellent' if av/vt*100 < 10 else 'Acceptable' if av/vt*100 < 30 else 'Inacceptable',
-                'Excellent' if p_grr < 10 else 'Acceptable' if p_grr <= 30 else 'Inacceptable',
-                '-', '-',
-                'Excellent' if p_grr < 10 else 'Acceptable' if p_grr <= 30 else 'Inacceptable',
-                'Suffisant' if ndc > 5 else 'Insuffisant',
-                'Acceptable' if p_tv < 30 else 'Inacceptable'
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        # Résultats principaux
+        export_df = pd.DataFrame({
+            "Paramètre": ["EV", "AV", "GRR", "VP", "VT", "%GRR", "Ndc", "%Tolérance"],
+            "Valeur": [ev, av, grr, vp, vt, p_grr, ndc, p_tv],
+            "Unité": ["unité", "unité", "unité", "unité", "unité", "%", "sans", "%"],
+            "Contribution": [f"{ev/vt*100:.1f}%", f"{av/vt*100:.1f}%", f"{grr/vt*100:.1f}%",
+                           f"{vp/vt*100:.1f}%", "100%", "-", "-", "-"],
+            "Statut": [
+                "Excellent" if ev/vt*100 < 10 else "Acceptable" if ev/vt*100 < 30 else "Inacceptable",
+                "Excellent" if av/vt*100 < 10 else "Acceptable" if av/vt*100 < 30 else "Inacceptable",
+                "Excellent" if p_grr < 10 else "Acceptable" if p_grr <= 30 else "Inacceptable",
+                "-", "-",
+                "Excellent" if p_grr < 10 else "Acceptable" if p_grr <= 30 else "Inacceptable",
+                "Suffisant" if ndc > 5 else "Insuffisant",
+                "Acceptable" if p_tv < 30 else "Inacceptable"
             ]
         })
-        results_export.to_excel(writer, sheet_name='Résultats', index=False)
+        export_df.to_excel(writer, sheet_name='Résultats', index=False)
         
         # Données brutes
         df.to_excel(writer, sheet_name='Données_Brutes', index=False)
         
         # Statistiques opérateurs
-        operators_stats = pd.DataFrame({
+        op_export = pd.DataFrame({
             'Opérateur': ['Opérateur 1', 'Opérateur 2', 'Opérateur 3'],
             'Moyenne': [x_bar_op1, x_bar_op2, x_bar_op3],
             'Étendue Moyenne': [r_bar_op1, r_bar_op2, r_bar_op3],
@@ -968,14 +860,9 @@ if uploaded_file:
                 df[op1_cols].values.flatten().std(),
                 df[op2_cols].values.flatten().std(),
                 df[op3_cols].values.flatten().std()
-            ],
-            'CV%': [
-                df[op1_cols].values.flatten().std() / x_bar_op1 * 100,
-                df[op2_cols].values.flatten().std() / x_bar_op2 * 100,
-                df[op3_cols].values.flatten().std() / x_bar_op3 * 100
             ]
         })
-        operators_stats.to_excel(writer, sheet_name='Stats_Opérateurs', index=False)
+        op_export.to_excel(writer, sheet_name='Stats_Opérateurs', index=False)
         
         # Métadonnées
         metadata = pd.DataFrame({
@@ -988,7 +875,7 @@ if uploaded_file:
                 n_essais,
                 confidence_factor,
                 tolerance,
-                'Gage R&R Pro v2.0',
+                'Gage R&R Pro v1.0',
                 'Excellent' if p_grr < 10 else 'Acceptable' if p_grr <= 30 else 'Inacceptable'
             ]
         })
@@ -1000,7 +887,7 @@ if uploaded_file:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.download_button(
-            label="📥 Télécharger le Rapport Complet (Excel)",
+            label="📥 Télécharger le Rapport Complet",
             data=output,
             file_name=f"gage_rr_rapport_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1009,48 +896,25 @@ if uploaded_file:
         
         st.markdown("""
         <div style="text-align: center; color: var(--gray); font-size: 0.9rem; margin-top: 1rem;">
-            <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 0.5rem;">
-                <div>📊 Résultats détaillés</div>
-                <div>📈 Graphiques statistiques</div>
-                <div>📋 Recommandations</div>
+            <div>📊 Résultats détaillés • 📈 Statistiques • 🎯 Recommandations</div>
+            <div style="margin-top: 0.5rem; font-size: 0.8rem;">
+                Rapport professionnel prêt pour présentation
             </div>
-            <div>Rapport professionnel conforme aux normes industrielles</div>
         </div>
         """, unsafe_allow_html=True)
 
-# Pied de page professionnel
+# Pied de page
 st.markdown("""
-<div style="margin-top: 4rem; padding: 3rem; background: linear-gradient(135deg, var(--dark), #16213e); 
-            border-radius: var(--border-radius); color: white;">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
-        <div>
-            <div style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; color: var(--success);">📊 Gage R&R Analytics Pro</div>
-            <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; line-height: 1.6;">
-                Solution avancée d'analyse de la capacité des systèmes de mesure. 
-                Conforme aux normes industrielles internationales.
-            </div>
-        </div>
-        <div>
-            <div style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; color: var(--success);">⚡ Fonctionnalités</div>
-            <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem;">
-                • Analyses statistiques avancées<br>
-                • Visualisations interactives 3D<br>
-                • Rapports automatisés<br>
-                • Suivi des performances
-            </div>
-        </div>
-        <div>
-            <div style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; color: var(--success);">🔧 Technologies</div>
-            <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem;">
-                • Python • Streamlit • Plotly<br>
-                • Pandas • NumPy • SciPy<br>
-                • Conforme AIAG MSA
-            </div>
-        </div>
+<div style="margin-top: 4rem; padding: 2rem; background: linear-gradient(135deg, #1a1a2e, #16213e); 
+            border-radius: var(--border-radius); color: white; text-align: center;">
+    <div style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; color: #4cc9f0;">
+        📊 Gage R&R Analytics Pro
     </div>
-    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.1); 
-                text-align: center; color: rgba(255, 255, 255, 0.6); font-size: 0.8rem;">
-        © 2024 Gage R&R Analytics Pro | Version 2.0 | Pour usage professionnel
+    <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; max-width: 800px; margin: 0 auto;">
+        Outil professionnel d'analyse de la capacité des systèmes de mesure • Conforme aux normes industrielles
+    </div>
+    <div style="margin-top: 1.5rem; color: rgba(255, 255, 255, 0.6); font-size: 0.8rem;">
+        © 2024 • Développé avec Streamlit • Pour les professionnels de la qualité
     </div>
 </div>
 """, unsafe_allow_html=True)
