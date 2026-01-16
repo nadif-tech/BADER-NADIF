@@ -1,632 +1,452 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from io import BytesIO
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.express as px
 
-# --- Configuration page ---
+# Configuration de la page
 st.set_page_config(
-    page_title="Gage R&R – Dashboard Avancé", 
+    page_title="Gage R&R - Méthode des Étendues",
+    page_icon="📊",
     layout="wide",
-    page_icon="📊"
+    initial_sidebar_state="expanded"
 )
 
-# --- CSS personnalisé pour améliorer l'esthétique ---
+# CSS personnalisé
 st.markdown("""
 <style>
     .main-header {
         font-size: 2.5rem;
+        font-weight: bold;
         color: #1E3A8A;
         text-align: center;
         padding: 1rem;
-        background: linear-gradient(90deg, #1E3A8A, #3B82F6);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-weight: 700;
-    }
-    
-    .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1.5rem;
-        border-radius: 15px;
-        color: white;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         margin-bottom: 1rem;
     }
     
-    .good-metric {
-        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-    }
-    
-    .warning-metric {
-        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-    }
-    
-    .bad-metric {
-        background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-    }
-    
-    .metric-value {
-        font-size: 2rem;
-        font-weight: bold;
-        margin: 0.5rem 0;
-    }
-    
-    .metric-label {
-        font-size: 1rem;
-        opacity: 0.9;
-    }
-    
-    .section-header {
-        font-size: 1.8rem;
-        color: #1E3A8A;
-        margin-top: 2rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 3px solid #3B82F6;
-    }
-    
-    .stDataFrame {
+    .metric-card {
+        background: white;
         border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #3B82F6;
+        margin-bottom: 1rem;
     }
     
-    .stButton button {
-        background: linear-gradient(90deg, #3B82F6, #1D4ED8);
+    .result-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 600;
-        transition: all 0.3s ease;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+        margin: 1rem 0;
     }
     
-    .stButton button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    .highlight {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #FF6B6B;
     }
     
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2rem;
+    .good {
+        color: #10B981;
+        font-weight: bold;
     }
     
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        white-space: pre-wrap;
-        background-color: #F3F4F6;
-        border-radius: 4px 4px 0px 0px;
-        gap: 1rem;
-        padding: 10px 20px;
+    .warning {
+        color: #F59E0B;
+        font-weight: bold;
+    }
+    
+    .bad {
+        color: #EF4444;
+        font-weight: bold;
+    }
+    
+    .stProgress > div > div > div > div {
+        background-color: #3B82F6;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- En-tête avec style amélioré ---
-st.markdown('<h1 class="main-header">📊 Dashboard Gage R&R - Analyse de Système de Mesure</h1>', unsafe_allow_html=True)
-st.markdown("---")
+# Titre avec style
+st.markdown('<h1 class="main-header">📊 Étude Gage R&R – Méthode des Étendues</h1>', unsafe_allow_html=True)
 
-# --- Fonction d2 ---
+# ---------------- d2 FUNCTION ----------------
 def get_d2(z, w):
-    d2_table = {
+    d2_values = {
         (15, 3): 1.693,
         (1, 3): 1.91,
         (1, 10): 3.18
     }
-    return d2_table.get((z, w), 1.0)
+    return d2_values.get((z, w), 1.0)
 
-# --- Sidebar paramètres avec style amélioré ---
+# ---------------- SIDEBAR ----------------
 with st.sidebar:
-    st.markdown("### ⚙️ **Paramètres d'analyse**")
-    
-    with st.expander("Paramètres statistiques", expanded=True):
-        confidence_factor = st.number_input(
-            "Facteur de confiance (k)",
-            value=5.15, 
-            step=0.01,
-            help="Facteur multiplicateur pour calculer les intervalles de confiance (généralement 5.15 pour 99% de couverture)"
-        )
-        
-        bins_hist = st.slider(
-            "Nombre de classes histogramme", 
-            5, 30, 10,
-            help="Nombre de barres pour les histogrammes"
-        )
-    
+    st.markdown("## ⚙️ Paramètres de l'étude")
     st.markdown("---")
     
-    with st.expander("Personnalisation graphique", expanded=True):
-        theme_color = st.selectbox(
-            "Couleur du thème",
-            ["Blues", "viridis", "plasma", "coolwarm", "Spectral"],
-            index=0
-        )
+    confidence_factor = st.slider(
+        "Facteur de confiance (k)",
+        min_value=4.0,
+        max_value=6.0,
+        value=5.15,
+        step=0.05,
+        help="Valeur recommandée: 5.15 (99% de couverture)"
+    )
     
     st.markdown("---")
-    st.markdown("### 📖 **Guide d'interprétation**")
-    with st.expander("Critères d'acceptation"):
-        st.markdown("""
-        - **%GRR < 10%** : ✅ Acceptable
-        - **10% ≤ %GRR ≤ 30%** : ⚠️ À considérer
-        - **%GRR > 30%** : ❌ Inacceptable
-        - **NdC ≥ 5** : ✅ Acceptable
-        """)
+    st.markdown("### 📈 Légende")
+    st.markdown("""
+    - **EV**: Répétabilité (Equipement Variation)
+    - **AV**: Reproductibilité (Appraiser Variation)
+    - **GRR**: Variation Totale du Système
+    - **VP**: Variation des Pièces
+    - **VT**: Variation Totale
+    """)
+    
+    st.markdown("---")
+    st.markdown("### 📊 Critères d'acceptation")
+    st.markdown("""
+    - ✅ **< 10%**: Excellent
+    - ⚠️ **10-30%**: Conditionnel
+    - ❌ **> 30%**: Inacceptable
+    """)
 
-# --- Import Excel ---
+# ---------------- IMPORT EXCEL ----------------
+st.markdown("## 📥 Importation des Données")
 uploaded_file = st.file_uploader(
-    "📥 **Importer le fichier Excel Gage R&R**", 
-    type=["xlsx", "xls"],
-    help="Format attendu : Colonnes OP1-1, OP1-2, OP1-3, OP2-1, etc."
+    "Téléversez votre fichier Excel",
+    type=["xlsx"],
+    help="Le fichier doit contenir les colonnes OP1-1, OP1-2, OP1-3, OP2-1, OP2-2, OP2-3, OP3-1, OP3-2, OP3-3"
 )
 
 if uploaded_file:
-    # Chargement avec barre de progression
-    with st.spinner('Chargement des données...'):
+    try:
         df = pd.read_excel(uploaded_file)
-        st.success('✅ Données chargées avec succès!')
-    
-    # --- Affichage des données avec onglets ---
-    st.markdown('<h2 class="section-header">📋 Données de Mesure</h2>', unsafe_allow_html=True)
-    
-    tab1, tab2, tab3 = st.tabs(["Aperçu des données", "Statistiques descriptives", "Vue détaillée"])
-    
-    with tab1:
-        # Appliquer un style coloré au dataframe
-        styled_df = df.style.background_gradient(
-            subset=[col for col in df.columns if 'OP' in col], 
-            cmap='Blues'
-        ).format(precision=3)
         
-        st.dataframe(styled_df, use_container_width=True, height=300)
-    
-    with tab2:
-        if any('OP' in col for col in df.columns):
-            op_cols = [col for col in df.columns if 'OP' in col]
-            if op_cols:
-                stats_df = df[op_cols].agg(['mean', 'std', 'min', 'max', 'count']).round(3)
-                st.dataframe(stats_df, use_container_width=True)
-    
-    with tab3:
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Nombre de pièces", df.shape[0])
-        with col2:
-            st.metric("Nombre d'opérateurs", 3)
-        with col3:
-            st.metric("Nombre de répétitions", 3)
-    
-    # --- Configuration des colonnes ---
-    op1_cols = ["OP1-1", "OP1-2", "OP1-3"]
-    op2_cols = ["OP2-1", "OP2-2", "OP2-3"]
-    op3_cols = ["OP3-1", "OP3-2", "OP3-3"]
-    n_pieces = df.shape[0]
-    n_operateurs = 3
-    n_essais = 3
-    
-    # --- Vérification des colonnes ---
-    missing_cols = []
-    for col in op1_cols + op2_cols + op3_cols:
-        if col not in df.columns:
-            missing_cols.append(col)
-    
-    if missing_cols:
-        st.error(f"❌ Colonnes manquantes dans le fichier : {', '.join(missing_cols)}")
-        st.stop()
-    
-    # --- Calculs ---
-    with st.spinner('Calcul des indicateurs Gage R&R...'):
-        # Calcul des plages par opérateur
-        df["R_OP1"] = df[op1_cols].max(axis=1) - df[op1_cols].min(axis=1)
-        df["R_OP2"] = df[op2_cols].max(axis=1) - df[op2_cols].min(axis=1)
-        df["R_OP3"] = df[op3_cols].max(axis=1) - df[op3_cols].min(axis=1)
+        # Aperçu des données avec style
+        st.markdown("## 📄 Aperçu des Données")
+        with st.expander("Voir les données", expanded=True):
+            st.dataframe(
+                df.style
+                .background_gradient(subset=pd.IndexSlice[:, df.columns.str.contains('OP')], cmap='Blues')
+                .format(precision=3),
+                use_container_width=True
+            )
         
-        # Moyennes des plages
-        r_bar_op1 = df["R_OP1"].mean()
-        r_bar_op2 = df["R_OP2"].mean()
-        r_bar_op3 = df["R_OP3"].mean()
+        # Vérification des colonnes
+        op1_cols = ["OP1-1", "OP1-2", "OP1-3"]
+        op2_cols = ["OP2-1", "OP2-2", "OP2-3"]
+        op3_cols = ["OP3-1", "OP3-2", "OP3-3"]
         
-        # Moyennes des mesures
-        x_bar_op1 = df[op1_cols].values.mean()
-        x_bar_op2 = df[op2_cols].values.mean()
-        x_bar_op3 = df[op3_cols].values.mean()
+        # Validation des colonnes
+        missing_cols = []
+        for col_set in [op1_cols, op2_cols, op3_cols]:
+            for col in col_set:
+                if col not in df.columns:
+                    missing_cols.append(col)
         
-        # Calcul R double barre
-        r_double_bar = (r_bar_op1 + r_bar_op2 + r_bar_op3) / n_operateurs
-        
-        # Calcul EV (Variabilité des équipements)
-        d2_ev = get_d2(n_pieces * n_operateurs, n_essais)
-        ev = (confidence_factor * r_double_bar) / d2_ev
-        
-        # Calcul AV (Variabilité des opérateurs)
-        x_range = max([x_bar_op1, x_bar_op2, x_bar_op3]) - min([x_bar_op1, x_bar_op2, x_bar_op3])
-        d2_av = get_d2(1, n_operateurs)
-        av_term = (confidence_factor * x_range / d2_av) ** 2
-        ev_corr = (ev ** 2) / (n_pieces * n_essais)
-        av = np.sqrt(max(0, av_term - ev_corr))
-        
-        # Calcul GRR
-        grr = np.sqrt(ev ** 2 + av ** 2)
-        
-        # Calcul VP (Variabilité des pièces)
-        df["Moy_Piece"] = df[op1_cols + op2_cols + op3_cols].mean(axis=1)
-        rp = df["Moy_Piece"].max() - df["Moy_Piece"].min()
-        vp = (confidence_factor * rp) / get_d2(1, n_pieces)
-        
-        # Calcul VT (Variabilité totale)
-        vt = np.sqrt(grr ** 2 + vp ** 2)
-        
-        # Pourcentages
-        p_ev = (ev / vt) * 100 if vt != 0 else 0
-        p_av = (av / vt) * 100 if vt != 0 else 0
-        p_vp = (vp / vt) * 100 if vt != 0 else 0
-        p_grr = (grr / vt) * 100 if vt != 0 else 0
-        
-        # Calcul NdC (Nombre de catégories distinctes)
-        ndc = 1.41 * (vp / grr) if grr != 0 else 0
-    
-    # --- Cartes métriques avec couleurs conditionnelles ---
-    st.markdown('<h2 class="section-header">📊 Résultats Principaux</h2>', unsafe_allow_html=True)
-    
-    col1, col2, col3, col4, col5 = st.columns(5)
-    
-    with col1:
-        grr_class = "good-metric" if p_grr < 10 else "warning-metric" if p_grr <= 30 else "bad-metric"
-        st.markdown(f"""
-        <div class="metric-card {grr_class}">
-            <div class="metric-label">%GRR</div>
-            <div class="metric-value">{p_grr:.1f}%</div>
-            <div class="metric-label">{"✅ Acceptable" if p_grr < 10 else "⚠️ À considérer" if p_grr <= 30 else "❌ Inacceptable"}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        ndc_class = "good-metric" if ndc >= 5 else "bad-metric"
-        st.markdown(f"""
-        <div class="metric-card {ndc_class}">
-            <div class="metric-label">NdC</div>
-            <div class="metric-value">{ndc:.1f}</div>
-            <div class="metric-label">{"✅ ≥ 5" if ndc >= 5 else "❌ < 5"}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">%EV</div>
-            <div class="metric-value">{p_ev:.1f}%</div>
-            <div class="metric-label">Équipement</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">%AV</div>
-            <div class="metric-value">{p_av:.1f}%</div>
-            <div class="metric-label">Opérateurs</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col5:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">%VP</div>
-            <div class="metric-value">{p_vp:.1f}%</div>
-            <div class="metric-label">Pièces</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # --- Graphiques et visualisations ---
-    st.markdown('<h2 class="section-header">📈 Visualisations Analytiques</h2>', unsafe_allow_html=True)
-    
-    tab_graph1, tab_graph2, tab_graph3 = st.tabs(["Analyse de variance", "Contrôle par opérateur", "Distribution"])
-    
-    with tab_graph1:
-        # Diagramme en barres des contributions
-        fig1, ax1 = plt.subplots(figsize=(10, 6))
-        categories = ['Équipement (EV)', 'Opérateurs (AV)', 'Pièces (VP)', 'GRR']
-        values = [p_ev, p_av, p_vp, p_grr]
-        colors = ['#3B82F6', '#10B981', '#8B5CF6', '#EF4444']
-        
-        bars = ax1.bar(categories, values, color=colors, edgecolor='black')
-        ax1.set_ylabel('Pourcentage (%)', fontsize=12, fontweight='bold')
-        ax1.set_title('Analyse de Variance (% Contribution)', fontsize=14, fontweight='bold')
-        
-        # Ajouter les valeurs sur les barres
-        for bar, val in zip(bars, values):
-            height = bar.get_height()
-            ax1.text(bar.get_x() + bar.get_width()/2., height + 0.5,
-                    f'{val:.1f}%', ha='center', va='bottom', fontweight='bold')
-        
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        st.pyplot(fig1)
-    
-    with tab_graph2:
-        # Graphique par opérateur
-        fig2, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
-        fig2.suptitle('Mesures par Opérateur', fontsize=14, fontweight='bold')
-        
-        operators_data = [(op1_cols, 'OP1', axes[0]), 
-                         (op2_cols, 'OP2', axes[1]), 
-                         (op3_cols, 'OP3', axes[2])]
-        
-        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
-        
-        for (op_cols, op_name, ax), color in zip(operators_data, colors):
-            for i, col in enumerate(op_cols):
-                ax.plot(df.index + 1, df[col], 
-                       marker='o', 
-                       linestyle='-', 
-                       linewidth=2, 
-                       markersize=5,
-                       alpha=0.7,
-                       label=f'{op_name}-{i+1}')
+        if missing_cols:
+            st.error(f"Colonnes manquantes: {', '.join(missing_cols)}")
+        else:
+            n_pieces = df.shape[0]
+            n_operateurs = 3
+            n_essais = 3
             
-            ax.set_xlabel('Numéro de pièce', fontsize=10)
-            ax.set_title(op_name, fontweight='bold')
-            ax.grid(True, alpha=0.3)
-            if op_name == 'OP1':
-                ax.set_ylabel('Valeur mesurée', fontsize=10)
-            ax.legend(loc='upper right')
-        
-        plt.tight_layout()
-        st.pyplot(fig2)
-    
-    with tab_graph3:
-        col_hist1, col_hist2 = st.columns(2)
-        
-        with col_hist1:
-            # Histogramme des moyennes par pièce
-            fig3, ax3 = plt.subplots(figsize=(8, 5))
-            ax3.hist(df["Moy_Piece"], 
-                    bins=bins_hist, 
-                    color='#3B82F6', 
-                    edgecolor='black', 
-                    alpha=0.7)
-            ax3.set_xlabel('Valeur moyenne', fontweight='bold')
-            ax3.set_ylabel('Fréquence', fontweight='bold')
-            ax3.set_title('Distribution des moyennes par pièce', fontweight='bold')
-            ax3.grid(True, alpha=0.3)
-            plt.tight_layout()
-            st.pyplot(fig3)
-        
-        with col_hist2:
-            # Box plot par opérateur
-            fig4, ax4 = plt.subplots(figsize=(8, 5))
+            # ---------------- CALCULS ----------------
+            # Moyennes et étendues par opérateur
+            df["R_OP1"] = df[op1_cols].max(axis=1) - df[op1_cols].min(axis=1)
+            df["R_OP2"] = df[op2_cols].max(axis=1) - df[op2_cols].min(axis=1)
+            df["R_OP3"] = df[op3_cols].max(axis=1) - df[op3_cols].min(axis=1)
             
-            # Préparer les données pour le boxplot
-            box_data = []
-            labels = []
+            r_bar_op1 = df["R_OP1"].mean()
+            r_bar_op2 = df["R_OP2"].mean()
+            r_bar_op3 = df["R_OP3"].mean()
             
-            for op_cols, op_name in zip([op1_cols, op2_cols, op3_cols], ['OP1', 'OP2', 'OP3']):
-                for col in op_cols:
-                    box_data.append(df[col].values)
-                    labels.append(op_name)
+            x_bar_op1 = df[op1_cols].values.mean()
+            x_bar_op2 = df[op2_cols].values.mean()
+            x_bar_op3 = df[op3_cols].values.mean()
             
-            # Créer le boxplot avec seaborn pour plus de style
-            plt.figure(figsize=(8, 5))
-            boxplot_df = pd.DataFrame({
-                'Valeur': pd.concat([df[col] for col in op1_cols + op2_cols + op3_cols]),
-                'Opérateur': ['OP1']*len(df)*3 + ['OP2']*len(df)*3 + ['OP3']*len(df)*3
+            # GRR Calculations
+            r_double_bar = (r_bar_op1 + r_bar_op2 + r_bar_op3) / n_operateurs
+            d2_ev = get_d2(n_pieces * n_operateurs, n_essais)
+            ev = (confidence_factor * r_double_bar) / d2_ev
+            
+            means_ops = [x_bar_op1, x_bar_op2, x_bar_op3]
+            x_range = max(means_ops) - min(means_ops)
+            d2_av = get_d2(1, n_operateurs)
+            
+            av_term = (confidence_factor * x_range / d2_av) ** 2
+            ev_corr = (ev ** 2) / (n_pieces * n_essais)
+            av = np.sqrt(max(0, av_term - ev_corr))
+            
+            grr = np.sqrt(ev ** 2 + av ** 2)
+            
+            # Variabilité pièces
+            df["Moy_Piece"] = df[op1_cols + op2_cols + op3_cols].mean(axis=1)
+            rp = df["Moy_Piece"].max() - df["Moy_Piece"].min()
+            
+            d2_vp = get_d2(1, n_pieces)
+            vp = (confidence_factor * rp) / d2_vp
+            
+            vt = np.sqrt(grr ** 2 + vp ** 2)
+            p_grr = (grr / vt) * 100
+            
+            # ---------------- GRAPHIQUES ----------------
+            st.markdown("---")
+            st.markdown("## 📈 Visualisations")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Graphique en barres des variations
+                fig1 = go.Figure(data=[
+                    go.Bar(name='Variations', 
+                          x=['EV', 'AV', 'GRR', 'VP', 'VT'], 
+                          y=[ev, av, grr, vp, vt],
+                          marker_color=['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'])
+                ])
+                fig1.update_layout(
+                    title='📊 Composantes de Variation',
+                    xaxis_title='Composante',
+                    yaxis_title='Valeur',
+                    template='plotly_white',
+                    height=400
+                )
+                st.plotly_chart(fig1, use_container_width=True)
+                
+                # Diagramme en radar pour les performances des opérateurs
+                fig_radar = go.Figure()
+                fig_radar.add_trace(go.Scatterpolar(
+                    r=[r_bar_op1, r_bar_op2, r_bar_op3],
+                    theta=['Opérateur 1', 'Opérateur 2', 'Opérateur 3'],
+                    fill='toself',
+                    name='Étendues Moyennes',
+                    line_color='#3B82F6'
+                ))
+                fig_radar.update_layout(
+                    polar=dict(
+                        radialaxis=dict(visible=True, range=[0, max([r_bar_op1, r_bar_op2, r_bar_op3])*1.2])
+                    ),
+                    title='📡 Performance par Opérateur',
+                    template='plotly_white',
+                    height=400
+                )
+                st.plotly_chart(fig_radar, use_container_width=True)
+            
+            with col2:
+                # Camembert pour la répartition des variations
+                labels = ['Variation Mesure (GRR)', 'Variation Pièces (VP)']
+                values = [grr**2, vp**2]  # Utilisation des variances
+                colors = ['#8B5CF6', '#F59E0B']
+                
+                fig2 = go.Figure(data=[go.Pie(
+                    labels=labels, 
+                    values=values,
+                    hole=.3,
+                    marker_colors=colors,
+                    textinfo='percent+label',
+                    textposition='inside'
+                )])
+                fig2.update_layout(
+                    title='🥧 Répartition des Variations',
+                    template='plotly_white',
+                    height=400,
+                    showlegend=False
+                )
+                st.plotly_chart(fig2, use_container_width=True)
+                
+                # Jauge pour le %GRR
+                fig_gauge = go.Figure(go.Indicator(
+                    mode="gauge+number",
+                    value=p_grr,
+                    title={'text': "🎯 % Gage R&R"},
+                    domain={'x': [0, 1], 'y': [0, 1]},
+                    gauge={
+                        'axis': {'range': [0, 100]},
+                        'bar': {'color': "#3B82F6"},
+                        'steps': [
+                            {'range': [0, 10], 'color': "#10B981"},
+                            {'range': [10, 30], 'color': "#F59E0B"},
+                            {'range': [30, 100], 'color': "#EF4444"}
+                        ],
+                        'threshold': {
+                            'line': {'color': "red", 'width': 4},
+                            'thickness': 0.75,
+                            'value': 30
+                        }
+                    }
+                ))
+                fig_gauge.update_layout(height=400)
+                st.plotly_chart(fig_gauge, use_container_width=True)
+            
+            # ---------------- RÉSULTATS DÉTAILLÉS ----------------
+            st.markdown("---")
+            st.markdown("## 📊 Résultats Détailés")
+            
+            # Métriques dans des colonnes avec style
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+                st.metric("EV – Répétabilité", f"{ev:.4f}")
+                st.markdown("</div>", unsafe_allow_html=True)
+                
+                st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+                st.metric("AV – Reproductibilité", f"{av:.4f}")
+                st.markdown("</div>", unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+                st.metric("Gage R&R", f"{grr:.4f}")
+                st.markdown("</div>", unsafe_allow_html=True)
+                
+                st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+                st.metric("Variabilité Pièces", f"{vp:.4f}")
+                st.markdown("</div>", unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+                st.metric("Variabilité Totale", f"{vt:.4f}")
+                st.markdown("</div>", unsafe_allow_html=True)
+            
+            with col4:
+                st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+                st.metric("% Gage R&R", f"{p_grr:.2f}%")
+                
+                # Indicateur visuel
+                progress_value = min(p_grr / 100, 1.0)
+                st.progress(progress_value)
+                
+                # Message de statut
+                if p_grr < 10:
+                    st.markdown('<p class="good">✅ Excellent - Système accepté</p>', unsafe_allow_html=True)
+                elif p_grr <= 30:
+                    st.markdown('<p class="warning">⚠️ Conditionnel - Amélioration recommandée</p>', unsafe_allow_html=True)
+                else:
+                    st.markdown('<p class="bad">❌ Inacceptable - Action corrective requise</p>', unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
+            
+            # ---------------- TABLEAU DES MOYENNES ----------------
+            st.markdown("### 📋 Statistiques par Opérateur")
+            stats_df = pd.DataFrame({
+                'Opérateur': ['Opérateur 1', 'Opérateur 2', 'Opérateur 3'],
+                'Moyenne': [x_bar_op1, x_bar_op2, x_bar_op3],
+                'Étendue Moyenne': [r_bar_op1, r_bar_op2, r_bar_op3],
+                'Écart-Type': [
+                    df[op1_cols].values.std(),
+                    df[op2_cols].values.std(),
+                    df[op3_cols].values.std()
+                ]
             })
             
-            sns.boxplot(x='Opérateur', y='Valeur', data=boxplot_df, 
-                       palette=['#FF6B6B', '#4ECDC4', '#45B7D1'],
-                       ax=ax4)
+            st.dataframe(
+                stats_df.style
+                .format(precision=4)
+                .background_gradient(subset=['Moyenne', 'Étendue Moyenne', 'Écart-Type'], cmap='YlOrRd'),
+                use_container_width=True
+            )
             
-            ax4.set_xlabel('Opérateur', fontweight='bold')
-            ax4.set_ylabel('Valeur mesurée', fontweight='bold')
-            ax4.set_title('Box Plot par Opérateur', fontweight='bold')
-            ax4.grid(True, alpha=0.3)
-            plt.tight_layout()
-            st.pyplot(fig4)
+            # ---------------- EXPORT EXCEL ----------------
+            st.markdown("---")
+            st.markdown("## 💾 Export des Résultats")
+            
+            # Création du fichier Excel avec onglets multiples
+            with pd.ExcelWriter('resultats_gage_rr_complet.xlsx', engine='openpyxl') as writer:
+                # Résultats principaux
+                resultats_df = pd.DataFrame({
+                    'Paramètre': ['EV', 'AV', 'GRR', 'VP', 'VT', '%GRR'],
+                    'Valeur': [ev, av, grr, vp, vt, p_grr],
+                    'Statut': [
+                        'Acceptable' if ev/vt*100 < 30 else 'Inacceptable',
+                        'Acceptable' if av/vt*100 < 30 else 'Inacceptable',
+                        'Acceptable' if p_grr < 30 else 'Inacceptable',
+                        'N/A', 'N/A',
+                        'Excellent' if p_grr < 10 else ('Conditionnel' if p_grr <= 30 else 'Inacceptable')
+                    ]
+                })
+                resultats_df.to_excel(writer, sheet_name='Résultats', index=False)
+                
+                # Statistiques par opérateur
+                stats_df.to_excel(writer, sheet_name='Statistiques_Opérateurs', index=False)
+                
+                # Données brutes avec calculs
+                df.to_excel(writer, sheet_name='Données_Brutes', index=False)
+            
+            with open('resultats_gage_rr_complet.xlsx', 'rb') as f:
+                excel_data = f.read()
+            
+            st.download_button(
+                label="📥 Télécharger le Rapport Complet Excel",
+                data=excel_data,
+                file_name="resultats_gage_rr_complet.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                help="Contient tous les résultats, statistiques et données brutes"
+            )
     
-    # --- Tableaux détaillés ---
-    st.markdown('<h2 class="section-header">📋 Résultats Détailés</h2>', unsafe_allow_html=True)
-    
-    col_table1, col_table2 = st.columns(2)
-    
-    with col_table1:
-        st.markdown("**📌 Valeurs absolues**")
-        main_results = pd.DataFrame({
-            "Indicateur": ["EV", "AV", "VP", "GRR", "VT"],
-            "Valeur": [round(ev, 4), round(av, 4), round(vp, 4), round(grr, 4), round(vt, 4)],
-            "Description": [
-                "Variabilité équipement",
-                "Variabilité opérateurs", 
-                "Variabilité pièces",
-                "Variabilité totale mesure",
-                "Variabilité totale"
-            ]
-        })
-        st.dataframe(main_results, use_container_width=True, hide_index=True)
-    
-    with col_table2:
-        st.markdown("**📌 Pourcentages et NdC**")
-        percentage_results = pd.DataFrame({
-            "Indicateur": ["%EV", "%AV", "%VP", "%GRR", "NdC"],
-            "Valeur": [f"{p_ev:.1f}%", f"{p_av:.1f}%", f"{p_vp:.1f}%", f"{p_grr:.1f}%", f"{ndc:.1f}"],
-            "Statut": [
-                "✅" if p_ev < 10 else "⚠️" if p_ev <= 30 else "❌",
-                "✅" if p_av < 10 else "⚠️" if p_av <= 30 else "❌",
-                "✅" if p_vp > 60 else "⚠️" if p_vp >= 40 else "❌",
-                "✅" if p_grr < 10 else "⚠️" if p_grr <= 30 else "❌",
-                "✅" if ndc >= 5 else "❌"
-            ]
-        })
-        st.dataframe(percentage_results, use_container_width=True, hide_index=True)
-    
-    # --- Export avec options ---
-    st.markdown('<h2 class="section-header">💾 Export des Résultats</h2>', unsafe_allow_html=True)
-    
-    col_export1, col_export2, col_export3 = st.columns(3)
-    
-    with col_export1:
-        # Export Excel
-        export_df = pd.DataFrame({
-            "Paramètre": ["EV", "AV", "VP", "GRR", "VT", "%EV", "%AV", "%VP", "%GRR", "NdC"],
-            "Valeur": [ev, av, vp, grr, vt, p_ev, p_av, p_vp, p_grr, ndc],
-            "Unité": ["abs", "abs", "abs", "abs", "abs", "%", "%", "%", "%", ""]
-        })
-        
-        buffer = BytesIO()
-        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-            export_df.to_excel(writer, sheet_name='Résultats', index=False)
-            df.to_excel(writer, sheet_name='Données brutes', index=False)
-        
-        buffer.seek(0)
-        
-        st.download_button(
-            label="📥 Télécharger rapport Excel",
-            data=buffer,
-            file_name="rapport_gage_rr.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    
-    with col_export2:
-        # Export CSV
-        csv_buffer = BytesIO()
-        export_df.to_csv(csv_buffer, index=False, sep=';')
-        csv_buffer.seek(0)
-        
-        st.download_button(
-            label="📄 Télécharger CSV",
-            data=csv_buffer,
-            file_name="resultats_gage_rr.csv",
-            mime="text/csv"
-        )
-    
-    with col_export3:
-        # Copier les résultats
-        results_text = f"""RÉSULTATS GAGE R&R
-------------------
-%GRR: {p_grr:.1f}%
-NdC: {ndc:.1f}
-%EV: {p_ev:.1f}%
-%AV: {p_av:.1f}%
-%VP: {p_vp:.1f}%
+    except Exception as e:
+        st.error(f"Erreur lors du traitement du fichier: {str(e)}")
+        st.info("Veuillez vérifier que le fichier Excel est correctement formaté.")
 
-Conclusion: {'✅ ACCEPTABLE' if p_grr < 10 and ndc >= 5 else '⚠️ À CONSIDÉRER' if p_grr <= 30 else '❌ INACCEPTABLE'}"""
-        
-        st.code(results_text)
-    
-    # --- Conclusion avec recommandations ---
-    st.markdown("---")
-    st.markdown('<h2 class="section-header">🎯 Conclusion et Recommandations</h2>', unsafe_allow_html=True)
-    
-    if p_grr < 10:
-        st.success("""
-        ### ✅ SYSTÈME DE MESURE ACCEPTABLE
-        **Recommandations:**
-        - Le système de mesure est adéquat pour son utilisation prévue
-        - Maintenir les procédures de mesure actuelles
-        - Continuer le suivi périodique selon le plan de surveillance
-        """)
-    elif p_grr <= 30:
-        st.warning("""
-        ### ⚠️ SYSTÈME DE MESURE À CONSIDÉRER
-        **Recommandations:**
-        - Analyser la cause principale de la variabilité
-        - Considérer l'impact sur la décision produit
-        - Mettre en place des actions correctives si nécessaire
-        - Revalider après modifications
-        """)
-    else:
-        st.error("""
-        ### ❌ SYSTÈME DE MESURE INACCEPTABLE
-        **Actions requises:**
-        - Arrêter l'utilisation du système pour des décisions produit
-        - Identifier et corriger les causes de variabilité
-        - Ré-étalonner ou remplacer l'équipement si nécessaire
-        - Re-former les opérateurs
-        - Refaire l'étude après corrections
-        """)
-    
-    # --- Graphique radar pour synthèse ---
-    st.markdown('<h3 class="section-header">🎯 Synthèse visuelle</h3>', unsafe_allow_html=True)
-    
-    # Création d'un graphique radar simple
-    fig_radar, ax_radar = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection='polar'))
-    
-    # Données pour le radar (normalisées)
-    categories = ['%GRR', 'NdC', '%EV', '%AV', '%VP']
-    values_norm = [
-        min(p_grr / 30, 1),  # Normalisé par rapport à 30%
-        min(ndc / 10, 1),    # Normalisé par rapport à 10
-        min(p_ev / 30, 1),   # Normalisé par rapport à 30%
-        min(p_av / 30, 1),   # Normalisé par rapport à 30%
-        min(p_vp / 100, 1)   # Normalisé par rapport à 100%
-    ]
-    
-    N = len(categories)
-    angles = [n / float(N) * 2 * np.pi for n in range(N)]
-    values_norm += values_norm[:1]
-    angles += angles[:1]
-    
-    ax_radar.plot(angles, values_norm, 'o-', linewidth=2, color='#3B82F6')
-    ax_radar.fill(angles, values_norm, alpha=0.25, color='#3B82F6')
-    ax_radar.set_xticks(angles[:-1])
-    ax_radar.set_xticklabels(categories)
-    ax_radar.set_ylim(0, 1)
-    ax_radar.set_title('Synthèse des indicateurs (normalisés)', fontweight='bold', pad=20)
-    ax_radar.grid(True)
-    
-    st.pyplot(fig_radar)
-    
 else:
-    # Écran d'accueil sans fichier
-    st.info("👆 Veuillez importer un fichier Excel pour commencer l'analyse Gage R&R")
+    # Instructions quand aucun fichier n'est uploadé
+    st.markdown("---")
+    col1, col2, col3 = st.columns([1, 2, 1])
     
-    col_info1, col_info2 = st.columns(2)
-    
-    with col_info1:
-        st.markdown("### 📋 Format de fichier attendu")
-        example_df = pd.DataFrame({
-            'Pièce': [1, 2, 3, 4, 5],
-            'OP1-1': [10.1, 20.2, 30.1, 40.2, 50.1],
-            'OP1-2': [10.2, 20.3, 30.2, 40.3, 50.2],
-            'OP1-3': [10.0, 20.1, 30.0, 40.1, 50.0],
-            'OP2-1': [10.3, 20.4, 30.3, 40.4, 50.3],
-            'OP2-2': [10.1, 20.2, 30.1, 40.2, 50.1],
-            'OP2-3': [10.2, 20.3, 30.2, 40.3, 50.2],
-            'OP3-1': [10.0, 20.1, 30.0, 40.1, 50.0],
-            'OP3-2': [10.1, 20.2, 30.1, 40.2, 50.1],
-            'OP3-3': [10.2, 20.3, 30.2, 40.3, 50.2]
-        })
-        st.dataframe(example_df, use_container_width=True)
-    
-    with col_info2:
-        st.markdown("### 🎯 Objectifs de l'analyse")
+    with col2:
         st.markdown("""
-        1. **Évaluer la capabilité** du système de mesure
-        2. **Décomposer la variabilité** en composantes
-        3. **Déterminer l'acceptabilité** selon les normes
-        4. **Identifier les améliorations** possibles
+        <div style='text-align: center; padding: 3rem;'>
+            <h3>📋 Instructions</h3>
+            <p>1. Préparez votre fichier Excel avec le format suivant :</p>
+            <p>2. Les colonnes doivent être nommées :</p>
+            <p><strong>OP1-1, OP1-2, OP1-3</strong> (Opérateur 1)</p>
+            <p><strong>OP2-1, OP2-2, OP2-3</strong> (Opérateur 2)</p>
+            <p><strong>OP3-1, OP3-2, OP3-3</strong> (Opérateur 3)</p>
+            <p>3. Chaque ligne représente une pièce différente</p>
+            <p>4. Téléversez le fichier pour démarrer l'analyse</p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        **Critères d'acceptation:**
-        - %GRR < 10% : Acceptable
-        - 10-30% : À considérer
-        - >30% : Inacceptable
-        - NdC ≥ 5 : Acceptable
+        # Template de fichier Excel
+        template_data = {
+            'OP1-1': [10.1, 10.2, 10.3, 10.4, 10.5],
+            'OP1-2': [10.2, 10.3, 10.4, 10.5, 10.6],
+            'OP1-3': [10.0, 10.1, 10.2, 10.3, 10.4],
+            'OP2-1': [10.3, 10.4, 10.5, 10.6, 10.7],
+            'OP2-2': [10.2, 10.3, 10.4, 10.5, 10.6],
+            'OP2-3': [10.1, 10.2, 10.3, 10.4, 10.5],
+            'OP3-1': [10.0, 10.1, 10.2, 10.3, 10.4],
+            'OP3-2': [10.1, 10.2, 10.3, 10.4, 10.5],
+            'OP3-3': [10.2, 10.3, 10.4, 10.5, 10.6]
+        }
+        template_df = pd.DataFrame(template_data)
         
-        **Fonctionnalités:**
-        - 📊 Analyse statistique complète
-        - 📈 Visualisations graphiques
-        - 📋 Rapports détaillés
-        - 💾 Export des résultats
-        """)
+        with st.expander("Voir un exemple de format"):
+            st.dataframe(template_df, use_container_width=True)
+            
+            # Télécharger le template
+            buffer = BytesIO()
+            template_df.to_excel(buffer, index=False)
+            buffer.seek(0)
+            
+            st.download_button(
+                "📝 Télécharger le Template Excel",
+                buffer,
+                "template_gage_rr.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
-# --- Footer ---
+# Pied de page
 st.markdown("---")
 st.markdown(
-    """
-    <div style='text-align: center; color: #6B7280; padding: 1rem;'>
-        <p>📊 Dashboard Gage R&R - Analyse de Système de Mesure | Développé avec Streamlit</p>
-        <p style='font-size: 0.9rem;'>Pour toute question ou support technique, contactez l'équipe qualité.</p>
-    </div>
-    """,
+    "<div style='text-align: center; color: #666;'>"
+    "📊 Gage R&R - Méthode des Étendues | Développé avec Streamlit"
+    "</div>",
     unsafe_allow_html=True
 )
-
-# Nettoyer les figures matplotlib pour éviter les fuites mémoire
-plt.close('all')
