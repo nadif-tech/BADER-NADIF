@@ -614,7 +614,7 @@ def create_circular_progress(value, max_value=100, size=120, stroke_width=10):
             />
         </svg>
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                    text-align: center; font-family: 'Poppins', sans-serif; font-weight: 700; 
+                    text-align: center; font-family: \'Poppins\', sans-serif; font-weight: 700; 
                     font-size: 1.8rem; color: {color};">
             {value:.1f}%
         </div>
@@ -645,7 +645,7 @@ with st.sidebar:
     st.markdown('''
     <div style="text-align: center; margin-bottom: 3rem;">
         <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
-        <div style="font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.5rem; 
+        <div style="font-family: \'Poppins\', sans-serif; font-weight: 700; font-size: 1.5rem; 
                     background: var(--primary-gradient); -webkit-background-clip: text; 
                     -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">
             Gage R&R Pro
@@ -702,8 +702,8 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Critères avec visualisation
-    st.markdown('<div style="font-family: \'Poppins\', sans-serif; font-weight: 600; font-size: 1.3rem; color: #2c3e50; margin: 1.5rem 0;">✅ Critères d'Évaluation</div>', unsafe_allow_html=True)
+    # CORRECTION : Chaîne corrigée avec échappement correct
+    st.markdown('<div style="font-family: \'Poppins\', sans-serif; font-weight: 600; font-size: 1.3rem; color: #2c3e50; margin: 1.5rem 0;">✅ Critères d\'Évaluation</div>', unsafe_allow_html=True)
     
     criteria_data = [
         ("< 10%", "EXCELLENT", "Le système est optimal et fiable", "#2ecc71"),
@@ -744,7 +744,7 @@ if uploaded_file is None:
     <div class="upload-area">
         {create_particles(15)}
         <div style="font-size: 5rem; margin-bottom: 2rem; opacity: 0.8;">☁️</div>
-        <div style="font-family: 'Poppins', sans-serif; font-size: 2rem; font-weight: 700; 
+        <div style="font-family: \'Poppins\', sans-serif; font-size: 2rem; font-weight: 700; 
                     color: #2c3e50; margin-bottom: 1rem; position: relative; z-index: 1;">
             <span class="shimmer-text">Glissez votre fichier ici</span>
         </div>
@@ -804,7 +804,7 @@ if uploaded_file:
     # Aperçu des données
     st.markdown('<div class="section-header fade-in delay-1"><span>📊 Aperçu des Données</span></div>', unsafe_allow_html=True)
     
-    with st.expander("**🔍 Visualiser les données d'entrée**", expanded=True):
+    with st.expander("**🔍 Visualiser les données d\'entrée**", expanded=True):
         col1, col2, col3 = st.columns([1, 3, 1])
         with col2:
             st.markdown('<div class="plot-container">', unsafe_allow_html=True)
@@ -1089,7 +1089,7 @@ if uploaded_file:
         
         st.markdown(f'''
         <div class="result-indicator {status[0]} fade-in delay-5">
-            <div style="font-family: 'Poppins', sans-serif; font-size: 1.4rem; margin-bottom: 0.8rem;">
+            <div style="font-family: \'Poppins\', sans-serif; font-size: 1.4rem; margin-bottom: 0.8rem;">
                 {status[1]}
             </div>
             <div style="font-size: 1rem; opacity: 0.9; line-height: 1.5;">
@@ -1151,7 +1151,7 @@ if uploaded_file:
                         <div style="color: #7f8c8d; font-size: 0.85rem;">Valeur calculée</div>
                     </div>
                 </div>
-                <div style="font-family: 'Poppins', sans-serif; font-weight: 700; 
+                <div style="font-family: \'Poppins\', sans-serif; font-weight: 700; 
                          font-size: 1.2rem; color: {color};">{value:.4f}</div>
             </div>
             ''', unsafe_allow_html=True)
@@ -1188,8 +1188,8 @@ if uploaded_file:
             
             # Métadonnées
             metadata_df = pd.DataFrame({
-                "Paramètre": ["Date d'analyse", "Nombre de pièces", "Nombre d'opérateurs", 
-                            "Nombre d'essais", "Facteur de confiance (k)", "Version logiciel"],
+                "Paramètre": ["Date d\'analyse", "Nombre de pièces", "Nombre d\'opérateurs", 
+                            "Nombre d\'essais", "Facteur de confiance (k)", "Version logiciel"],
                 "Valeur": [
                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     n_pieces,
@@ -1210,9 +1210,9 @@ if uploaded_file:
                     border-radius: 24px; border: 2px dashed rgba(102, 126, 234, 0.3); 
                     margin: 2rem 0;">
             <div style="font-size: 3rem; margin-bottom: 1.5rem;">📁</div>
-            <div style="font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.8rem; 
+            <div style="font-family: \'Poppins\', sans-serif; font-weight: 700; font-size: 1.8rem; 
                     color: #2c3e50; margin-bottom: 1rem;">
-                Rapport d'Analyse Complet
+                Rapport d\'Analyse Complet
             </div>
             <div style="color: #7f8c8d; font-size: 1.1rem; margin-bottom: 2.5rem; line-height: 1.6;">
                 Exportez un rapport professionnel avec tous les résultats,<br>
@@ -1253,7 +1253,7 @@ st.markdown('''
             rgba(44, 62, 80, 0.05) 0%, rgba(52, 152, 219, 0.05) 100%); 
             border-radius: 30px; text-align: center; border-top: 1px solid rgba(0,0,0,0.05);">
     
-    <div style="font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 2rem; 
+    <div style="font-family: \'Poppins\', sans-serif; font-weight: 800; font-size: 2rem; 
                 background: var(--primary-gradient); -webkit-background-clip: text; 
                 -webkit-text-fill-color: transparent; margin-bottom: 1rem;">
         Gage R&R Excellence Suite
@@ -1261,8 +1261,8 @@ st.markdown('''
     
     <div style="color: #7f8c8d; font-size: 1rem; max-width: 800px; margin: 0 auto 2rem auto; 
                 line-height: 1.6;">
-        Solution professionnelle d'analyse de la capacité des systèmes de mesure • 
-        Conçue pour les exigences de l'industrie 4.0
+        Solution professionnelle d\'analyse de la capacité des systèmes de mesure • 
+        Conçue pour les exigences de l\'industrie 4.0
     </div>
     
     <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 2rem; 
