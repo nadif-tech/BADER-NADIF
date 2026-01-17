@@ -398,7 +398,7 @@ st.markdown('<div class="section-header"><span>📥 Importation des Données</sp
 
 uploaded_file = st.file_uploader(
     "",
-    type=["xlsx"],
+    type=["xlsx", "xls"],
     help="Téléversez votre fichier Excel contenant les mesures",
     label_visibility="collapsed"
 )
@@ -428,13 +428,49 @@ if uploaded_file:
     # Animation de chargement
     with st.spinner('🔄 Traitement des données en cours...'):
         time.sleep(0.5)
-        df = pd.read_excel(uploaded_file)
+        try:
+            # Essayer avec openpyxl d'abord (pour .xlsx)
+            if uploaded_file.name.endswith('.xlsx'):
+                df = pd.read_excel(uploaded_file, engine='openpyxl')
+            else:
+                # Pour .xls, utiliser le moteur par défaut
+                df = pd.read_excel(uploaded_file)
+        except ImportError as e:
+            # Si openpyxl n'est pas disponible
+            st.error("""
+            ❌ **Erreur : Bibliothèque manquante**
+            
+            Le module `openpyxl` est requis pour lire les fichiers Excel (.xlsx).
+            
+            **Solution :**
+            1. Créez un fichier `requirements.txt` à la racine de votre projet
+            2. Ajoutez cette ligne : `openpyxl>=3.1.0`
+            3. Redéployez votre application sur Streamlit Cloud
+            """)
+            st.stop()
+        except Exception as e:
+            st.error(f"❌ Erreur lors de la lecture du fichier : {str(e)}")
+            st.stop()
 
     # ---------------- APERÇU DES DONNÉES ----------------
     st.markdown('<div class="section-header"><span>📄 Aperçu des Données</span></div>', unsafe_allow_html=True)
     
     with st.expander("Voir les données détaillées", expanded=True):
         st.markdown('<div class="dataframe-container">', unsafe_allow_html=True)
+        
+        # Vérifier les colonnes requises
+        required_columns = ["OP1-1", "OP1-2", "OP1-3", "OP2-1", "OP2-2", "OP2-3", "OP3-1", "OP3-2", "OP3-3"]
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        
+        if missing_columns:
+            st.error(f"❌ Colonnes manquantes dans le fichier : {', '.join(missing_columns)}")
+            st.info("""
+            **Format requis :**
+            - Les colonnes doivent s'appeler : OP1-1, OP1-2, OP1-3, OP2-1, OP2-2, OP2-3, OP3-1, OP3-2, OP3-3
+            - Chaque ligne représente une pièce mesurée
+            - 3 opérateurs × 3 essais = 9 colonnes
+            """)
+            st.stop()
         
         # Style amélioré pour le DataFrame
         def color_gradient(val):
@@ -550,8 +586,8 @@ if uploaded_file:
         angles += angles[:1]
         
         # Valeurs normalisées
-        means_norm = [x_bar_op1, r_bar_op1, 1/r_bar_op1]
-        means_norm = [v/max(means_norm) for v in means_norm]
+        means_norm = [x_bar_op1, r_bar_op1, 1/r_bar_op1 if r_bar_op1 != 0 else 0]
+        means_norm = [v/max(means_norm) if max(means_norm) != 0 else 0 for v in means_norm]
         
         ax2 = plt.subplot(111, polar=True)
         ax2.plot(angles, means_norm + means_norm[:1], 'o-', linewidth=2, label='Opérateur 1', color='#3498db')
@@ -748,48 +784,55 @@ if uploaded_file:
     
     # Création du fichier Excel
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        export_df = pd.DataFrame({
-            "Paramètre": ["EV", "AV", "GRR", "VP", "VT", "%GRR"],
-            "Valeur": [ev, av, grr, vp, vt, p_grr],
-            "Unité": ["unité", "unité", "unité", "unité", "unité", "%"],
-            "Statut": [
-                "✓ Acceptable" if ev/vt*100 < 30 else "✗ Inacceptable",
-                "✓ Acceptable" if av/vt*100 < 30 else "✗ Inacceptable",
-                "✓ Excellent" if p_grr < 10 else ("⚠ Conditionnel" if p_grr <= 30 else "✗ Inacceptable"),
-                "-", "-",
-                f"{p_grr:.1f}%"
-            ]
-        })
-        export_df.to_excel(writer, sheet_name='Résultats', index=False)
+    try:
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            export_df = pd.DataFrame({
+                "Paramètre": ["EV", "AV", "GRR", "VP", "VT", "%GRR"],
+                "Valeur": [ev, av, grr, vp, vt, p_grr],
+                "Unité": ["unité", "unité", "unité", "unité", "unité", "%"],
+                "Statut": [
+                    "✓ Acceptable" if ev/vt*100 < 30 else "✗ Inacceptable",
+                    "✓ Acceptable" if av/vt*100 < 30 else "✗ Inacceptable",
+                    "✓ Excellent" if p_grr < 10 else ("⚠ Conditionnel" if p_grr <= 30 else "✗ Inacceptable"),
+                    "-", "-",
+                    f"{p_grr:.1f}%"
+                ]
+            })
+            export_df.to_excel(writer, sheet_name='Résultats', index=False)
+            
+            # Ajouter d'autres feuilles
+            df.to_excel(writer, sheet_name='Données Brutes', index=False)
+            
+            summary_df = pd.DataFrame({
+                'Info': ['Date', 'Pièces', 'Opérateurs', 'Essais', 'Facteur k'],
+                'Valeur': [pd.Timestamp.now().strftime('%Y-%m-%d'), n_pieces, n_operateurs, n_essais, confidence_factor]
+            })
+            summary_df.to_excel(writer, sheet_name='Résumé', index=False)
         
-        # Ajouter d'autres feuilles
-        df.to_excel(writer, sheet_name='Données Brutes', index=False)
+        output.seek(0)
         
-        summary_df = pd.DataFrame({
-            'Info': ['Date', 'Pièces', 'Opérateurs', 'Essais', 'Facteur k'],
-            'Valeur': [pd.Timestamp.now().strftime('%Y-%m-%d'), n_pieces, n_operateurs, n_essais, confidence_factor]
-        })
-        summary_df.to_excel(writer, sheet_name='Résumé', index=False)
-    
-    output.seek(0)
-    
-    # Bouton de téléchargement stylisé
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown(f"""
-        <a href='data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{output.getvalue().hex()}' 
-           download='resultats_gage_rr_{pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-           class='download-btn'>
-           📥 Télécharger le Rapport Complet
-        </a>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div style="text-align: center; color: #7f8c8d; font-size: 0.9rem; margin-top: 1rem;">
-            Inclut : Résultats détaillés • Données brutes • Résumé de l'étude
-        </div>
-        """, unsafe_allow_html=True)
+        # Bouton de téléchargement stylisé
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            import base64
+            b64 = base64.b64encode(output.getvalue()).decode()
+            href = f'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}'
+            
+            st.markdown(f"""
+            <a href='{href}' 
+               download='resultats_gage_rr_{pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+               class='download-btn'>
+               📥 Télécharger le Rapport Complet
+            </a>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("""
+            <div style="text-align: center; color: #7f8c8d; font-size: 0.9rem; margin-top: 1rem;">
+                Inclut : Résultats détaillés • Données brutes • Résumé de l'étude
+            </div>
+            """, unsafe_allow_html=True)
+    except ImportError:
+        st.warning("⚠️ Impossible de générer le fichier Excel. Le module `openpyxl` n'est pas installé.")
 
 # Pied de page élégant
 st.markdown("""
