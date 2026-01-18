@@ -4,7 +4,6 @@ import numpy as np
 from io import BytesIO
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import seaborn as sns
 import time
 import base64
 from datetime import datetime
@@ -17,7 +16,8 @@ plt.rcParams['figure.dpi'] = 100
 plt.rcParams['font.size'] = 10
 plt.rcParams['axes.grid'] = True
 plt.rcParams['grid.alpha'] = 0.3
-sns.set_style("whitegrid")
+plt.rcParams['axes.facecolor'] = '#f8fafc'
+plt.rcParams['figure.facecolor'] = 'white'
 
 st.set_page_config(
     page_title="Gage R&R - Étendues",
@@ -928,11 +928,6 @@ with st.sidebar:
     st.markdown('<div style="font-size: 1.2rem; font-weight: 600; color: #2c3e50; margin: 1.5rem 0 1rem 0;">📊 Options Graphiques</div>', unsafe_allow_html=True)
     
     show_all_charts = st.checkbox("Afficher tous les graphiques", value=True)
-    chart_theme = st.selectbox(
-        "Thème des graphiques",
-        ["Défaut", "Clair", "Sombre", "Pastel"],
-        index=0
-    )
     
     if not show_all_charts:
         selected_charts = st.multiselect(
@@ -1401,7 +1396,7 @@ st.markdown("""
         </div>
         <div>Analyse complète avec graphiques professionnels • Conforme aux normes AIAG MSA</div>
         <div style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.7;">
-            Outil d'analyse statistique • Développé avec Streamlit, Matplotlib et Seaborn
+            Outil d'analyse statistique • Développé avec Streamlit, Matplotlib et NumPy
         </div>
     </div>
 </div>
