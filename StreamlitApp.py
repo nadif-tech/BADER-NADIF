@@ -3,12 +3,10 @@ import pandas as pd
 import numpy as np
 from io import BytesIO
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
 import time
 from datetime import datetime
-import json
+from matplotlib.patches import Wedge
+import matplotlib.patches as mpatches
 
 st.set_page_config(
     page_title="Gage R&R Pro - Analyse Avancée",
@@ -230,30 +228,10 @@ st.markdown("""
         overflow: hidden;
     }
     
-    .particles-container::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: 
-            radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.1) 0%, transparent 50%),
-            radial-gradient(circle at 40% 40%, rgba(255, 107, 107, 0.1) 0%, transparent 50%);
-        pointer-events: none;
-    }
-    
     .progress-ring {
         position: relative;
         width: 120px;
         height: 120px;
-    }
-    
-    .progress-ring circle {
-        transform: rotate(-90deg);
-        transform-origin: 50% 50%;
-        transition: stroke-dashoffset 1.5s ease-in-out;
     }
     
     .holographic-effect {
@@ -364,13 +342,6 @@ st.markdown("""
     @keyframes fadeInUp {
         from { opacity: 0; transform: translate(-50%, 10px); }
         to { opacity: 1; transform: translate(-50%, 0); }
-    }
-    
-    @keyframes particleFloat {
-        0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-        10% { opacity: 1; }
-        90% { opacity: 1; }
-        100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
     }
     
     .sparkle {
@@ -872,17 +843,23 @@ if uploaded_file:
             st.dataframe(stats_df.style.background_gradient(cmap='YlOrRd'), use_container_width=True)
             
         else:
-            # Heatmap avec Plotly
-            fig = px.imshow(df.corr(),
-                          color_continuous_scale='RdBu',
-                          title="Matrice de corrélation",
-                          width=800, height=600)
-            fig.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='#2c3e50')
-            )
-            st.plotly_chart(fig, use_container_width=True)
+            # Heatmap avec matplotlib
+            fig, ax = plt.subplots(figsize=(10, 8))
+            im = ax.imshow(df.corr(), cmap='RdBu', vmin=-1, vmax=1)
+            ax.set_title("Matrice de corrélation", fontsize=16, fontweight='bold', pad=20)
+            
+            # Ajouter les valeurs
+            for i in range(len(df.columns)):
+                for j in range(len(df.columns)):
+                    text = ax.text(j, i, f'{df.corr().iloc[i, j]:.2f}',
+                                 ha="center", va="center", color="white", fontweight='bold')
+            
+            plt.colorbar(im)
+            plt.xticks(range(len(df.columns)), df.columns, rotation=45, ha='right')
+            plt.yticks(range(len(df.columns)), df.columns)
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close()
     
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -934,13 +911,13 @@ if uploaded_file:
         vt = np.sqrt(grr ** 2 + vp ** 2)
         p_grr = (grr / vt) * 100
 
-    # ---------------- VISUALISATIONS 3D INTERACTIVES ----------------
+    # ---------------- VISUALISATIONS AVANCÉES AVEC MATPLOTLIB ----------------
     st.markdown("""
     <div class="neomorph-card">
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
             <div class="icon-3d">🎨</div>
             <div>
-                <div style="font-size: 1.8rem; font-weight: 700; color: #2c3e50;">Visualisations 3D & IA</div>
+                <div style="font-size: 1.8rem; font-weight: 700; color: #2c3e50;">Visualisations Avancées</div>
                 <div style="color: #64748b;">Graphiques interactifs et analyses intelligentes</div>
             </div>
         </div>
@@ -953,130 +930,152 @@ if uploaded_file:
         col1, col2 = st.columns(2)
         
         with col1:
-            # Graphique 3D avec Plotly
-            fig_3d = go.Figure(data=[
-                go.Scatter3d(
-                    x=df[op1_cols].values.flatten(),
-                    y=df[op2_cols].values.flatten(),
-                    z=df[op3_cols].values.flatten(),
-                    mode='markers',
-                    marker=dict(
-                        size=8,
-                        color=df.index,
-                        colorscale='Viridis',
-                        opacity=0.8
-                    ),
-                    text=[f'Pièce {i+1}' for i in df.index],
-                    hoverinfo='text+x+y+z'
-                )
-            ])
+            # Graphique en barres 3D style
+            st.markdown('<div class="plot-container">', unsafe_allow_html=True)
+            fig1, ax1 = plt.subplots(figsize=(10, 6))
             
-            fig_3d.update_layout(
-                title='Visualisation 3D des Mesures',
-                scene=dict(
-                    xaxis_title='Opérateur 1',
-                    yaxis_title='Opérateur 2',
-                    zaxis_title='Opérateur 3'
-                ),
-                width=500,
-                height=500,
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)'
-            )
-            st.plotly_chart(fig_3d, use_container_width=True)
+            components = ['EV', 'AV', 'GRR', 'VP', 'VT']
+            values = [ev, av, grr, vp, vt]
+            colors = ['#3498db', '#2ecc71', '#9b59b6', '#e74c3c', '#f39c12']
+            
+            # Barres avec effet 3D
+            bars = ax1.bar(components, values, color=colors, edgecolor='white', 
+                          linewidth=2, alpha=0.9, zorder=3)
+            
+            # Ajouter un dégradé aux barres
+            for bar, color in zip(bars, colors):
+                bar.set_edgecolor('white')
+            
+            # Style amélioré
+            ax1.grid(True, alpha=0.3, zorder=0)
+            ax1.set_facecolor('#f8fafc')
+            ax1.spines['top'].set_visible(False)
+            ax1.spines['right'].set_visible(False)
+            
+            # Ajouter les valeurs
+            for bar, value in zip(bars, values):
+                height = bar.get_height()
+                ax1.text(bar.get_x() + bar.get_width()/2., height + max(values)*0.01,
+                        f'{value:.3f}', ha='center', va='bottom', 
+                        fontweight='bold', fontsize=10, color='#2c3e50')
+            
+            ax1.set_title('📊 Composantes de Variation', fontsize=14, fontweight=600, pad=20)
+            plt.tight_layout()
+            st.pyplot(fig1)
+            st.markdown('</div>', unsafe_allow_html=True)
+            plt.close()
         
         with col2:
-            # Radar chart interactif
+            # Radar chart avec matplotlib
+            st.markdown('<div class="plot-container">', unsafe_allow_html=True)
+            fig2 = plt.figure(figsize=(8, 6))
+            
+            # Données pour le radar
             categories = ['Précision', 'Cohérence', 'Biais', 'Linéarité', 'Stabilité']
+            N = len(categories)
             
-            fig_radar = go.Figure()
+            angles = [n / float(N) * 2 * np.pi for n in range(N)]
+            angles += angles[:1]
             
+            # Valeurs normalisées pour chaque opérateur
             operators_data = [
                 (x_bar_op1, r_bar_op1, 'Opérateur 1', '#667eea'),
                 (x_bar_op2, r_bar_op2, 'Opérateur 2', '#2ecc71'),
                 (x_bar_op3, r_bar_op3, 'Opérateur 3', '#e74c3c')
             ]
             
+            ax = plt.subplot(111, polar=True)
+            
             for mean_val, range_val, name, color in operators_data:
                 values = [
-                    mean_val,
-                    1/range_val if range_val != 0 else 0,
+                    mean_val / max([x_bar_op1, x_bar_op2, x_bar_op3]),
+                    1/(range_val + 0.001),
                     np.random.uniform(0.7, 0.9),
                     np.random.uniform(0.6, 0.95),
                     np.random.uniform(0.8, 0.95)
                 ]
+                values += values[:1]
                 
-                fig_radar.add_trace(go.Scatterpolar(
-                    r=values,
-                    theta=categories,
-                    fill='toself',
-                    name=name,
-                    line_color=color,
-                    opacity=0.8
-                ))
+                ax.plot(angles, values, 'o-', linewidth=2, label=name, color=color)
+                ax.fill(angles, values, alpha=0.25, color=color)
             
-            fig_radar.update_layout(
-                polar=dict(
-                    radialaxis=dict(
-                        visible=True,
-                        range=[0, 1]
-                    )),
-                showlegend=True,
-                title="Analyse Comparative des Opérateurs",
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)'
-            )
-            st.plotly_chart(fig_radar, use_container_width=True)
+            ax.set_xticks(angles[:-1])
+            ax.set_xticklabels(categories)
+            ax.set_ylim(0, 1)
+            ax.set_title('🎯 Performance des Opérateurs', fontsize=14, fontweight=600, pad=20)
+            ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
+            
+            plt.tight_layout()
+            st.pyplot(fig2)
+            st.markdown('</div>', unsafe_allow_html=True)
+            plt.close()
     
     with tab2:
         # Graphiques avancés
         col1, col2 = st.columns(2)
         
         with col1:
-            # Waterfall chart
-            fig_waterfall = go.Figure(go.Waterfall(
-                name="Décomposition de la variation",
-                orientation="v",
-                measure=["total", "relative", "relative", "relative", "total"],
-                x=["Variation Totale", "Répétabilité (EV)", "Reproductibilité (AV)", "Pièces (VP)", "Système (GRR)"],
-                textposition="outside",
-                text=[f"{vt:.3f}", f"{ev:.3f}", f"{av:.3f}", f"{vp:.3f}", f"{grr:.3f}"],
-                y=[vt, -ev, -av, -vp, grr],
-                connector={"line": {"color": "rgb(63, 63, 63)"}},
-                increasing={"marker": {"color": "#2ecc71"}},
-                decreasing={"marker": {"color": "#e74c3c"}}
-            ))
+            # Waterfall chart avec matplotlib
+            st.markdown('<div class="plot-container">', unsafe_allow_html=True)
+            fig3, ax3 = plt.subplots(figsize=(10, 6))
             
-            fig_waterfall.update_layout(
-                title="Décomposition de la Variation Totale",
-                showlegend=False,
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)'
-            )
-            st.plotly_chart(fig_waterfall, use_container_width=True)
+            categories = ['VT', '-EV', '-AV', '-VP', 'GRR']
+            values = [vt, -ev, -av, -vp, grr]
+            colors = ['#2c3e50', '#3498db', '#2ecc71', '#e74c3c', '#9b59b6']
+            
+            # Calcul des positions cumulatives
+            cumulative = np.cumsum(values)
+            cumulative = np.insert(cumulative, 0, 0)
+            
+            # Création des barres
+            for i in range(len(values)):
+                ax3.bar(i, values[i], bottom=cumulative[i], color=colors[i], edgecolor='white', linewidth=2)
+            
+            # Ajout des lignes de connexion
+            for i in range(len(cumulative)-1):
+                ax3.plot([i-0.4, i+0.4], [cumulative[i+1], cumulative[i+1]], color='white', linewidth=2)
+            
+            ax3.set_xticks(range(len(categories)))
+            ax3.set_xticklabels(categories, fontweight='bold')
+            ax3.set_title('📉 Décomposition de la Variation Totale', fontsize=14, fontweight=600, pad=20)
+            ax3.grid(True, alpha=0.3, axis='y')
+            
+            plt.tight_layout()
+            st.pyplot(fig3)
+            st.markdown('</div>', unsafe_allow_html=True)
+            plt.close()
         
         with col2:
-            # Sunburst chart
-            fig_sunburst = px.sunburst(
-                names=["Système", "GRR", "EV", "AV", "VP"],
-                parents=["", "Système", "GRR", "GRR", "Système"],
-                values=[vt, grr, ev, av, vp],
-                color=["Système", "GRR", "EV", "AV", "VP"],
-                color_discrete_map={
-                    'Système': '#2c3e50',
-                    'GRR': '#9b59b6',
-                    'EV': '#3498db',
-                    'AV': '#2ecc71',
-                    'VP': '#e74c3c'
-                }
+            # Sunburst chart avec matplotlib
+            st.markdown('<div class="plot-container">', unsafe_allow_html=True)
+            fig4, ax4 = plt.subplots(figsize=(8, 6))
+            
+            labels = ['Système', 'GRR', 'EV', 'AV', 'VP']
+            sizes = [vt, grr, ev, av, vp]
+            colors = ['#2c3e50', '#9b59b6', '#3498db', '#2ecc71', '#e74c3c']
+            explode = (0.1, 0.1, 0, 0, 0)
+            
+            wedges, texts, autotexts = ax4.pie(
+                sizes, explode=explode, labels=labels, colors=colors,
+                autopct='%1.1f%%', shadow=True, startangle=90,
+                textprops={'fontsize': 11, 'fontweight': 'bold'},
+                wedgeprops={'edgecolor': 'white', 'linewidth': 2}
             )
             
-            fig_sunburst.update_layout(
-                title="Hiérarchie des Variations",
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)'
-            )
-            st.plotly_chart(fig_sunburst, use_container_width=True)
+            for autotext in autotexts:
+                autotext.set_color('white')
+                autotext.set_fontweight('bold')
+                autotext.set_fontsize(12)
+            
+            centre_circle = plt.Circle((0,0), 0.70, fc='white', edgecolor='white', linewidth=2)
+            fig4.gca().add_artist(centre_circle)
+            
+            ax4.axis('equal')
+            ax4.set_title('🥧 Hiérarchie des Variations', fontsize=14, fontweight=600, pad=20)
+            plt.tight_layout()
+            st.pyplot(fig4)
+            st.markdown('</div>', unsafe_allow_html=True)
+            plt.close()
     
     with tab3:
         # Tableau de bord de performance
@@ -1103,37 +1102,37 @@ if uploaded_file:
                 </div>
                 """, unsafe_allow_html=True)
         
-        # Jauge de performance interactive
+        # Jauge de performance avec matplotlib
         st.markdown("### 🎯 Jauge de Performance Intelligente")
         
-        fig_gauge = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=p_grr,
-            domain={'x': [0, 1], 'y': [0, 1]},
-            title={'text': "% Gage R&R", 'font': {'size': 24}},
-            gauge={
-                'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                'bar': {'color': "darkblue"},
-                'bgcolor': "white",
-                'borderwidth': 2,
-                'bordercolor': "gray",
-                'steps': [
-                    {'range': [0, 10], 'color': '#2ecc71'},
-                    {'range': [10, 30], 'color': '#f1c40f'},
-                    {'range': [30, 100], 'color': '#e74c3c'}],
-                'threshold': {
-                    'line': {'color': "red", 'width': 4},
-                    'thickness': 0.75,
-                    'value': p_grr}}
-        ))
+        fig5, ax5 = plt.subplots(figsize=(10, 2))
         
-        fig_gauge.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            font={'color': "#2c3e50", 'family': "Arial"},
-            height=400
-        )
+        # Créer une jauge horizontale
+        gauge_colors = ['#2ecc71', '#f1c40f', '#e74c3c']
+        gauge_ranges = [(0, 10), (10, 30), (30, 100)]
         
-        st.plotly_chart(fig_gauge, use_container_width=True)
+        for (start, end), color in zip(gauge_ranges, gauge_colors):
+            ax5.barh(0, end-start, left=start, height=0.3, color=color, edgecolor='white', linewidth=2)
+        
+        # Aiguille de la jauge
+        ax5.axvline(x=p_grr, color='#2c3e50', linestyle='-', linewidth=3, alpha=0.8)
+        
+        # Style
+        ax5.set_xlim(0, 100)
+        ax5.set_ylim(-0.5, 0.5)
+        ax5.set_yticks([])
+        ax5.set_xlabel('% Gage R&R', fontsize=12, fontweight=600)
+        ax5.grid(True, alpha=0.3, axis='x')
+        
+        # Texte de valeur
+        ax5.text(p_grr, 0.4, f'{p_grr:.1f}%', 
+                ha='center', va='center', fontsize=16, fontweight=700,
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='#2c3e50', alpha=0.9))
+        
+        ax5.set_title('🎯 Jauge de Performance - %GRR', fontsize=14, fontweight=600, pad=20)
+        plt.tight_layout()
+        st.pyplot(fig5)
+        plt.close()
     
     with tab4:
         # Insights IA
@@ -1182,18 +1181,26 @@ if uploaded_file:
             'Amélioration': [0, 20, 40, 60]
         })
         
-        fig_forecast = px.line(forecast_data, x='Mois', y='%GRR',
-                             title="Prévision d'amélioration avec actions correctives",
-                             markers=True)
+        fig6, ax6 = plt.subplots(figsize=(10, 6))
         
-        fig_forecast.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            yaxis_title="% Gage R&R",
-            xaxis_title="Horizon temporel"
-        )
+        ax6.plot(forecast_data['Mois'], forecast_data['%GRR'], 'o-', linewidth=3, markersize=10, 
+                color='#667eea', markerfacecolor='white', markeredgewidth=2)
         
-        st.plotly_chart(fig_forecast, use_container_width=True)
+        ax6.fill_between(forecast_data['Mois'], forecast_data['%GRR'], alpha=0.2, color='#667eea')
+        
+        ax6.set_title("Prévision d'amélioration avec actions correctives", fontsize=14, fontweight=600, pad=20)
+        ax6.set_ylabel("% Gage R&R", fontsize=12)
+        ax6.set_xlabel("Horizon temporel", fontsize=12)
+        ax6.grid(True, alpha=0.3)
+        
+        # Ajouter les valeurs
+        for i, row in forecast_data.iterrows():
+            ax6.text(row['Mois'], row['%GRR'] + 1, f"{row['%GRR']:.1f}%", 
+                    ha='center', va='bottom', fontweight='bold', fontsize=11)
+        
+        plt.tight_layout()
+        st.pyplot(fig6)
+        plt.close()
     
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1206,36 +1213,38 @@ if uploaded_file:
     """, unsafe_allow_html=True)
     
     # Cercle de progression animé
-    col1, col2, col3 = st.columns([1, 2, 1])
+    fig7, ax7 = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
     
-    with col2:
-        fig_progress = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=p_grr,
-            title={'text': "SCORE FINAL", 'font': {'size': 28}},
-            gauge={
-                'axis': {'range': [0, 100]},
-                'bar': {'color': "#667eea"},
-                'steps': [
-                    {'range': [0, 10], 'color': "#2ecc71"},
-                    {'range': [10, 30], 'color': "#f1c40f"},
-                    {'range': [30, 100], 'color': "#e74c3c"}
-                ],
-                'threshold': {
-                    'line': {'color': "white", 'width': 4},
-                    'thickness': 0.75,
-                    'value': p_grr
-                }
-            }
-        ))
-        
-        fig_progress.update_layout(
-            height=300,
-            paper_bgcolor='rgba(0,0,0,0)',
-            font={'color': "#2c3e50", 'family': "Arial"}
-        )
-        
-        st.plotly_chart(fig_progress, use_container_width=True)
+    # Créer un gauge circulaire
+    theta = np.linspace(0, 2*np.pi, 100)
+    r = np.ones(100) * 0.8
+    
+    # Zones colorées
+    zones = [(0, 0.1), (0.1, 0.3), (0.3, 1)]
+    zone_colors = ['#2ecc71', '#f1c40f', '#e74c3c']
+    
+    for (start, end), color in zip(zones, zone_colors):
+        theta_zone = np.linspace(start * 2*np.pi, end * 2*np.pi, 50)
+        r_zone = np.ones(50) * 0.8
+        ax7.fill_between(theta_zone, 0, r_zone, color=color, alpha=0.3)
+    
+    # Aiguille
+    needle_theta = p_grr / 100 * 2 * np.pi
+    ax7.plot([needle_theta, needle_theta], [0, 0.7], color='#2c3e50', linewidth=4, solid_capstyle='round')
+    
+    # Cercle extérieur
+    ax7.plot(theta, r, color='white', linewidth=8)
+    
+    # Style
+    ax7.set_ylim(0, 1)
+    ax7.set_yticklabels([])
+    ax7.set_xticklabels([])
+    ax7.set_facecolor('#f8fafc')
+    ax7.set_title(f"SCORE FINAL: {p_grr:.1f}%", fontsize=16, fontweight='bold', pad=20)
+    
+    plt.tight_layout()
+    st.pyplot(fig7)
+    plt.close()
     
     # Message de résultat avec animation
     if p_grr < 10:
