@@ -805,5 +805,6 @@ st.markdown("""
         <div style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.7;">
             Développé avec Streamlit • Optimisé pour la qualité industrielle
         </div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
