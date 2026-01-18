@@ -4,7 +4,6 @@ import numpy as np
 from io import BytesIO
 import matplotlib.pyplot as plt
 import time
-from fpdf import FPDF
 import base64
 from datetime import datetime
 
@@ -337,7 +336,7 @@ st.markdown("""
 st.markdown("""
 <div class="main-header">
     <div class="main-title">📊 Gage R&R - Méthode des Étendues</div>
-    <div class="main-subtitle">Analyse avancée de la capacité du système de mesure avec rapport PDF</div>
+    <div class="main-subtitle">Analyse avancée de la capacité du système de mesure avec rapport complet</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -351,349 +350,580 @@ def get_d2(z, w):
         return 3.18
     return 1.0
 
-# ---------------- CLASS PDF REPORT ----------------
-class GageRRPDF(FPDF):
-    def __init__(self):
-        super().__init__()
-        self.set_auto_page_break(auto=True, margin=15)
-        
-    def header(self):
-        # Logo
-        self.image("https://img.icons8.com/color/48/000000/statistics.png", 10, 8, 15)
-        self.set_font('Arial', 'B', 16)
-        self.cell(0, 10, 'RAPPORT GAGE R&R - MÉTHODE DES ÉTENDUES', 0, 1, 'C')
-        self.set_font('Arial', 'I', 10)
-        self.cell(0, 5, f'Date du rapport: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'C')
-        self.ln(5)
-        
-    def footer(self):
-        self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        self.cell(0, 10, f'Page {self.page_no()}/{{nb}}', 0, 0, 'C')
-        
-    def chapter_title(self, title):
-        self.set_font('Arial', 'B', 14)
-        self.set_fill_color(200, 220, 255)
-        self.cell(0, 10, title, 0, 1, 'L', 1)
-        self.ln(4)
-        
-    def add_section_title(self, title, level=1):
-        if level == 1:
-            self.set_font('Arial', 'B', 12)
-            self.set_text_color(0, 0, 139)  # Dark blue
-            self.cell(0, 8, title, 0, 1)
-            self.ln(2)
-        else:
-            self.set_font('Arial', 'B', 11)
-            self.set_text_color(0, 0, 0)
-            self.cell(0, 7, title, 0, 1)
-            self.ln(1)
-        
-    def add_text(self, text):
-        self.set_font('Arial', '', 10)
-        self.set_text_color(0, 0, 0)
-        self.multi_cell(0, 5, text)
-        self.ln(2)
-        
-    def add_bullet(self, text):
-        self.set_font('Arial', '', 10)
-        self.set_text_color(0, 0, 0)
-        self.cell(5)
-        self.cell(5, 5, '•')
-        self.multi_cell(0, 5, text[1:])
-        
-    def add_table(self, headers, data):
-        self.set_font('Arial', 'B', 10)
-        col_width = 190 / len(headers)
-        
-        # Headers
-        self.set_fill_color(220, 220, 220)
-        for header in headers:
-            self.cell(col_width, 7, header, 1, 0, 'C', True)
-        self.ln()
-        
-        # Data
-        self.set_font('Arial', '', 9)
-        fill = False
-        for row in data:
-            for item in row:
-                self.cell(col_width, 6, str(item), 1, 0, 'C', fill)
-            self.ln()
-            fill = not fill
+# ---------------- FONCTION POUR GÉNÉRER RAPPORT HTML ----------------
+def generate_html_report(report_data, df_sample):
+    """Génère un rapport HTML complet"""
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Rapport Gage R&R - {report_data['study_name']}</title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
             
-    def add_metric_box(self, title, value, status, color_rgb):
-        self.set_fill_color(*color_rgb)
-        self.set_text_color(255, 255, 255)
-        self.set_font('Arial', 'B', 10)
-        self.cell(47, 10, title, 1, 0, 'C', True)
-        self.set_text_color(0, 0, 0)
-        self.set_font('Arial', '', 9)
-        self.cell(47, 10, value, 1, 0, 'C')
-        self.set_font('Arial', 'B', 9)
-        self.cell(47, 10, status, 1, 0, 'C')
-        self.ln()
+            * {{
+                font-family: 'Inter', sans-serif;
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }}
+            
+            body {{
+                background: #f8fafc;
+                color: #333;
+                line-height: 1.6;
+                padding: 20px;
+            }}
+            
+            .container {{
+                max-width: 1200px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                padding: 30px;
+            }}
+            
+            .header {{
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px;
+                border-radius: 12px;
+                text-align: center;
+                margin-bottom: 30px;
+            }}
+            
+            .header h1 {{
+                font-size: 28px;
+                font-weight: 700;
+                margin-bottom: 10px;
+            }}
+            
+            .header .date {{
+                font-size: 14px;
+                opacity: 0.9;
+            }}
+            
+            .section {{
+                margin-bottom: 30px;
+                padding-bottom: 20px;
+                border-bottom: 2px solid #eef2f7;
+            }}
+            
+            .section-title {{
+                background: linear-gradient(90deg, #667eea, #764ba2);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                font-size: 18px;
+                font-weight: 600;
+            }}
+            
+            .metrics-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+                margin-bottom: 20px;
+            }}
+            
+            .metric-card {{
+                background: linear-gradient(145deg, #ffffff, #f5f7fa);
+                border-radius: 10px;
+                padding: 20px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                border-left: 4px solid;
+                transition: transform 0.3s;
+            }}
+            
+            .metric-card:hover {{
+                transform: translateY(-5px);
+            }}
+            
+            .metric-value {{
+                font-size: 24px;
+                font-weight: 700;
+                margin: 10px 0;
+            }}
+            
+            .metric-label {{
+                color: #666;
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }}
+            
+            .status-badge {{
+                display: inline-block;
+                padding: 6px 15px;
+                border-radius: 20px;
+                font-weight: 600;
+                font-size: 14px;
+                margin-bottom: 15px;
+            }}
+            
+            .status-excellent {{
+                background: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }}
+            
+            .status-acceptable {{
+                background: #fff3cd;
+                color: #856404;
+                border: 1px solid #ffeaa7;
+            }}
+            
+            .status-unacceptable {{
+                background: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }}
+            
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin: 15px 0;
+                font-size: 14px;
+            }}
+            
+            th {{
+                background: #667eea;
+                color: white;
+                padding: 12px;
+                text-align: left;
+                font-weight: 600;
+            }}
+            
+            td {{
+                padding: 10px;
+                border-bottom: 1px solid #eef2f7;
+            }}
+            
+            tr:nth-child(even) {{
+                background: #f8fafc;
+            }}
+            
+            .recommendations {{
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 10px;
+                margin-top: 20px;
+            }}
+            
+            .recommendation-item {{
+                margin: 10px 0;
+                padding-left: 20px;
+                position: relative;
+            }}
+            
+            .recommendation-item:before {{
+                content: "•";
+                position: absolute;
+                left: 0;
+                color: #667eea;
+                font-size: 20px;
+            }}
+            
+            .footer {{
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 2px solid #eef2f7;
+                text-align: center;
+                color: #666;
+                font-size: 12px;
+            }}
+            
+            .signature {{
+                margin-top: 40px;
+                text-align: center;
+                padding: 20px;
+            }}
+            
+            .signature-line {{
+                width: 300px;
+                height: 1px;
+                background: #333;
+                margin: 40px auto 10px;
+            }}
+            
+            .page-break {{
+                page-break-before: always;
+            }}
+            
+            @media print {{
+                body {{
+                    padding: 0;
+                }}
+                
+                .container {{
+                    box-shadow: none;
+                    padding: 20px;
+                }}
+                
+                .metric-card {{
+                    page-break-inside: avoid;
+                }}
+                
+                .page-break {{
+                    page-break-before: always;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <!-- En-tête -->
+            <div class="header">
+                <h1>📊 RAPPORT GAGE R&R</h1>
+                <p>Méthode des Étendues - Analyse du Système de Mesure</p>
+                <p class="date">Date du rapport : {report_data['date']}</p>
+                <p class="date">Nom de l'étude : {report_data['study_name']}</p>
+            </div>
+            
+            <!-- Section 1: Résumé Exécutif -->
+            <div class="section">
+                <div class="section-title">1. RÉSUMÉ EXÉCUTIF</div>
+                
+                <div class="status-badge {report_data['status_class']}">
+                    STATUT : {report_data['overall_status']} - {report_data['p_grr']:.2f}%
+                </div>
+                
+                <p style="margin: 15px 0;">{report_data['overall_message']}</p>
+                
+                <div class="metrics-grid">
+                    <div class="metric-card" style="border-left-color: #3498db;">
+                        <div class="metric-label">Répétabilité (EV)</div>
+                        <div class="metric-value">{report_data['ev']:.4f}</div>
+                        <div style="color: #666; font-size: 12px;">{report_data['ev_percent']:.1f}% de la variation totale</div>
+                    </div>
+                    
+                    <div class="metric-card" style="border-left-color: #2ecc71;">
+                        <div class="metric-label">Reproductibilité (AV)</div>
+                        <div class="metric-value">{report_data['av']:.4f}</div>
+                        <div style="color: #666; font-size: 12px;">{report_data['av_percent']:.1f}% de la variation totale</div>
+                    </div>
+                    
+                    <div class="metric-card" style="border-left-color: #9b59b6;">
+                        <div class="metric-label">Variation Système (GRR)</div>
+                        <div class="metric-value">{report_data['grr']:.4f}</div>
+                        <div style="color: #666; font-size: 12px;">{report_data['p_grr']:.2f}% de la variation totale</div>
+                    </div>
+                    
+                    <div class="metric-card" style="border-left-color: #e74c3c;">
+                        <div class="metric-label">Variation Pièces (VP)</div>
+                        <div class="metric-value">{report_data['vp']:.4f}</div>
+                        <div style="color: #666; font-size: 12px;">{report_data['vp_percent']:.1f}% de la variation totale</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 2: Informations de l'Étude -->
+            <div class="section">
+                <div class="section-title">2. INFORMATIONS DE L'ÉTUDE</div>
+                
+                <table>
+                    <tr>
+                        <th style="width: 40%;">Paramètre</th>
+                        <th>Valeur</th>
+                    </tr>
+                    <tr>
+                        <td>Date d'analyse</td>
+                        <td>{report_data['date']}</td>
+                    </tr>
+                    <tr>
+                        <td>Nombre de pièces</td>
+                        <td>{report_data['n_pieces']}</td>
+                    </tr>
+                    <tr>
+                        <td>Nombre d'opérateurs</td>
+                        <td>{report_data['n_operateurs']}</td>
+                    </tr>
+                    <tr>
+                        <td>Nombre d'essais par pièce</td>
+                        <td>{report_data['n_essais']}</td>
+                    </tr>
+                    <tr>
+                        <td>Facteur de confiance (k)</td>
+                        <td>{report_data['confidence_factor']:.2f}</td>
+                    </tr>
+                    <tr>
+                        <td>Étendue moyenne (R̄)</td>
+                        <td>{report_data['r_double_bar']:.4f}</td>
+                    </tr>
+                    <tr>
+                        <td>Ratio Signal/Bruit (VP/GRR)</td>
+                        <td>{report_data['ratio_vp_grr']:.2f}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="page-break"></div>
+            
+            <!-- Section 3: Performance des Opérateurs -->
+            <div class="section">
+                <div class="section-title">3. PERFORMANCE DES OPÉRATEURS</div>
+                
+                <table>
+                    <tr>
+                        <th>Opérateur</th>
+                        <th>Moyenne</th>
+                        <th>Étendue Moyenne</th>
+                        <th>Écart-Type</th>
+                    </tr>
+                    {''.join([f'''
+                    <tr>
+                        <td>👤 {op['name']}</td>
+                        <td>{op['moyenne']:.4f}</td>
+                        <td>{op['etendue']:.4f}</td>
+                        <td>{op['ecart_type']:.4f}</td>
+                    </tr>
+                    ''' for op in report_data['operators']])}
+                </table>
+            </div>
+            
+            <!-- Section 4: Données Brutes (Extrait) -->
+            <div class="section">
+                <div class="section-title">4. DONNÉES BRUTES (EXTRAIT)</div>
+                
+                <table>
+                    <tr>
+                        <th>Pièce</th>
+                        <th>OP1-1</th>
+                        <th>OP1-2</th>
+                        <th>OP1-3</th>
+                        <th>OP2-1</th>
+                        <th>OP2-2</th>
+                        <th>OP2-3</th>
+                        <th>OP3-1</th>
+                        <th>OP3-2</th>
+                        <th>OP3-3</th>
+                    </tr>
+                    {''.join([f'''
+                    <tr>
+                        <td>Pièce {i+1}</td>
+                        <td>{df_sample.iloc[i]['OP1-1']:.4f}</td>
+                        <td>{df_sample.iloc[i]['OP1-2']:.4f}</td>
+                        <td>{df_sample.iloc[i]['OP1-3']:.4f}</td>
+                        <td>{df_sample.iloc[i]['OP2-1']:.4f}</td>
+                        <td>{df_sample.iloc[i]['OP2-2']:.4f}</td>
+                        <td>{df_sample.iloc[i]['OP2-3']:.4f}</td>
+                        <td>{df_sample.iloc[i]['OP3-1']:.4f}</td>
+                        <td>{df_sample.iloc[i]['OP3-2']:.4f}</td>
+                        <td>{df_sample.iloc[i]['OP3-3']:.4f}</td>
+                    </tr>
+                    ''' for i in range(min(10, len(df_sample)))])}
+                </table>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                    * Affichage des 10 premières pièces seulement
+                </p>
+            </div>
+            
+            <div class="page-break"></div>
+            
+            <!-- Section 5: Interprétation des Résultats -->
+            <div class="section">
+                <div class="section-title">5. INTERPRÉTATION DES RÉSULTATS</div>
+                
+                <div style="margin: 20px 0;">
+                    <h3 style="color: #667eea; margin-bottom: 10px;">Source Principale de Variation</h3>
+                    <p>{report_data['source_principale']}</p>
+                    
+                    <h3 style="color: #667eea; margin: 20px 0 10px 0;">Capacité de Discrimination</h3>
+                    <p>{report_data['capacite_discrimination']}</p>
+                    
+                    <h3 style="color: #667eea; margin: 20px 0 10px 0;">Évaluation des Composantes</h3>
+                    <ul style="margin-left: 20px;">
+                        <li style="margin: 8px 0;">Répétabilité (EV): {report_data['diagnostic_ev']}</li>
+                        <li style="margin: 8px 0;">Reproductibilité (AV): {report_data['diagnostic_av']}</li>
+                        <li style="margin: 8px 0;">Ratio VP/GRR: {report_data['diagnostic_ratio']}</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Section 6: Recommandations -->
+            <div class="section">
+                <div class="section-title">6. RECOMMANDATIONS ET PLAN D'ACTION</div>
+                
+                <div class="recommendations">
+                    <h3 style="color: #{'c62828' if report_data['p_grr'] > 30 else 'ef6c00' if report_data['p_grr'] > 15 else '2e7d32'}; 
+                        margin-bottom: 15px;">
+                        {report_data['recommandations_titre']}
+                    </h3>
+                    
+                    {''.join([f'''
+                    <div class="recommendation-item">{rec}</div>
+                    ''' for rec in report_data['recommandations_liste']])}
+                    
+                    <h3 style="color: #667eea; margin: 25px 0 15px 0;">Priorités d'Action</h3>
+                    {''.join([f'''
+                    <div class="recommendation-item">{action}</div>
+                    ''' for action in report_data['actions_prioritaires']])}
+                </div>
+            </div>
+            
+            <!-- Section 7: Critères d'Acceptation -->
+            <div class="section">
+                <div class="section-title">7. CRITÈRES D'ACCEPTATION</div>
+                
+                <table>
+                    <tr>
+                        <th>%GRR</th>
+                        <th>Évaluation</th>
+                        <th>Recommandation</th>
+                    </tr>
+                    <tr>
+                        <td>&lt; 10%</td>
+                        <td><span style="color: #27ae60;">✓ EXCELLENT</span></td>
+                        <td>Système optimal, utilisation sans restriction</td>
+                    </tr>
+                    <tr>
+                        <td>10% - 30%</td>
+                        <td><span style="color: #f39c12;">⚠ ACCEPTABLE</span></td>
+                        <td>Système acceptable, améliorations possibles</td>
+                    </tr>
+                    <tr>
+                        <td>&gt; 30%</td>
+                        <td><span style="color: #c0392b;">✗ INACCEPTABLE</span></td>
+                        <td>Action corrective requise avant utilisation</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- Signature -->
+            <div class="signature">
+                <div class="signature-line"></div>
+                <p style="margin-top: 10px; color: #666;">
+                    Responsable Qualité / Ingénieur Méthodes
+                </p>
+                <p style="color: #666; margin-top: 5px;">
+                    Date : _________________________
+                </p>
+            </div>
+            
+            <!-- Pied de page -->
+            <div class="footer">
+                <p>Rapport généré automatiquement par l'application Gage R&R - Méthode des Étendues</p>
+                <p>Conforme aux normes AIAG MSA 4th Edition</p>
+                <p>© {datetime.now().year} - Système d'Analyse de la Capacité de Mesure</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return html_content
 
-# ---------------- FONCTION DE GÉNÉRATION DE RAPPORT ----------------
-def generate_report(p_grr, ev, av, grr, vp, vt, n_pieces, n_operateurs, n_essais, r_double_bar, 
-                   confidence_factor, operators_data, df, filename):
-    """Génère un rapport PDF complet"""
+# ---------------- FONCTION POUR GÉNÉRER RAPPORT EXCEL AVEC INTERPRÉTATION ----------------
+def generate_excel_report_with_interpretation(df, results, operators_data, report_data):
+    """Génère un rapport Excel complet avec interprétation"""
     
-    # Calcul des pourcentages
-    ev_percent = (ev / vt) * 100 if vt > 0 else 0
-    av_percent = (av / vt) * 100 if vt > 0 else 0
-    vp_percent = (vp / vt) * 100 if vt > 0 else 0
-    ratio_vp_grr = vp / grr if grr > 0 else 0
+    output = BytesIO()
     
-    # Évaluation générale
-    if p_grr < 10:
-        overall_status = "EXCELLENT"
-        overall_color = (46, 204, 113)  # Vert
-        overall_message = "Le système de mesure est optimal et fiable pour les analyses critiques."
-    elif p_grr <= 30:
-        overall_status = "ACCEPTABLE"
-        overall_color = (241, 196, 15)  # Orange
-        overall_message = "Le système est acceptable mais des améliorations sont recommandées."
-    else:
-        overall_status = "INACCEPTABLE"
-        overall_color = (231, 76, 60)   # Rouge
-        overall_message = "Le système nécessite des actions correctives urgentes."
-    
-    # Création du PDF
-    pdf = GageRRPDF()
-    pdf.add_page()
-    
-    # Page de titre
-    pdf.set_font('Arial', 'B', 20)
-    pdf.cell(0, 40, '', 0, 1, 'C')
-    pdf.cell(0, 10, 'RAPPORT D\'ANALYSE GAGE R&R', 0, 1, 'C')
-    pdf.set_font('Arial', 'B', 16)
-    pdf.cell(0, 10, 'Méthode des Étendues', 0, 1, 'C')
-    pdf.ln(20)
-    
-    # Résumé exécutif
-    pdf.add_section_title("1. RÉSUMÉ EXÉCUTIF")
-    
-    # Carte de statut
-    pdf.set_fill_color(*overall_color)
-    pdf.set_text_color(255, 255, 255)
-    pdf.set_font('Arial', 'B', 14)
-    pdf.cell(0, 12, f'STATUT: {overall_status} - {p_grr:.1f}%', 0, 1, 'C', True)
-    pdf.set_text_color(0, 0, 0)
-    pdf.set_font('Arial', 'I', 10)
-    pdf.multi_cell(0, 5, overall_message)
-    pdf.ln(5)
-    
-    # Métriques clés
-    pdf.add_section_title("2. MÉTRIQUES CLÉS", level=2)
-    
-    metrics = [
-        ("%GRR Total", f"{p_grr:.2f}%", overall_status, overall_color),
-        ("Répétabilité (EV)", f"{ev:.4f} ({ev_percent:.1f}%)", "✓" if ev_percent < 20 else "⚠", (52, 152, 219)),
-        ("Reproductibilité (AV)", f"{av:.4f} ({av_percent:.1f}%)", "✓" if av_percent < 20 else "⚠", (46, 204, 113)),
-        ("Variation Pièces (VP)", f"{vp:.4f} ({vp_percent:.1f}%)", "✓" if vp_percent > 50 else "⚠", (231, 76, 60)),
-        ("Variation Totale (VT)", f"{vt:.4f}", "-", (155, 89, 182)),
-        ("Ratio VP/GRR", f"{ratio_vp_grr:.2f}", "✓" if ratio_vp_grr > 4 else "⚠", (243, 156, 18))
-    ]
-    
-    for i in range(0, len(metrics), 2):
-        row1 = metrics[i]
-        row2 = metrics[i+1] if i+1 < len(metrics) else None
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        # Feuille 1: Résultats Principaux
+        results_df = pd.DataFrame({
+            "Paramètre": ["%GRR Total", "Répétabilité (EV)", "Reproductibilité (AV)", 
+                         "Variation Système (GRR)", "Variation Pièces (VP)", 
+                         "Variation Totale (VT)", "Ratio VP/GRR", "Étendue moyenne (R̄)"],
+            "Valeur": [
+                f"{results['p_grr']:.2f}%",
+                f"{results['ev']:.4f} ({results['ev_percent']:.1f}%)",
+                f"{results['av']:.4f} ({results['av_percent']:.1f}%)",
+                f"{results['grr']:.4f}",
+                f"{results['vp']:.4f} ({results['vp_percent']:.1f}%)",
+                f"{results['vt']:.4f}",
+                f"{results['ratio_vp_grr']:.2f}",
+                f"{results['r_double_bar']:.4f}"
+            ],
+            "Statut": [
+                report_data['overall_status'],
+                "✓ Acceptable" if results['ev_percent'] < 20 else "⚠ Conditionnel",
+                "✓ Acceptable" if results['av_percent'] < 20 else "⚠ Conditionnel",
+                "✓ Excellent" if results['p_grr'] < 10 else ("⚠ Acceptable" if results['p_grr'] <= 30 else "✗ Inacceptable"),
+                "✓ Bonne discrimination" if results['ratio_vp_grr'] > 4 else "⚠ Discrimination limitée",
+                "-",
+                "✓ Bon" if results['ratio_vp_grr'] > 4 else ("⚠ Moyen" if results['ratio_vp_grr'] > 2 else "✗ Faible"),
+                "-"
+            ]
+        })
+        results_df.to_excel(writer, sheet_name='Résultats Principaux', index=False)
         
-        pdf.add_metric_box(row1[0], row1[1], row1[2], row1[3])
-        if row2:
-            pdf.add_metric_box(row2[0], row2[1], row2[2], row2[3])
-        pdf.ln(2)
+        # Feuille 2: Données Brutes
+        df.to_excel(writer, sheet_name='Données Brutes', index=False)
+        
+        # Feuille 3: Performance Opérateurs
+        op_df = pd.DataFrame(operators_data)
+        op_df.to_excel(writer, sheet_name='Performance Opérateurs', index=False)
+        
+        # Feuille 4: Rapport d'Interprétation
+        interpretation_data = {
+            "Section": [
+                "ÉVALUATION GLOBALE",
+                "Statut",
+                "Score %GRR",
+                "Message",
+                "",
+                "ANALYSE DES COMPOSANTES",
+                "Source principale",
+                "Diagnostic Répétabilité",
+                "Diagnostic Reproductibilité",
+                "Diagnostic Discrimination",
+                "",
+                "RECOMMANDATIONS",
+                "Titre",
+                "Actions prioritaires",
+                "",
+                "INFORMATIONS DE L'ÉTUDE",
+                "Date",
+                "Pièces (n)",
+                "Opérateurs (o)",
+                "Essais (r)",
+                "Facteur k"
+            ],
+            "Contenu": [
+                "",
+                report_data['overall_status'],
+                f"{results['p_grr']:.2f}%",
+                report_data['overall_message'],
+                "",
+                "",
+                report_data['source_principale'],
+                report_data['diagnostic_ev'],
+                report_data['diagnostic_av'],
+                report_data['diagnostic_ratio'],
+                "",
+                "",
+                report_data['recommandations_titre'],
+                "; ".join(report_data['recommandations_liste'][:3]),
+                "",
+                "",
+                report_data['date'],
+                str(results['n_pieces']),
+                str(results['n_operateurs']),
+                str(results['n_essais']),
+                f"{results['confidence_factor']:.2f}"
+            ]
+        }
+        interpretation_df = pd.DataFrame(interpretation_data)
+        interpretation_df.to_excel(writer, sheet_name='Rapport Interprétation', index=False)
+        
+        # Feuille 5: Plan d'Action
+        action_data = {
+            "Priorité": ["P1", "P1", "P1", "P2", "P2", "P3"],
+            "Action": report_data['actions_prioritaires'] + ["Suivre les indicateurs clés", "Documenter les actions", "Planifier réévaluation"],
+            "Responsable": ["Technicien", "Qualité", "Formation", "Qualité", "Qualité", "Management"],
+            "Échéance": ["Immédiate", "1 semaine", "2 semaines", "1 mois", "Continu", "6 mois"],
+            "Statut": ["À faire", "À faire", "À faire", "À planifier", "En cours", "À planifier"]
+        }
+        action_df = pd.DataFrame(action_data)
+        action_df.to_excel(writer, sheet_name='Plan Action', index=False)
     
-    pdf.add_page()
-    
-    # Informations sur l'étude
-    pdf.add_section_title("3. INFORMATIONS SUR L'ÉTUDE")
-    
-    study_info = [
-        ["Paramètre", "Valeur"],
-        ["Date d'analyse", datetime.now().strftime("%d/%m/%Y %H:%M")],
-        ["Nombre de pièces", str(n_pieces)],
-        ["Nombre d'opérateurs", str(n_operateurs)],
-        ["Nombre d'essais par pièce", str(n_essais)],
-        ["Facteur de confiance (k)", f"{confidence_factor:.2f}"],
-        ["Étendue moyenne (R̄)", f"{r_double_bar:.4f}"],
-        ["Méthode utilisée", "Méthode des Étendues"],
-        ["Critère d'acceptation", "%GRR < 30%"]
-    ]
-    
-    pdf.add_table([study_info[0][0], study_info[0][1]], [row[1:] for row in study_info[1:]])
-    pdf.ln(10)
-    
-    # Performance des opérateurs
-    pdf.add_section_title("4. PERFORMANCE DES OPÉRATEURS")
-    
-    op_headers = ["Opérateur", "Moyenne", "Étendue Moyenne", "Écart-Type"]
-    op_data = []
-    for i, op in enumerate(operators_data):
-        op_data.append([
-            f"Opérateur {i+1}",
-            f"{np.mean(df[[f'OP{i+1}-1', f'OP{i+1}-2', f'OP{i+1}-3']].values.flatten()):.4f}",
-            f"{[r_bar_op1, r_bar_op2, r_bar_op3][i]:.4f}",
-            f"{np.std(df[[f'OP{i+1}-1', f'OP{i+1}-2', f'OP{i+1}-3']].values.flatten()):.4f}"
-        ])
-    
-    pdf.add_table(op_headers, op_data)
-    pdf.ln(10)
-    
-    # Données brutes (premières 10 lignes)
-    pdf.add_section_title("5. DONNÉES BRUTES (EXTRAIT)")
-    
-    # Préparer les données pour le tableau
-    data_headers = ["Pièce"] + [f"OP{i+1}-{j+1}" for i in range(3) for j in range(3)]
-    sample_data = []
-    for idx in range(min(10, len(df))):
-        row = [f"Pièce {idx+1}"]
-        for i in range(3):
-            for j in range(3):
-                row.append(f"{df.iloc[idx][f'OP{i+1}-{j+1}']:.4f}")
-        sample_data.append(row)
-    
-    pdf.set_font('Arial', '', 7)
-    col_width = 190 / len(data_headers)
-    
-    # Headers
-    pdf.set_font('Arial', 'B', 7)
-    pdf.set_fill_color(240, 240, 240)
-    for header in data_headers:
-        pdf.cell(col_width, 5, header, 1, 0, 'C', True)
-    pdf.ln()
-    
-    # Data
-    pdf.set_font('Arial', '', 7)
-    fill = False
-    for row in sample_data:
-        for item in row:
-            pdf.cell(col_width, 4, item, 1, 0, 'C', fill)
-        pdf.ln()
-        fill = not fill
-    
-    pdf.add_page()
-    
-    # Interprétation des résultats
-    pdf.add_section_title("6. INTERPRÉTATION DES RÉSULTATS")
-    
-    pdf.add_section_title("6.1 Évaluation Globale", level=2)
-    pdf.add_text(f"Le système de mesure présente un %GRR de {p_grr:.1f}%, ce qui le classe comme '{overall_status}' selon les critères de l'industrie automobile (AIAG).")
-    
-    pdf.add_section_title("6.2 Analyse des Composantes", level=2)
-    
-    if ev_percent > av_percent:
-        pdf.add_text("La source principale de variation est la RÉPÉTABILITÉ (EV), ce qui indique que:")
-        pdf.add_bullet(" La variabilité intra-opérateur est dominante")
-        pdf.add_bullet(" Causes possibles: instrument instable, procédure non standardisée")
-        pdf.add_bullet(" Recommandation: vérifier l'étalonnage et la stabilité des équipements")
-    else:
-        pdf.add_text("La source principale de variation est la REPRODUCTIBILITÉ (AV), ce qui indique que:")
-        pdf.add_bullet(" Les différences entre opérateurs sont dominantes")
-        pdf.add_bullet(" Causes possibles: méthodes de mesure divergentes, formation insuffisante")
-        pdf.add_bullet(" Recommandation: harmoniser les procédures et former les opérateurs")
-    
-    pdf.add_section_title("6.3 Capacité de Discrimination", level=2)
-    if ratio_vp_grr > 4:
-        pdf.add_text(f"Le ratio VP/GRR de {ratio_vp_grr:.2f} indique une EXCELLENTE capacité à distinguer les différences entre pièces.")
-    elif ratio_vp_grr > 2:
-        pdf.add_text(f"Le ratio VP/GRR de {ratio_vp_grr:.2f} indique une capacité ACCEPTABLE à distinguer les différences entre pièces.")
-    else:
-        pdf.add_text(f"Le ratio VP/GRR de {ratio_vp_grr:.2f} indique une FAIBLE capacité à distinguer les différences entre pièces.")
-    
-    pdf.add_page()
-    
-    # Recommandations et plan d'action
-    pdf.add_section_title("7. RECOMMANDATIONS ET PLAN D'ACTION")
-    
-    if p_grr > 30:
-        pdf.add_section_title("7.1 Actions Correctives Immédiates (Critique)", level=2)
-        actions = [
-            "Suspension temporaire du système pour les mesures critiques",
-            "Réétalonnage complet des instruments de mesure",
-            "Formation standardisée pour tous les opérateurs",
-            "Contrôle des conditions environnementales",
-            "Mise à jour des procédures de mesure"
-        ]
-    elif p_grr > 15:
-        pdf.add_section_title("7.2 Améliorations Recommandées (Amélioration)", level=2)
-        actions = [
-            "Amélioration de la documentation des méthodes",
-            "Implémentation d'aides à la mesure (gabarits)",
-            "Audits croisés entre opérateurs",
-            "Surveillance régulière des performances",
-            "Identification des causes racines"
-        ]
-    else:
-        pdf.add_section_title("7.3 Actions de Maintenance (Optimisation)", level=2)
-        actions = [
-            "Maintenance de la documentation à jour",
-            "Étalonnage préventif programmé",
-            "Surveillance statistique continue",
-            "Formation des nouveaux opérateurs",
-            "Réévaluation annuelle du système"
-        ]
-    
-    for action in actions:
-        pdf.add_bullet(f" {action}")
-    
-    pdf.ln(5)
-    
-    pdf.add_section_title("7.4 Priorités d'Action", level=2)
-    if ev_percent > av_percent:
-        pdf.add_text("PRIORITÉ 1: Améliorer la répétabilité")
-        pdf.add_bullet(" Standardiser la méthode de prise de mesure")
-        pdf.add_bullet(" Vérifier l'état et l'étalonnage des instruments")
-        pdf.add_bullet(" Minimiser les variations environnementales")
-    else:
-        pdf.add_text("PRIORITÉ 1: Améliorer la reproductibilité")
-        pdf.add_bullet(" Formation commune à tous les opérateurs")
-        pdf.add_bullet(" Création d'aides visuelles pour les décisions")
-        pdf.add_bullet(" Audits croisés réguliers")
-    
-    pdf.add_text("PRIORITÉ 2: Valider les améliorations")
-    pdf.add_bullet(" Refaire l'étude Gage R&R après corrections")
-    pdf.add_bullet(" Suivre les indicateurs clés sur tableau de bord")
-    pdf.add_bullet(" Documenter toutes les actions correctives")
-    
-    pdf.add_page()
-    
-    # Critères d'acceptation et références
-    pdf.add_section_title("8. CRITÈRES D'ACCEPTATION ET RÉFÉRENCES")
-    
-    pdf.add_section_title("8.1 Échelle d'Évaluation", level=2)
-    criteria = [
-        ["%GRR", "Évaluation", "Recommandation"],
-        ["< 10%", "EXCELLENT", "Système optimal, utilisation sans restriction"],
-        ["10% - 30%", "ACCEPTABLE", "Système acceptable, améliorations possibles"],
-        ["> 30%", "INACCEPTABLE", "Action corrective requise avant utilisation"]
-    ]
-    
-    pdf.add_table(criteria[0], criteria[1:])
-    pdf.ln(10)
-    
-    pdf.add_section_title("8.2 Références Normatives", level=2)
-    references = [
-        "AIAG MSA Manual 4th Edition - Automotive Industry Action Group",
-        "ISO 22514-7:2012 - Statistical methods in process management",
-        "ISO 5725:1994 - Accuracy (trueness and precision) of measurement methods",
-        "ASTM E691 - Standard Practice for Conducting an Interlaboratory Study"
-    ]
-    
-    for ref in references:
-        pdf.add_bullet(f" {ref}")
-    
-    # Signature
-    pdf.ln(20)
-    pdf.set_font('Arial', 'I', 10)
-    pdf.cell(0, 5, "_________________________________________", 0, 1, 'C')
-    pdf.cell(0, 5, "Responsable Qualité / Ingénieur Méthodes", 0, 1, 'C')
-    pdf.cell(0, 5, "Date: ___________________________", 0, 1, 'C')
-    
-    # Sauvegarde du PDF
-    pdf_bytes = pdf.output(dest='S').encode('latin-1')
-    
-    return pdf_bytes
+    output.seek(0)
+    return output
 
 # ---------------- SIDEBAR STYLÉE ----------------
 with st.sidebar:
@@ -710,14 +940,18 @@ with st.sidebar:
         help="Facteur pour le niveau de confiance des calculs"
     )
     
-    # Configuration PDF
+    # Options de rapport
     st.markdown("---")
-    st.markdown('<div style="font-size: 1.2rem; font-weight: 600; color: #2c3e50; margin: 1.5rem 0 1rem 0;">📄 Options PDF</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size: 1.2rem; font-weight: 600; color: #2c3e50; margin: 1.5rem 0 1rem 0;">📄 Options de Rapport</div>', unsafe_allow_html=True)
     
-    include_raw_data = st.checkbox("Inclure données brutes", value=True)
-    include_charts = st.checkbox("Inclure graphiques", value=True)
-    company_name = st.text_input("Nom de l'entreprise", "Votre Entreprise")
     study_name = st.text_input("Nom de l'étude", "Analyse Gage R&R")
+    company_name = st.text_input("Nom de l'entreprise", "")
+    
+    export_format = st.radio(
+        "Format d'export",
+        ["HTML (pour impression/PDF)", "Excel complet"],
+        index=0
+    )
     
     st.markdown("---")
     
@@ -828,7 +1062,6 @@ if uploaded_file:
     with st.expander("Voir les données détaillées", expanded=True):
         st.markdown('<div class="dataframe-container">', unsafe_allow_html=True)
         
-        # Style amélioré pour le DataFrame
         def color_gradient(val):
             if isinstance(val, (int, float)):
                 intensity = min(0.8, abs(val - df.values.mean()) / df.values.std() * 0.3)
@@ -889,19 +1122,179 @@ if uploaded_file:
     vt = np.sqrt(grr ** 2 + vp ** 2)
     p_grr = (grr / vt) * 100
 
-    # Préparation des données opérateurs pour le PDF
-    operators_data = []
+    # Calculs pour l'interprétation
+    ev_percent = (ev / vt) * 100 if vt > 0 else 0
+    av_percent = (av / vt) * 100 if vt > 0 else 0
+    vp_percent = (vp / vt) * 100 if vt > 0 else 0
+    ratio_vp_grr = vp / grr if grr > 0 else 0
+
+    # Données des opérateurs
+    operators = []
     for i in range(3):
         op_cols = [f"OP{i+1}-1", f"OP{i+1}-2", f"OP{i+1}-3"]
         op_data = df[op_cols].values.flatten()
-        operators_data.append({
+        operators.append({
+            'name': f'Opérateur {i+1}',
             'moyenne': np.mean(op_data),
             'etendue': [r_bar_op1, r_bar_op2, r_bar_op3][i],
             'ecart_type': np.std(op_data)
         })
 
-    # ---------------- GÉNÉRATION DU PDF ----------------
-    st.markdown('<div class="section-header"><span>📄 Génération du Rapport PDF</span></div>', unsafe_allow_html=True)
+    # ---------------- PRÉPARATION DES DONNÉES POUR RAPPORT ----------------
+    
+    # Évaluation générale
+    if p_grr < 10:
+        overall_status = "EXCELLENT"
+        overall_color = "#27ae60"
+        status_class = "status-excellent"
+        overall_message = "Le système de mesure est optimal et fiable pour les analyses critiques."
+    elif p_grr <= 30:
+        overall_status = "ACCEPTABLE"
+        overall_color = "#f39c12"
+        status_class = "status-acceptable"
+        overall_message = "Le système est acceptable mais des améliorations sont recommandées pour une meilleure fiabilité."
+    else:
+        overall_status = "INACCEPTABLE"
+        overall_color = "#c0392b"
+        status_class = "status-unacceptable"
+        overall_message = "Le système nécessite des actions correctives urgentes avant toute utilisation."
+    
+    # Analyse par composante
+    if ev_percent > av_percent:
+        source_principale = "La RÉPÉTABILITÉ (EV) est la principale source de variation, indiquant une variabilité intra-opérateur élevée."
+    else:
+        source_principale = "La REPRODUCTIBILITÉ (AV) est la principale source de variation, indiquant des différences significatives entre opérateurs."
+    
+    # Diagnostic
+    diagnostic_ev = f"{ev_percent:.1f}% - {'Excellente' if ev_percent < 10 else 'Bonne' if ev_percent < 20 else 'À améliorer'}"
+    diagnostic_av = f"{av_percent:.1f}% - {'Excellente' if av_percent < 10 else 'Bonne' if av_percent < 20 else 'À améliorer'}"
+    
+    if ratio_vp_grr > 4:
+        diagnostic_ratio = f"{ratio_vp_grr:.2f}:1 - Excellente capacité à distinguer les pièces"
+        capacite_discrimination = f"Avec un ratio de {ratio_vp_grr:.2f}:1, le système possède une excellente capacité à distinguer les différences entre pièces."
+    elif ratio_vp_grr > 2:
+        diagnostic_ratio = f"{ratio_vp_grr:.2f}:1 - Capacité acceptable"
+        capacite_discrimination = f"Avec un ratio de {ratio_vp_grr:.2f}:1, le système possède une capacité acceptable à distinguer les différences entre pièces."
+    else:
+        diagnostic_ratio = f"{ratio_vp_grr:.2f}:1 - Faible capacité"
+        capacite_discrimination = f"Avec un ratio de {ratio_vp_grr:.2f}:1, le système a une faible capacité à distinguer les différences entre pièces."
+    
+    # Recommandations
+    if p_grr > 30:
+        recommandations_titre = "ACTIONS CORRECTIVES IMMÉDIATES"
+        recommandations_liste = [
+            "Suspendre temporairement l'utilisation du système pour les mesures critiques",
+            "Réétalonner tous les instruments de mesure",
+            "Former/reformer les opérateurs avec méthode standardisée",
+            "Vérifier la stabilité des conditions environnementales",
+            "Revoir le plan d'échantillonnage des pièces"
+        ]
+        actions_prioritaires = [
+            "Standardiser la méthode de prise de mesure",
+            "Vérifier l'état et l'étalonnage des instruments",
+            "Minimiser les variations environnementales"
+        ]
+    elif p_grr > 15:
+        recommandations_titre = "AMÉLIORATIONS RECOMMANDÉES"
+        recommandations_liste = [
+            "Améliorer la procédure écrite de mesure",
+            "Implémenter des gabarits ou dispositifs d'aide",
+            "Organiser des audits croisés entre opérateurs",
+            "Augmenter le nombre d'essais pour réduire l'incertitude",
+            "Surveiller régulièrement la performance du système"
+        ]
+        if ev_percent > av_percent:
+            actions_prioritaires = [
+                "Standardiser la méthode de prise de mesure",
+                "Vérifier l'état et l'étalonnage des instruments",
+                "Minimiser les variations environnementales"
+            ]
+        else:
+            actions_prioritaires = [
+                "Organiser une formation commune à tous les opérateurs",
+                "Créer des aides visuelles pour les décisions limites",
+                "Implémenter des audits croisés réguliers"
+            ]
+    else:
+        recommandations_titre = "ACTIONS DE MAINTENANCE"
+        recommandations_liste = [
+            "Maintenir la documentation à jour",
+            "Programmer des étalonnages réguliers",
+            "Surveiller les tendances dans le temps",
+            "Former les nouveaux opérateurs avec méthode validée",
+            "Réaliser des vérifications périodiques du système"
+        ]
+        actions_prioritaires = [
+            "Maintenir la documentation à jour",
+            "Programmer des étalonnages préventifs",
+            "Surveiller statistiquement les performances"
+        ]
+    
+    # Données pour le rapport
+    report_data = {
+        'date': datetime.now().strftime("%d/%m/%Y %H:%M"),
+        'study_name': study_name,
+        'company_name': company_name,
+        'p_grr': p_grr,
+        'ev': ev,
+        'av': av,
+        'grr': grr,
+        'vp': vp,
+        'vt': vt,
+        'ev_percent': ev_percent,
+        'av_percent': av_percent,
+        'vp_percent': vp_percent,
+        'ratio_vp_grr': ratio_vp_grr,
+        'r_double_bar': r_double_bar,
+        'n_pieces': n_pieces,
+        'n_operateurs': n_operateurs,
+        'n_essais': n_essais,
+        'confidence_factor': confidence_factor,
+        'overall_status': overall_status,
+        'status_class': status_class,
+        'overall_message': overall_message,
+        'source_principale': source_principale,
+        'capacite_discrimination': capacite_discrimination,
+        'diagnostic_ev': diagnostic_ev,
+        'diagnostic_av': diagnostic_av,
+        'diagnostic_ratio': diagnostic_ratio,
+        'recommandations_titre': recommandations_titre,
+        'recommandations_liste': recommandations_liste,
+        'actions_prioritaires': actions_prioritaires,
+        'operators': operators
+    }
+    
+    # Données pour les résultats
+    results_data = {
+        'p_grr': p_grr,
+        'ev': ev,
+        'av': av,
+        'grr': grr,
+        'vp': vp,
+        'vt': vt,
+        'ev_percent': ev_percent,
+        'av_percent': av_percent,
+        'vp_percent': vp_percent,
+        'ratio_vp_grr': ratio_vp_grr,
+        'r_double_bar': r_double_bar,
+        'n_pieces': n_pieces,
+        'n_operateurs': n_operateurs,
+        'n_essais': n_essais,
+        'confidence_factor': confidence_factor
+    }
+    
+    operators_display_data = [
+        {
+            'Opérateur': op['name'],
+            'Moyenne': f"{op['moyenne']:.4f}",
+            'Étendue Moyenne': f"{op['etendue']:.4f}",
+            'Écart-Type': f"{op['ecart_type']:.4f}"
+        }
+        for op in operators
+    ]
+
+    # ---------------- GÉNÉRATION DE RAPPORT ----------------
+    st.markdown('<div class="section-header"><span>📄 Génération de Rapport</span></div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
@@ -910,13 +1303,13 @@ if uploaded_file:
         st.markdown(f"""
         <div class="report-card" style="border-left-color: {'#2ecc71' if p_grr < 10 else '#f1c40f' if p_grr <= 30 else '#e74c3c'};">
             <div style="font-size: 1.2rem; font-weight: 600; color: #2c3e50;">
-                Rapport Gage R&R - {study_name}
+                {study_name}
             </div>
             <div style="margin-top: 1rem;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                     <span style="color: #7f8c8d;">Statut:</span>
                     <span style="font-weight: 600; color: {'#27ae60' if p_grr < 10 else '#f39c12' if p_grr <= 30 else '#c0392b'}">
-                        {'EXCELLENT' if p_grr < 10 else 'ACCEPTABLE' if p_grr <= 30 else 'INACCEPTABLE'}
+                        {overall_status}
                     </span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -924,26 +1317,116 @@ if uploaded_file:
                     <span style="font-weight: 600;">{p_grr:.2f}%</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                    <span style="color: #7f8c8d;">Pages estimées:</span>
-                    <span style="font-weight: 600;">5-6 pages</span>
+                    <span style="color: #7f8c8d;">Format:</span>
+                    <span style="font-weight: 600;">{export_format}</span>
                 </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Boutons de génération
+        st.markdown("---")
+        
+        if export_format == "HTML (pour impression/PDF)":
+            if st.button("📄 Générer Rapport HTML", type="primary", use_container_width=True):
+                with st.spinner("🔄 Génération du rapport HTML en cours..."):
+                    # Générer le HTML
+                    html_content = generate_html_report(report_data, df)
+                    
+                    # Créer un fichier HTML téléchargeable
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"Rapport_Gage_RR_{study_name.replace(' ', '_')}_{timestamp}.html"
+                    
+                    # Encoder en base64
+                    b64 = base64.b64encode(html_content.encode()).decode()
+                    
+                    # Afficher le bouton de téléchargement
+                    st.markdown(f"""
+                    <div style="text-align: center; margin: 2rem 0;">
+                        <a href="data:text/html;base64,{b64}" 
+                           download="{filename}"
+                           style="text-decoration: none;">
+                            <div class="download-btn-pdf">
+                                📥 Télécharger le Rapport HTML
+                            </div>
+                        </a>
+                        <div style="color: #7f8c8d; font-size: 0.9rem; margin-top: 1rem;">
+                            Fichier: {filename}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Instructions pour conversion PDF
+                    with st.expander("ℹ️ Comment convertir en PDF"):
+                        st.markdown("""
+                        ### Instructions pour conversion HTML vers PDF:
+                        
+                        1. **Téléchargez** le fichier HTML ci-dessus
+                        2. **Ouvrez-le** dans votre navigateur (Chrome, Edge, Firefox)
+                        3. **Imprimez** la page (Ctrl+P ou Cmd+P)
+                        4. **Choisissez** "Enregistrer au format PDF" comme imprimante
+                        5. **Ajustez** les marges si nécessaire
+                        6. **Enregistrez** le fichier PDF
+                        
+                        ### Paramètres d'impression recommandés:
+                        - Orientation: Portrait
+                        - Marges: Minimales
+                        - Mise à l'échelle: 100%
+                        - En-têtes et pieds de page: Désactivés
+                        - Arrière-plan: Inclure
+                        """)
+                    
+                    st.success("✅ Rapport HTML généré avec succès!")
+        
+        else:  # Excel format
+            if st.button("📊 Générer Rapport Excel", type="primary", use_container_width=True):
+                with st.spinner("🔄 Génération du rapport Excel en cours..."):
+                    # Générer le rapport Excel
+                    excel_output = generate_excel_report_with_interpretation(
+                        df, results_data, operators_display_data, report_data
+                    )
+                    
+                    # Nom du fichier
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"Rapport_Gage_RR_{study_name.replace(' ', '_')}_{timestamp}.xlsx"
+                    
+                    # Encoder en base64
+                    b64 = base64.b64encode(excel_output.getvalue()).decode()
+                    
+                    # Afficher le bouton de téléchargement
+                    st.markdown(f"""
+                    <div style="text-align: center; margin: 2rem 0;">
+                        <a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" 
+                           download="{filename}"
+                           style="text-decoration: none;">
+                            <div class="download-btn">
+                                📥 Télécharger le Rapport Excel
+                            </div>
+                        </a>
+                        <div style="color: #7f8c8d; font-size: 0.9rem; margin-top: 1rem;">
+                            Fichier: {filename} • {len(excel_output.getvalue())//1024} Ko
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    st.success("✅ Rapport Excel généré avec succès!")
     
     with col2:
-        st.markdown("### 📋 Sections Incluses")
+        st.markdown("### 📋 Contenu du Rapport")
+        
         sections = [
-            "✅ Résumé exécutif et statut",
-            "✅ Métriques clés et évaluation",
+            "✅ Page de titre professionnelle",
+            "✅ Résumé exécutif avec évaluation",
+            "✅ Métriques complètes détaillées",
             "✅ Informations sur l'étude",
             "✅ Performance des opérateurs",
             "✅ Données brutes (extrait)",
-            "✅ Interprétation détaillée",
-            "✅ Recommandations et plan d'action",
-            "✅ Critères d'acceptation",
-            "✅ Références normatives",
-            "✅ Zone de signature"
+            "✅ Interprétation détaillée des résultats",
+            "✅ Recommandations personnalisées",
+            "✅ Plan d'action prioritaire",
+            "✅ Critères d'acceptation AIAG",
+            "✅ Zone de signature",
+            "✅ Références normatives"
         ]
         
         for section in sections:
@@ -953,92 +1436,38 @@ if uploaded_file:
                 <div style="color: #2c3e50;">{section}</div>
             </div>
             """, unsafe_allow_html=True)
-    
-    # Bouton pour générer le PDF
-    st.markdown("---")
-    
-    if st.button("📄 Générer le Rapport PDF", type="primary", use_container_width=True):
-        with st.spinner("🔄 Génération du rapport PDF en cours..."):
-            try:
-                # Générer le nom du fichier
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"Rapport_Gage_RR_{study_name.replace(' ', '_')}_{timestamp}.pdf"
-                
-                # Générer le PDF
-                pdf_bytes = generate_report(
-                    p_grr=p_grr,
-                    ev=ev,
-                    av=av,
-                    grr=grr,
-                    vp=vp,
-                    vt=vt,
-                    n_pieces=n_pieces,
-                    n_operateurs=n_operateurs,
-                    n_essais=n_essais,
-                    r_double_bar=r_double_bar,
-                    confidence_factor=confidence_factor,
-                    operators_data=operators_data,
-                    df=df,
-                    filename=filename
-                )
-                
-                # Encoder le PDF en base64
-                b64_pdf = base64.b64encode(pdf_bytes).decode()
-                
-                # Afficher le bouton de téléchargement
-                st.markdown(f"""
-                <div style="text-align: center; margin: 2rem 0;">
-                    <a href="data:application/pdf;base64,{b64_pdf}" 
-                       download="{filename}"
-                       style="text-decoration: none;">
-                        <div class="download-btn-pdf">
-                            📥 Télécharger le Rapport PDF Complet
-                        </div>
-                    </a>
-                    <div style="color: #7f8c8d; font-size: 0.9rem; margin-top: 1rem;">
-                        Fichier: {filename} • {len(pdf_bytes)//1024} Ko
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Aperçu du PDF (optionnel)
-                with st.expander("👁️ Aperçu du rapport (première page)"):
-                    st.markdown("""
-                    <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 3rem;">📄</div>
-                        <div style="font-weight: 600; color: #2c3e50; margin: 1rem 0;">
-                            Rapport PDF Généré avec Succès!
-                        </div>
-                        <div style="color: #7f8c8d;">
-                            Le rapport contient toutes les analyses, interprétations et recommandations.
-                        </div>
-                        <div style="margin-top: 1.5rem; padding: 1rem; background: white; border-radius: 8px; text-align: left;">
-                            <div style="font-weight: 600; color: #2c3e50;">Contenu inclus:</div>
-                            <div style="color: #7f8c8d; font-size: 0.9rem; margin-top: 0.5rem;">
-                                • Page de titre professionnelle<br>
-                                • Résumé exécutif avec statut<br>
-                                • Tableaux de résultats détaillés<br>
-                                • Analyse complète des composantes<br>
-                                • Plan d'action personnalisé<br>
-                                • Références normatives<br>
-                                • Zone de signature
-                            </div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                st.success("✅ Rapport PDF généré avec succès!")
-                
-            except Exception as e:
-                st.error(f"❌ Erreur lors de la génération du PDF: {str(e)}")
-    
-    # ---------------- VISUALISATIONS AVANCÉES ----------------
-    st.markdown('<div class="section-header"><span>📈 Visualisations</span></div>', unsafe_allow_html=True)
+        
+        st.markdown("---")
+        st.markdown("### 📊 Résumé des Résultats")
+        
+        summary_data = {
+            "Indicateur": ["%GRR Total", "Répétabilité", "Reproductibilité", "Ratio VP/GRR"],
+            "Valeur": [f"{p_grr:.2f}%", f"{ev_percent:.1f}%", f"{av_percent:.1f}%", f"{ratio_vp_grr:.2f}"],
+            "Évaluation": [overall_status, 
+                          "✓" if ev_percent < 20 else "⚠", 
+                          "✓" if av_percent < 20 else "⚠",
+                          "✓" if ratio_vp_grr > 4 else ("⚠" if ratio_vp_grr > 2 else "✗")]
+        }
+        
+        summary_df = pd.DataFrame(summary_data)
+        st.dataframe(
+            summary_df.style
+            .apply(lambda x: ['background: #d4edda' if v in ['✓', 'EXCELLENT', 'ACCEPTABLE'] else 
+                             'background: #fff3cd' if v == '⚠' else 
+                             'background: #f8d7da' if v in ['✗', 'INACCEPTABLE'] else '' for v in x], 
+                   subset=['Évaluation'])
+            .set_properties(**{'text-align': 'center'}),
+            use_container_width=True,
+            hide_index=True
+        )
+
+    # ---------------- VISUALISATIONS ----------------
+    st.markdown('<div class="section-header"><span>📈 Visualisations des Résultats</span></div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
     with col1:
-        # Graphique 1 : Composantes de variation (3D style)
+        # Graphique 1 : Composantes de variation
         st.markdown('<div class="plot-container">', unsafe_allow_html=True)
         fig1, ax1 = plt.subplots(figsize=(10, 6))
         
@@ -1046,17 +1475,14 @@ if uploaded_file:
         values = [ev, av, grr, vp, vt]
         colors = ['#3498db', '#2ecc71', '#9b59b6', '#e74c3c', '#f39c12']
         
-        # Barres avec effet 3D
         bars = ax1.bar(components, values, color=colors, edgecolor='white', 
                       linewidth=2, alpha=0.9, zorder=3)
         
-        # Style amélioré
         ax1.grid(True, alpha=0.3, zorder=0)
         ax1.set_facecolor('#f8fafc')
         ax1.spines['top'].set_visible(False)
         ax1.spines['right'].set_visible(False)
         
-        # Ajouter les valeurs avec animation visuelle
         for bar, value in zip(bars, values):
             height = bar.get_height()
             ax1.text(bar.get_x() + bar.get_width()/2., height + max(values)*0.01,
@@ -1070,16 +1496,16 @@ if uploaded_file:
         plt.close()
     
     with col2:
-        # Graphique 3 : Camembert amélioré
+        # Graphique 2 : Répartition en pourcentage
         st.markdown('<div class="plot-container">', unsafe_allow_html=True)
-        fig3, ax3 = plt.subplots(figsize=(8, 6))
+        fig2, ax2 = plt.subplots(figsize=(8, 6))
         
         labels = ['Variation Système\n(GRR)', 'Variation Pièces\n(VP)']
         sizes = [grr**2, vp**2]
         colors = ['#9b59b6', '#e74c3c']
         explode = (0.1, 0)
         
-        wedges, texts, autotexts = ax3.pie(
+        wedges, texts, autotexts = ax2.pie(
             sizes, explode=explode, labels=labels, colors=colors,
             autopct='%1.1f%%', shadow=True, startangle=90,
             textprops={'fontsize': 11, 'fontweight': 'bold'},
@@ -1092,26 +1518,25 @@ if uploaded_file:
             autotext.set_fontsize(12)
         
         centre_circle = plt.Circle((0,0), 0.70, fc='white', edgecolor='white', linewidth=2)
-        fig3.gca().add_artist(centre_circle)
+        fig2.gca().add_artist(centre_circle)
         
-        ax3.axis('equal')
-        ax3.set_title('🥧 Répartition des Variations', fontsize=14, fontweight=600, pad=20)
+        ax2.axis('equal')
+        ax2.set_title('🥧 Répartition des Variations', fontsize=14, fontweight=600, pad=20)
         plt.tight_layout()
-        st.pyplot(fig3)
+        st.pyplot(fig2)
         st.markdown('</div>', unsafe_allow_html=True)
         plt.close()
 
     # ---------------- RÉSULTATS PRINCIPAUX ----------------
     st.markdown('<div class="section-header"><span>📊 Résultats Principaux</span></div>', unsafe_allow_html=True)
     
-    # Métriques principales
     col1, col2, col3, col4 = st.columns(4)
     
     metrics_data = [
-        ("EV", ev, "#3498db", "Répétabilité"),
-        ("AV", av, "#2ecc71", "Reproductibilité"),
-        ("GRR", grr, "#9b59b6", "Variation Système"),
-        ("%GRR", p_grr, "#e74c3c", "Pourcentage Total")
+        ("EV", ev, "#3498db", f"Répétabilité\n({ev_percent:.1f}%)"),
+        ("AV", av, "#2ecc71", f"Reproductibilité\n({av_percent:.1f}%)"),
+        ("GRR", grr, "#9b59b6", f"Variation Système\n({p_grr:.1f}%)"),
+        ("VP", vp, "#e74c3c", f"Variation Pièces\n({vp_percent:.1f}%)")
     ]
     
     for col, (label, value, color, desc) in zip([col1, col2, col3, col4], metrics_data):
@@ -1120,7 +1545,7 @@ if uploaded_file:
             <div class="metric-card">
                 <div class="metric-label">{desc}</div>
                 <div class="metric-value" style="background: linear-gradient(135deg, {color}, #2c3e50); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                    {value:.3f}{'%' if label == '%GRR' else ''}
+                    {value:.3f}
                 </div>
                 <div style="color: #95a5a6; font-size: 0.9rem; margin-top: 0.5rem;">
                     <strong>{label}</strong>
@@ -1128,7 +1553,7 @@ if uploaded_file:
             </div>
             """, unsafe_allow_html=True)
     
-    # Barre de progression avec animation
+    # Barre de progression
     progress_html = f"""
     <div style="margin: 2rem 0;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -1164,225 +1589,138 @@ if uploaded_file:
     </div>
     """, unsafe_allow_html=True)
 
-    # ---------------- STATISTIQUES DÉTAILLÉES ----------------
-    st.markdown('<div class="section-header"><span>📋 Statistiques Détaillées</span></div>', unsafe_allow_html=True)
+    # ---------------- INTERPRÉTATION DÉTAILLÉE ----------------
+    st.markdown('<div class="section-header"><span>💡 Interprétation Détaillée</span></div>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Tableau des opérateurs
-        st.markdown("**👥 Performance par Opérateur**")
-        operators_display = []
-        for i, (op_cols, op_name, r_bar) in enumerate(zip([op1_cols, op2_cols, op3_cols], 
-                                                         ['Opérateur 1', 'Opérateur 2', 'Opérateur 3'],
-                                                         [r_bar_op1, r_bar_op2, r_bar_op3]), 1):
-            op_data = df[op_cols].values.flatten()
-            operators_display.append({
-                'Opérateur': f'👤 {op_name}',
-                'Moyenne': f'{np.mean(op_data):.4f}',
-                'Étendue': f'{r_bar:.4f}',
-                'σ': f'{np.std(op_data):.4f}'
-            })
+    with st.expander("🔍 Analyse Complète", expanded=True):
+        tab1, tab2, tab3 = st.tabs(["📊 Évaluation", "🎯 Recommandations", "📈 Performance"])
         
-        operators_df = pd.DataFrame(operators_display)
-        st.dataframe(
-            operators_df.style
-            .background_gradient(subset=['Moyenne', 'Étendue', 'σ'], cmap='YlOrRd')
-            .set_properties(**{'text-align': 'center'}),
-            use_container_width=True
-        )
-    
-    with col2:
-        # Indicateurs secondaires
-        st.markdown("**📈 Indicateurs Complémentaires**")
-        
-        secondary_metrics = [
-            ("VP (Pièces)", f"{vp:.4f}", "#e74c3c"),
-            ("VT (Totale)", f"{vt:.4f}", "#f39c12"),
-            ("R̄ (Étendue)", f"{r_double_bar:.4f}", "#3498db"),
-            ("Pièces (n)", str(n_pieces), "#95a5a6"),
-            ("Essais (r)", str(n_essais), "#95a5a6"),
-            ("Opérateurs (o)", str(n_operateurs), "#95a5a6")
-        ]
-        
-        for label, value, color in secondary_metrics:
+        with tab1:
             st.markdown(f"""
-            <div style="background: white; padding: 1rem; border-radius: 10px; margin: 0.5rem 0; 
-                        border-left: 4px solid {color}; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="font-weight: 600; color: #2c3e50;">{label}</div>
-                    <div style="font-weight: 700; color: {color}; font-size: 1.1rem;">{value}</div>
+            <div style="background: {'#d4edda' if p_grr < 10 else '#fff3cd' if p_grr <= 30 else '#f8d7da'}; 
+                        padding: 1.5rem; border-radius: 10px; border-left: 5px solid {'#28a745' if p_grr < 10 else '#ffc107' if p_grr <= 30 else '#dc3545'};">
+                <div style="font-size: 1.2rem; font-weight: 600; color: {'#155724' if p_grr < 10 else '#856404' if p_grr <= 30 else '#721c24'}; 
+                            margin-bottom: 1rem;">
+                    Évaluation: {overall_status}
+                </div>
+                <div style="color: {'#155724' if p_grr < 10 else '#856404' if p_grr <= 30 else '#721c24'};">
+                    {overall_message}
                 </div>
             </div>
             """, unsafe_allow_html=True)
-
-    # ---------------- INTERPRÉTATION ET CONSEILS ----------------
-    st.markdown('<div class="section-header"><span>💡 Interprétation & Conseils</span></div>', unsafe_allow_html=True)
-    
-    # Calcul des pourcentages pour l'interprétation
-    ev_percent = (ev / vt) * 100 if vt > 0 else 0
-    av_percent = (av / vt) * 100 if vt > 0 else 0
-    ratio_vp_grr = vp / grr if grr > 0 else 0
-    
-    # Interprétation détaillée
-    with st.expander("🔍 Analyse Détaillée des Résultats", expanded=True):
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("### 📊 Analyse des Composantes")
             
-            if ev_percent > av_percent:
-                st.markdown("""
-                <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 10px; border-left: 4px solid #2196f3;">
-                    <div style="font-weight: 600; color: #1565c0; margin-bottom: 0.5rem;">
-                        🔍 Source Principale: RÉPÉTABILITÉ (EV)
-                    </div>
-                    <div style="color: #424242;">
-                        La variabilité intra-opérateur domine. Cela suggère que:
-                    </div>
-                    <div style="margin-top: 1rem;">
-                        <div style="color: #424242;">• L'instrument peut être instable</div>
-                        <div style="color: #424242;">• La procédure n'est pas suffisamment standardisée</div>
-                        <div style="color: #424242;">• Les conditions environnementales varient</div>
+            st.markdown("#### Analyse des Composantes")
+            
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.markdown(f"""
+                <div style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+                    <div style="font-weight: 600; color: #1565c0;">Répétabilité (EV)</div>
+                    <div style="color: #424242; margin-top: 0.5rem;">
+                        {diagnostic_ev}
+                        <div style="font-size: 0.9rem; margin-top: 0.3rem;">
+                            Variabilité des mesures répétées par le même opérateur
+                        </div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-            else:
-                st.markdown("""
-                <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 10px; border-left: 4px solid #4caf50;">
-                    <div style="font-weight: 600; color: #2e7d32; margin-bottom: 0.5rem;">
-                        🔍 Source Principale: REPRODUCTIBILITÉ (AV)
+            
+            with col_b:
+                st.markdown(f"""
+                <div style="background: #e8f5e9; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+                    <div style="font-weight: 600; color: #2e7d32;">Reproductibilité (AV)</div>
+                    <div style="color: #424242; margin-top: 0.5rem;">
+                        {diagnostic_av}
+                        <div style="font-size: 0.9rem; margin-top: 0.3rem;">
+                            Différences entre les opérateurs
+                        </div>
                     </div>
-                    <div style="color: #424242;">
-                        Les différences entre opérateurs dominent. Cela suggère que:
-                    </div>
-                    <div style="margin-top: 1rem;">
-                        <div style="color: #424242;">• Les méthodes de mesure divergent</div>
-                        <div style="color: #424242;">• La formation est insuffisante ou inégale</div>
-                        <div style="color: #424242;">• L'interprétation des résultats est subjective</div>
-                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown(f"""
+            <div style="background: #fff3e0; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <div style="font-weight: 600; color: #ef6c00;">Capacité de Discrimination</div>
+                <div style="color: #424242; margin-top: 0.5rem;">
+                    {capacite_discrimination}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with tab2:
+            st.markdown(f"""
+            <div style="background: {'#ffebee' if p_grr > 30 else '#fff3e0' if p_grr > 15 else '#e8f5e9'}; 
+                        padding: 1.5rem; border-radius: 10px;">
+                <div style="font-size: 1.2rem; font-weight: 600; color: {'#c62828' if p_grr > 30 else '#ef6c00' if p_grr > 15 else '#2e7d32'}; 
+                            margin-bottom: 1rem;">
+                    {recommandations_titre}
+                </div>
+                <div style="color: {'#721c24' if p_grr > 30 else '#856404' if p_grr > 15 else '#2e7d32'};">
+                    {''.join([f'<div style="margin: 0.5rem 0;">• {rec}</div>' for rec in recommandations_liste])}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("#### Plan d'Action Prioritaire")
+            for i, action in enumerate(actions_prioritaires, 1):
+                st.markdown(f"""
+                <div style="background: white; padding: 1rem; border-radius: 8px; margin: 0.5rem 0; border-left: 4px solid #667eea;">
+                    <div style="font-weight: 600; color: #2c3e50;">P{i}: {action}</div>
                 </div>
                 """, unsafe_allow_html=True)
         
-        with col2:
-            st.markdown("### 🎯 Capacité de Discrimination")
+        with tab3:
+            st.markdown("#### Performance des Opérateurs")
+            operators_df = pd.DataFrame(operators_display_data)
+            st.dataframe(
+                operators_df.style
+                .background_gradient(subset=['Moyenne', 'Étendue Moyenne', 'Écart-Type'], cmap='YlOrRd')
+                .set_properties(**{'text-align': 'center'}),
+                use_container_width=True
+            )
             
-            if ratio_vp_grr > 4:
+            st.markdown("#### Indicateurs Secondaires")
+            
+            col_x, col_y = st.columns(2)
+            with col_x:
                 st.markdown(f"""
-                <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 10px; border-left: 4px solid #4caf50;">
-                    <div style="font-weight: 600; color: #2e7d32; margin-bottom: 0.5rem;">
-                        ✅ EXCELLENTE CAPACITÉ
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+                    <div style="font-weight: 600; color: #2c3e50;">Ratio Signal/Bruit</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: {'#2ecc71' if ratio_vp_grr > 4 else '#f1c40f' if ratio_vp_grr > 2 else '#e74c3c'}">
+                        {ratio_vp_grr:.2f}:1
                     </div>
-                    <div style="font-size: 2rem; font-weight: 700; color: #2e7d32; text-align: center; margin: 1rem 0;">
-                        {ratio_vp_grr:.1f}:1
-                    </div>
-                    <div style="color: #424242; text-align: center;">
-                        Le système distingue clairement les différences entre pièces
+                    <div style="font-size: 0.9rem; color: #7f8c8d; margin-top: 0.3rem;">
+                        {'Excellente' if ratio_vp_grr > 4 else 'Acceptable' if ratio_vp_grr > 2 else 'Faible'} discrimination
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-            elif ratio_vp_grr > 2:
+            
+            with col_y:
                 st.markdown(f"""
-                <div style="background: #fff3e0; padding: 1.5rem; border-radius: 10px; border-left: 4px solid #ff9800;">
-                    <div style="font-weight: 600; color: #ef6c00; margin-bottom: 0.5rem;">
-                        ⚠ CAPACITÉ ACCEPTABLE
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+                    <div style="font-weight: 600; color: #2c3e50;">Étendue Moyenne (R̄)</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #3498db">
+                        {r_double_bar:.4f}
                     </div>
-                    <div style="font-size: 2rem; font-weight: 700; color: #ef6c00; text-align: center; margin: 1rem 0;">
-                        {ratio_vp_grr:.1f}:1
-                    </div>
-                    <div style="color: #424242; text-align: center;">
-                        Le système distingue raisonnablement les différences entre pièces
+                    <div style="font-size: 0.9rem; color: #7f8c8d; margin-top: 0.3rem;">
+                        Moyenne des étendues par opérateur
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div style="background: #ffebee; padding: 1.5rem; border-radius: 10px; border-left: 4px solid #f44336;">
-                    <div style="font-weight: 600; color: #c62828; margin-bottom: 0.5rem;">
-                        ❌ FAIBLE CAPACITÉ
-                    </div>
-                    <div style="font-size: 2rem; font-weight: 700; color: #c62828; text-align: center; margin: 1rem 0;">
-                        {ratio_vp_grr:.1f}:1
-                    </div>
-                    <div style="color: #424242; text-align: center;">
-                        Le système a du mal à distinguer les différences entre pièces
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-    
-    # Conseils personnalisés
-    with st.expander("🎯 Plan d'Action Recommandé", expanded=True):
-        if p_grr > 30:
-            st.markdown("""
-            <div style="background: #ffebee; padding: 1.5rem; border-radius: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
-                    <div style="font-size: 1.5rem;">🔴</div>
-                    <div style="font-size: 1.2rem; font-weight: 600; color: #c62828;">
-                        ACTIONS CORRECTIVES IMMÉDIATES
-                    </div>
-                </div>
-                <div style="color: #424242;">
-                    1. **Suspendre temporairement** l'utilisation du système pour les mesures critiques<br>
-                    2. **Réétalonner** tous les instruments de mesure<br>
-                    3. **Former/reformer** les opérateurs avec méthode standardisée<br>
-                    4. **Vérifier** la stabilité des conditions environnementales<br>
-                    5. **Revoir** le plan d'échantillonnage des pièces<br>
-                    6. **Documenter** toutes les actions correctives
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        elif p_grr > 15:
-            st.markdown("""
-            <div style="background: #fff3e0; padding: 1.5rem; border-radius: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
-                    <div style="font-size: 1.5rem;">🟡</div>
-                    <div style="font-size: 1.2rem; font-weight: 600; color: #ef6c00;">
-                        AMÉLIORATIONS RECOMMANDÉES
-                    </div>
-                </div>
-                <div style="color: #424242;">
-                    1. **Améliorer** la procédure écrite de mesure<br>
-                    2. **Implémenter** des gabarits ou dispositifs d'aide<br>
-                    3. **Organiser** des audits croisés entre opérateurs<br>
-                    4. **Augmenter** le nombre d'essais pour réduire l'incertitude<br>
-                    5. **Surveiller régulièrement** la performance du système<br>
-                    6. **Planifier** une réévaluation dans 6 mois
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown("""
-            <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
-                    <div style="font-size: 1.5rem;">🟢</div>
-                    <div style="font-size: 1.2rem; font-weight: 600; color: #2e7d32;">
-                        ACTIONS DE MAINTENANCE
-                    </div>
-                </div>
-                <div style="color: #424242;">
-                    1. **Maintenir** la documentation à jour<br>
-                    2. **Programmer** des étalonnages réguliers<br>
-                    3. **Surveiller** les tendances dans le temps<br>
-                    4. **Former** les nouveaux opérateurs avec méthode validée<br>
-                    5. **Réaliser** des vérifications périodiques<br>
-                    6. **Capitaliser** sur les bonnes pratiques
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
 
-# Pied de page élégant
+# Pied de page
 st.markdown("""
 <div style="margin-top: 4rem; padding: 2rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); 
             border-radius: 20px; text-align: center; border-top: 1px solid #e0e6ed;">
     <div style="font-size: 0.9rem; color: #7f8c8d;">
         <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 0.5rem;">
             <div>📊</div>
-            <div><strong>Gage R&R - Méthode des Étendues avec Rapport PDF</strong></div>
+            <div><strong>Gage R&R - Méthode des Étendues avec Rapports Complets</strong></div>
             <div>⚡</div>
         </div>
-        <div>Analyse avancée de la capacité du système de mesure • Génération automatique de rapports PDF professionnels</div>
+        <div>Analyse avancée de la capacité du système de mesure • Rapports HTML/Excel professionnels</div>
         <div style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.7;">
-            Développé avec Streamlit • FPDF • Optimisé pour la qualité industrielle • Conforme aux normes AIAG
+            Conforme aux normes AIAG MSA • Utilise uniquement: Streamlit, Pandas, NumPy, Matplotlib, OpenPyXL
         </div>
     </div>
 </div>
