@@ -1848,22 +1848,59 @@ elif page == "Planning":
     bt_p["Fin prévue"] = bt_p["Date prévue"] + pd.to_timedelta(bt_p["Durée (h)"], unit="h")
 
     color_map = {"Critique":"#ff3355","Haute":"#ff8833","Moyenne":"#1565C0","Basse":"#00cc66"}
+    
+    # Create Gantt chart
     fig_g = go.Figure()
-    for _, r in bt_p.iterrows():
-        c = color_map.get(r["Priorité"],"#4488ff")
-        dur = max((r["Fin prévue"]-r["Date prévue"]).total_seconds()/86400, 0.3)
-        base = (r["Date prévue"]-pd.Timestamp("2025-01-01")).total_seconds()/86400
-        fig_g.add_trace(go.Bar(
-            y=[f"{r['BT']} | {r['Titre'][:26]}"], x=[dur], base=[base],
-            orientation="h", marker=dict(color=c, opacity=0.85, line=dict(color=c,width=1)),
-            hovertemplate=f"<b>{r['BT']}</b><br>{r['Titre']}<br>👷 {r['Technicien']}<br>Priorité: {r['Priorité']}<extra></extra>",
-            showlegend=False
-        ))
-    fig_g.update_layout(**PLOT_LAYOUT, barmode="overlay", height=380,
-        xaxis=dict(**PLOT_LAYOUT["xaxis"],
-            tickvals=list(range(0,50,7)),
-            ticktext=[(pd.Timestamp("2025-01-01")+timedelta(days=d)).strftime("%d %b") for d in range(0,50,7)]),
-        title="Diagramme de Gantt — Interventions planifiées")
+    
+    # Sort by date for better visualization
+    bt_p_sorted = bt_p.sort_values("Date prévue")
+    
+    for _, r in bt_p_sorted.iterrows():
+        color = color_map.get(r["Priorité"], "#4488ff")
+        
+        # Calculate duration in days (minimum 0.3 days for visibility)
+        if pd.notna(r["Date prévue"]) and pd.notna(r["Fin prévue"]):
+            duration = max((r["Fin prévue"] - r["Date prévue"]).total_seconds() / 86400, 0.3)
+            
+            fig_g.add_trace(go.Bar(
+                name=r['BT'],
+                y=[f"{r['BT']} | {r['Titre'][:26]}"],
+                x=[duration],
+                base=r["Date prévue"],
+                orientation="h",
+                marker=dict(color=color, opacity=0.85, line=dict(color=color, width=1)),
+                hovertemplate=f"<b>{r['BT']}</b><br>{r['Titre']}<br>👷 {r['Technicien']}<br>Priorité: {r['Priorité']}<br>Début: %{{base|%d %b %Y}}<br>Durée: {r['Durée (h)']}h<extra></extra>",
+                showlegend=False
+            ))
+    
+    # Update layout with proper configuration
+    fig_g.update_layout(
+        barmode="overlay",
+        height=400,
+        title=dict(
+            text="Diagramme de Gantt — Interventions planifiées",
+            font=dict(color="#4a7aaa", family="Exo 2")
+        ),
+        xaxis=dict(
+            title="Date",
+            tickformat="%d %b",
+            gridcolor="#0d2540",
+            color="#2a4a6a",
+            linecolor="#0d2540",
+            zerolinecolor="#0d2540"
+        ),
+        yaxis=dict(
+            title="",
+            gridcolor="#0d2540",
+            color="#2a4a6a",
+            linecolor="#0d2540"
+        ),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#4a7aaa", family="Exo 2"),
+        margin=dict(l=0, r=0, t=40, b=0)
+    )
+    
     st.plotly_chart(fig_g, use_container_width=True)
 
     section_header("📅","Prochaines maintenances préventives")
@@ -1871,18 +1908,19 @@ elif page == "Planning":
         try:
             nd = pd.to_datetime(r["Prochaine MNT"])
             delta = (nd - pd.Timestamp.now()).days
-            c = "#ff3355" if delta<7 else "#ff8833" if delta<30 else "#00cc66"
-            ic = "🚨" if delta<7 else "⚠️" if delta<30 else "📅"
+            color_class = "#ff3355" if delta<7 else "#ff8833" if delta<30 else "#00cc66"
+            icon = "🚨" if delta<7 else "⚠️" if delta<30 else "📅"
             st.markdown(f"""<div class="item-card" style="padding:10px 14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span>{ic} <span class="item-title" style="font-size:13px;">{r['Nom']}</span>
+                    <span>{icon} <span class="item-title" style="font-size:13px;">{r['Nom']}</span>
                     <span class="item-id" style="margin-left:8px;">· {r['ID']} · {r['Site']}</span></span>
-                    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:{c};font-weight:700;">
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:{color_class};font-weight:700;">
                         {r['Prochaine MNT']} <span style="font-size:11px;font-weight:400;color:#1a3555;">({delta}j)</span>
                     </span>
                 </div>
             </div>""", unsafe_allow_html=True)
-        except: pass
+        except:
+            pass
 
 # ─── KPIs & ANALYSES ──────────────────────────────────────────────────────────
 elif page == "KPIs & Analyses":
