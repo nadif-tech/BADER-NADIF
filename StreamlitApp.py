@@ -558,7 +558,7 @@ class Document:
     number: str = ""
     title: str = ""
     description: str = ""
-    type: DocumentType = DocumentType.DOCUMENT
+    type: DocumentType = DocumentType.MANUEL  # Changé de DOCUMENT à MANUEL
     category: str = ""
     entity_type: str = ""
     entity_id: int = 0
@@ -581,7 +581,7 @@ class Document:
 
     @property
     def size_human(self) -> str:
-        """Convertit la taille du fichier en format lisible sans humanize"""
+        """Convertit la taille du fichier en format lisible"""
         size = self.file_size
         for unit in ['o', 'Ko', 'Mo', 'Go']:
             if size < 1024.0:
