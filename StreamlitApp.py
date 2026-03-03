@@ -3,11 +3,11 @@ GMAO ENTERPRISE - Système de Gestion de Maintenance Assistée par Ordinateur
 Version: 3.0.0
 Auteur: Système Expert
 Licence: Commerciale
-Description: Application complète de gestion de maintenance avec plus de 10 000 lignes de code
+Description: Application complète de gestion de maintenance
 """
 
 # =============================================================================
-# IMPORTS - 200+ lignes
+# IMPORTS (réduits aux seuls packages nécessaires)
 # =============================================================================
 
 import streamlit as st
@@ -16,8 +16,6 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import matplotlib.pyplot as plt
-import seaborn as sns
 from datetime import datetime, timedelta, date
 import calendar
 import hashlib
@@ -42,8 +40,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 import requests
-import xml.etree.ElementTree as ET
-import xml.dom.minidom as minidom
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple, Union
 from contextlib import contextmanager
@@ -54,763 +50,20 @@ from collections import defaultdict, Counter
 from abc import ABC, abstractmethod
 import warnings
 import random
-import string
 import secrets
 import bcrypt
-import jwt
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
-import pickle
-import joblib
-import schedule
 import threading
-import queue
-import asyncio
-import websockets
-import socket
-import psutil
-import platform
-import subprocess
-import tempfile
-import glob
-import fnmatch
-import chardet
-import unicodedata
-import pytz
-from tzlocal import get_localzone
-import holidays
 import humanize
-import tqdm
-import colorama
-from colorama import Fore, Back, Style
-import rich
-from rich.console import Console
-from rich.table import Table
-from rich.progress import Progress
-from rich.panel import Panel
-from rich.layout import Layout
-from rich.live import Live
-from rich.text import Text
-from rich.columns import Columns
-from rich import print as rprint
-import jinja2
-from jinja2 import Template, Environment, FileSystemLoader
-import markdown
-import pdfkit
-import weasyprint
-from weasyprint import HTML, CSS
+import qrcode
+from PIL import Image, ImageDraw, ImageFont
 import openpyxl
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
-from openpyxl.utils.dataframe import dataframe_to_rows
-import xlsxwriter
-import xlrd
-import xlwt
-import odf
-import pyodf
-import yaml
-import toml
-import configparser
-import argparse
-import click
-import typer
-from typer import Argument, Option
-import fastapi
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
-import uvicorn
-import gunicorn
-import pydantic
-from pydantic import BaseModel, Field, validator
-import sqlalchemy
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, Table, MetaData
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, Session
-from sqlalchemy.pool import QueuePool
-import alembic
-from alembic.config import Config as AlembicConfig
-from alembic import command
-import redis
-from redis import Redis
-import pymongo
-from pymongo import MongoClient
-import elasticsearch
-from elasticsearch import Elasticsearch
-import influxdb
-from influxdb import InfluxDBClient
-import graphviz
-from graphviz import Digraph
-import networkx as nx
-import community
-import sklearn
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LinearRegression
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers, models
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader, Dataset
-import nltk
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-from nltk.sentiment import SentimentIntensityAnalyzer
-import spacy
-import textblob
-from textblob import TextBlob
-import gensim
-from gensim import corpora, models
-import wordcloud
-from wordcloud import WordCloud
-import PIL
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
-import cv2
-import numpy as np
-import pyttsx3
-import speech_recognition as sr
-import gtts
-from gtts import gTTS
-import playsound
-import pygame
-import qrcode
-from qrcode import QRCode
-import barcode
-from barcode import EAN13
-from barcode.writer import ImageWriter
-import pyzbar
-from pyzbar.pyzbar import decode
-import pdfplumber
-import tabula
-import camelot
-import PyPDF2
-from PyPDF2 import PdfReader, PdfWriter
-import docx
-from docx import Document
-from docx.shared import Inches, Pt, RGBColor
-import pptx
-from pptx import Presentation
-from pptx.util import Inches, Pt
-import markdown2
-import bleach
-import mistune
-import CommonMark
-import mdformat
-import pypandoc
-import textract
-import pytesseract
-import easyocr
-import keras_ocr
-import paddleocr
-from paddleocr import PaddleOCR
-import transformers
-from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-import langdetect
-from langdetect import detect
-import googletrans
-from googletrans import Translator
-import deep_translator
-from deep_translator import GoogleTranslator
-import wikipedia
-import wolframalpha
-import newsapi
-from newsapi import NewsApiClient
-import yfinance as yf
-import alpaca_trade_api as tradeapi
-import ccxt
-import binance
-from binance.client import Client
-import twstock
-import iexfinance
-from iexfinance.stocks import Stock
-import alpha_vantage
-from alpha_vantage.timeseries import TimeSeries
-import pandas_datareader as pdr
-import investpy
-import forex_python
-from forex_python.converter import CurrencyRates
-import cryptocompare
-import coinmarketcap
-from coinmarketcapapi import CoinMarketCapAPI
-import blockchain
-from blockchain import blockexplorer
-import web3
-from web3 import Web3
-import eth_account
-from eth_account import Account
-import solcx
-from solcx import compile_source
-import brownie
-from brownie import accounts, network, project
-import ganache
-from ganache import Ganache
-import truffle
-from truffle import Truffle
-import hardhat
-from hardhat import Hardhat
-import foundry
-from foundry import Foundry
-import slither
-from slither import Slither
-import mythril
-from mythril import Mythril
-import echidna
-from echidna import Echidna
-import manticore
-from manticore import Manticore
-import tealer
-from tealer import Tealer
-import octopus
-from octopus import Octopus
-import pyevmasm
-from pyevmasm import disassemble_all
-import rlp
-import eth_utils
-import eth_keys
-import eth_hash
-import trie
-import plyvel
-import rocksdb
-import lmdb
-import leveldb
-import pympler
-from pympler import asizeof, tracker, summary, muppy
-import memory_profiler
-from memory_profiler import profile
-import line_profiler
-from line_profiler import LineProfiler
-import cProfile
-import pstats
-import snakeviz
-import pycallgraph
-from pycallgraph import PyCallGraph
-from pycallgraph.output import GraphvizOutput
-import coverage
-from coverage import Coverage
-import pytest
-from pytest import fixture, mark, skip
-import unittest
-from unittest import TestCase, mock
-import doctest
-import hypothesis
-from hypothesis import given, strategies as st
-import property
-from property import given, settings
-import faker
-from faker import Faker
-import mimesis
-from mimesis import Person, Address, Datetime
-import factory
-from factory import Factory, Faker
-import model_bakery
-from model_bakery import baker
-import mixer
-from mixer.backend.sqlalchemy import mixer as sqlalchemy_mixer
-import django
-from django.conf import settings
-from django.core.management import call_command
-import flask
-from flask import Flask, request, jsonify
-import tornado
-from tornado.web import Application, RequestHandler
-import aiohttp
-from aiohttp import web
-import sanic
-from sanic import Sanic
-import quart
-from quart import Quart
-import chalice
-from chalice import Chalice
-import zappa
-from zappa import Zappa
-import serverless
-from serverless import Serverless
-import aws_lambda
-from aws_lambda import lambda_handler
-import google_cloud
-from google.cloud import storage, bigquery, pubsub
-import azure
-from azure.storage.blob import BlobServiceClient
-import boto3
-from boto3 import Session
-import botocore
-from botocore.exceptions import ClientError
-import paramiko
-from paramiko import SSHClient, AutoAddPolicy
-import fabric
-from fabric import Connection
-import ansible
-from ansible import context
-from ansible.module_utils.common.collections import ImmutableDict
-import docker
-from docker import DockerClient
-import kubernetes
-from kubernetes import client, config
-import openshift
-from openshift import client as oc_client
-import terraform
-from terraform import Terraform
-import pulumi
-from pulumi import export, ResourceOptions
-import cloudformation
-from cloudformation import CloudFormation
-import heat
-from heat import Heat
-import salt
-from salt import Salt
-import chef
-from chef import Chef
-import puppet
-from puppet import Puppet
-import vagrant
-from vagrant import Vagrant
-import virtualbox
-from virtualbox import VirtualBox
-import vmware
-from vmware import vim
-import xen
-from xen import Xen
-import kvm
-from kvm import KVM
-import proxmox
-from proxmox import Proxmox
-import ovirt
-from ovirt import oVirt
-import openstack
-from openstack import connection
-import cloudstack
-from cloudstack import CloudStack
-import digitalocean
-from digitalocean import Manager
-import linode
-from linode import LinodeClient
-import vultr
-from vultr import Vultr
-import hetzner
-from hetzner import Hetzner
-import ovh
-from ovh import Client
-import scaleway
-from scaleway import Scaleway
-import exoscale
-from exoscale import Exoscale
-import upcloud
-from upcloud import UpCloud
-import packet
-from packet import Packet
-import equinix
-from equinix import Equinix
-import vercel
-from vercel import Vercel
-import netlify
-from netlify import Netlify
-import heroku
-from heroku import Heroku
-import render
-from render import Render
-import railway
-from railway import Railway
-import fly
-from fly import Fly
-import deno
-from deno import Deno
-import node
-from node import Node
-import npm
-from npm import NPM
-import yarn
-from yarn import Yarn
-import pnpm
-from pnpm import PNPM
-import webpack
-from webpack import Webpack
-import vite
-from vite import Vite
-import esbuild
-from esbuild import ESBuild
-import rollup
-from rollup import Rollup
-import parcel
-from parcel import Parcel
-import gulp
-from gulp import Gulp
-import grunt
-from grunt import Grunt
-import bower
-from bower import Bower
-import jspm
-from jspm import JSPM
-import systemjs
-from systemjs import SystemJS
-import requirejs
-from requirejs import RequireJS
-import browserify
-from browserify import Browserify
-import snowpack
-from snowpack import Snowpack
-import swc
-from swc import SWC
-import turbopack
-from turbopack import Turbopack
-import rspack
-from rspack import Rspack
-import farm
-from farm import Farm
-import mako
-from mako.template import Template as MakoTemplate
-from mako.lookup import TemplateLookup
-import cheetah
-from cheetah import Template as CheetahTemplate
-import genshi
-from genshi import Builder
-import pyratemp
-from pyratemp import Template as PyraTemplate
-import tenjin
-from tenjin import Template as TenjinTemplate
-import tornado
-from tornado.template import Template as TornadoTemplate
-import bottle
-from bottle import template as BottleTemplate
-import web2py
-from web2py import gluon
-import pyramid
-from pyramid.renderers import render
-import dash
-from dash import Dash, dcc, html, Input, Output
-import panel
-from panel import Panel
-import bokeh
-from bokeh.plotting import figure, show
-from bokeh.models import ColumnDataSource
-import holoviews
-from holoviews import opts
-import hvplot
-from hvplot import hvPlot
-import geoviews
-from geoviews import GeoViews
-import datashader
-from datashader import Canvas
-import xarray
-from xarray import DataArray, Dataset
-import netCDF4
-from netCDF4 import Dataset as NetCDFDataset
-import h5py
-from h5py import File
-import zarr
-from zarr import group
-import tifffile
-from tifffile import imread, imwrite
-import gdal
-from gdal import gdalconst
-import rasterio
-from rasterio import open
-import shapely
-from shapely.geometry import Point, Polygon, LineString
-import geopandas
-from geopandas import GeoDataFrame
-import fiona
-from fiona import open as fiona_open
-import cartopy
-from cartopy import crs as ccrs
-import pyproj
-from pyproj import Transformer
-import folium
-from folium import Map, Marker
-import leafmap
-from leafmap import leafmap
-import ipyleaflet
-from ipyleaflet import Map, Marker, TileLayer
-import ipywidgets
-from ipywidgets import interact, interactive
-import voila
-from voila import Voila
-import mercury
-from mercury import Mercury
-import solara
-from solara import Solara
-import taipy
-from taipy import Gui
-import nicegui
-from nicegui import ui
-import flet
-from flet import Page, Text, ElevatedButton
-import kivy
-from kivy.app import App
-from kivy.uix.button import Button
-import pygame
-from pygame import display, event
-import arcade
-from arcade import Window
-import pyglet
-from pyglet import app
-import cocos
-from cocos import scene
-import rabbyt
-from rabbyt import Sprite
-import pybox2d
-from pybox2d import world
-import pymunk
-from pymunk import Space
-import box2d
-from box2d import b2World
-import bullet
-from bullet import Bullet
-import ode
-from ode import World
-import chipmunk
-from chipmunk import Space
-import matter
-from matter import Matter
-import planck
-from planck import Planck
-import liquidfun
-from liquidfun import LiquidFun
-import mujoco
-from mujoco import MjModel
-import pybullet
-from pybullet import connect
-import gym
-from gym import Env
-import stable_baselines3
-from stable_baselines3 import PPO
-import ray
-from ray import tune
-from ray.rllib.algorithms.ppo import PPO as RayPPO
-import rl
-from rl import agents
-import torch
-from torch import nn
-import jax
-from jax import numpy as jnp
-import haiku as hk
-import flax
-from flax import linen
-import trax
-from trax import layers
-import keras
-from keras import layers as keras_layers
-import tflearn
-from tflearn import DNN
-import sonnet as snt
-import dgl
-from dgl import DGLGraph
-import pytorch_geometric
-from torch_geometric.data import Data
-import networkx
-from networkx import Graph
-import igraph
-from igraph import Graph as IGraph
-import graph_tool
-from graph_tool import Graph as GraphTool
-import snap
-from snap import TGraph
-import leidenalg
-from leidenalg import find_partition
-import infomap
-from infomap import Infomap
-import markov
-from markov import Chain
-import hmmlearn
-from hmmlearn import hmm
-import pomegranate
-from pomegranate import HiddenMarkovModel
-import pycrf
-from pycrf import CRF
-import sklearn_crfsuite
-from sklearn_crfsuite import CRF as CRFSuite
-import keras_ocr
-from keras_ocr import pipeline
-import easyocr
-from easyocr import Reader
-import paddleocr
-from paddleocr import PaddleOCR
-import ocrmypdf
-from ocrmypdf import ocr
-import tesseract
-from tesseract import image_to_string
-import abbyy
-from abbyy import OCR
-import textract
-from textract import process
-import pdftotext
-from pdftotext import PDF
-import pdfminer
-from pdfminer.high_level import extract_text
-import slate
-from slate import PDF
-import tabula
-from tabula import read_pdf
-import camelot
-from camelot import read_pdf
-import pikepdf
-from pikepdf import Pdf
-import pypdf
-from pypdf import PdfReader
-import pypdf2
-from pypdf2 import PdfFileReader
-import pymupdf
-from pymupdf import open as pdf_open
-import fitz
-from fitz import open as pdf_open
-import pdfplumber
-from pdfplumber import open as pdf_open
-import pdf2image
-from pdf2image import convert_from_path
-import img2pdf
-from img2pdf import convert
-import pillow
-from PIL import Image, ImageDraw
-import wand
-from wand.image import Image as WandImage
-import cv2
-from cv2 import imread
-import scikit_image
-from skimage import io, filters
-import opencv
-from opencv import cv2
-import mahotas
-from mahotas import imread
-import vips
-from vips import Image as VipsImage
-import gdal
-from gdal import Open
-import rasterio
-from rasterio import open
-import georaster
-from georaster import Raster
-import osgeo
-from osgeo import gdal, ogr, osr
-import pyproj
-from pyproj import Proj
-import shapely
-from shapely.geometry import shape
-import fiona
-from fiona import open
-import geopandas
-from geopandas import read_file
-import cartopy
-from cartopy import crs
-import matplotlib
-from matplotlib import pyplot as plt
-import seaborn
-from seaborn import heatmap
-import plotly
-from plotly import graph_objects
-import bokeh
-from bokeh import plotting
-import altair
-from altair import Chart
-import vega
-from vega import Vega
-import d3
-from d3 import D3
-import three
-from three import Three
-import babylon
-from babylon import Babylon
-import cesium
-from cesium import Cesium
-import mapbox
-from mapbox import Mapbox
-import leaflet
-from leaflet import Leaflet
-import openlayers
-from openlayers import OpenLayers
-import mapnik
-from mapnik import Map
-import tilemill
-from tilemill import TileMill
-import tilelive
-from tilelive import TileLive
-import tilejson
-from tilejson import TileJSON
-import mbtiles
-from mbtiles import MBTiles
-import pmtiles
-from pmtiles import PMTiles
-import vectortiles
-from vectortiles import VectorTiles
-import mapboxgl
-from mapboxgl import MapboxGL
-import mapbox
-from mapbox import Mapbox
-import maplibre
-from maplibre import MapLibre
-import openstreetmap
-from openstreetmap import OpenStreetMap
-import googlemaps
-from googlemaps import Client
-import heremaps
-from heremaps import HereMaps
-import tomtom
-from tomtom import TomTom
-import bingmaps
-from bingmaps import BingMaps
-import aws_location
-from aws_location import Location
-import azure_maps
-from azure.maps import Maps
-import mapmyindia
-from mapmyindia import MapmyIndia
-import osmapi
-from osmapi import OsmApi
-import overpass
-from overpass import API
-import nominatim
-from nominatim import Nominatim
-import geopy
-from geopy.geocoders import Nominatim
-import geocoder
-from geocoder import google
-import reverse_geocoder
-from reverse_geocoder import search
-import timezonefinder
-from timezonefinder import TimezoneFinder
-import pytz
-from pytz import timezone
-import dateutil
-from dateutil import parser
-import pendulum
-from pendulum import datetime
-import arrow
-from arrow import now
-import moment
-from moment import moment
-import delorean
-from delorean import Delorean
-import maya
-from maya import MayaDT
-import parsedatetime
-from parsedatetime import Calendar
-import dateparser
-from dateparser import parse
-import datetime
-from datetime import datetime
-import time
-from time import time
-import calendar
-from calendar import monthrange
-import holidays
-from holidays import country_holidays
-import workalendar
-from workalendar import europe
-import business_calendar
-from business_calendar import Calendar
-import pandas
-from pandas import to_datetime
-import numpy
-from numpy import datetime64
 
 # =============================================================================
-# CONFIGURATION - 300+ lignes
+# CONFIGURATION
 # =============================================================================
 
-# Configuration du logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -821,7 +74,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Configuration de Streamlit
 st.set_page_config(
     page_title="GMAO Enterprise - Gestion de Maintenance",
     page_icon="🏭",
@@ -835,11 +87,10 @@ st.set_page_config(
 )
 
 # =============================================================================
-# ENUMS - 150+ lignes
+# ENUMS (inchangés)
 # =============================================================================
 
 class UserRole(str, Enum):
-    """Rôles utilisateur"""
     ADMIN = "admin"
     MANAGER = "manager"
     SUPERVISOR = "supervisor"
@@ -852,7 +103,6 @@ class UserRole(str, Enum):
     STOCK_MANAGER = "stock_manager"
 
 class AssetStatus(str, Enum):
-    """Statuts des équipements"""
     ACTIF = "Actif"
     EN_MAINTENANCE = "En maintenance"
     HORS_SERVICE = "Hors service"
@@ -866,7 +116,6 @@ class AssetStatus(str, Enum):
     REBUT = "Rebut"
 
 class InterventionStatus(str, Enum):
-    """Statuts des interventions"""
     OUVERTE = "Ouverte"
     ASSIGNEE = "Assignée"
     EN_COURS = "En cours"
@@ -880,7 +129,6 @@ class InterventionStatus(str, Enum):
     EN_CONTROLE = "En contrôle"
 
 class PriorityLevel(str, Enum):
-    """Niveaux de priorité"""
     TRES_BASSE = "Très basse"
     BASSE = "Basse"
     NORMALE = "Normale"
@@ -890,7 +138,6 @@ class PriorityLevel(str, Enum):
     CRITIQUE = "Critique"
 
 class MaintenanceType(str, Enum):
-    """Types de maintenance"""
     PREVENTIVE = "Préventive"
     CURATIVE = "Curative"
     PREDICTIVE = "Prédictive"
@@ -903,7 +150,6 @@ class MaintenanceType(str, Enum):
     CALIBRATION = "Calibration"
 
 class StockMovementType(str, Enum):
-    """Types de mouvement de stock"""
     ENTREE = "Entrée"
     SORTIE = "Sortie"
     TRANSFERT = "Transfert"
@@ -916,7 +162,6 @@ class StockMovementType(str, Enum):
     RESERVATION = "Réservation"
 
 class DocumentType(str, Enum):
-    """Types de documents"""
     FACTURE = "Facture"
     BON_LIVRAISON = "Bon de livraison"
     BON_COMMANDE = "Bon de commande"
@@ -933,7 +178,6 @@ class DocumentType(str, Enum):
     SCHEMA = "Schéma"
 
 class NotificationType(str, Enum):
-    """Types de notification"""
     MAINTENANCE = "maintenance"
     INTERVENTION = "intervention"
     STOCK = "stock"
@@ -946,7 +190,6 @@ class NotificationType(str, Enum):
     APPROBATION = "approbation"
 
 class ReportFormat(str, Enum):
-    """Formats de rapport"""
     PDF = "PDF"
     EXCEL = "Excel"
     CSV = "CSV"
@@ -959,7 +202,6 @@ class ReportFormat(str, Enum):
     MARKDOWN = "Markdown"
 
 class UnitType(str, Enum):
-    """Types d'unités"""
     PIECE = "pièce"
     METRE = "mètre"
     KILOGRAMME = "kilogramme"
@@ -972,7 +214,6 @@ class UnitType(str, Enum):
     FORFAIT = "forfait"
 
 class ContractType(str, Enum):
-    """Types de contrat"""
     MAINTENANCE = "maintenance"
     LOCATION = "location"
     PRESTATION = "prestation"
@@ -982,7 +223,6 @@ class ContractType(str, Enum):
     ASSURANCE = "assurance"
 
 class PaymentMethod(str, Enum):
-    """Modes de paiement"""
     CARTE_BANCAIRE = "Carte bancaire"
     VIREMENT = "Virement"
     CHEQUE = "Chèque"
@@ -993,12 +233,11 @@ class PaymentMethod(str, Enum):
     LETTRE_CHARGE = "Lettre de change"
 
 # =============================================================================
-# DATA CLASSES - 400+ lignes
+# DATA CLASSES (inchangées)
 # =============================================================================
 
 @dataclass
 class User:
-    """Modèle utilisateur"""
     id: Optional[int] = None
     username: str = ""
     email: str = ""
@@ -1028,21 +267,20 @@ class User:
     updated_at: datetime = field(default_factory=datetime.now)
     created_by: Optional[int] = None
     updated_by: Optional[int] = None
-    
+
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
-    
+
     @property
     def initials(self) -> str:
         return f"{self.first_name[0] if self.first_name else ''}{self.last_name[0] if self.last_name else ''}".upper()
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
 @dataclass
 class Asset:
-    """Modèle équipement"""
     id: Optional[int] = None
     code: str = ""
     name: str = ""
@@ -1092,17 +330,17 @@ class Asset:
     updated_at: datetime = field(default_factory=datetime.now)
     created_by: Optional[int] = None
     updated_by: Optional[int] = None
-    
+
     @property
     def age_days(self) -> int:
         if self.commissioning_date:
             return (date.today() - self.commissioning_date).days
         return 0
-    
+
     @property
     def age_years(self) -> float:
         return self.age_days / 365.25
-    
+
     @property
     def warranty_status(self) -> str:
         if not self.warranty_end_date:
@@ -1114,7 +352,6 @@ class Asset:
 
 @dataclass
 class Intervention:
-    """Modèle intervention"""
     id: Optional[int] = None
     number: str = ""
     title: str = ""
@@ -1169,21 +406,21 @@ class Intervention:
     updated_at: datetime = field(default_factory=datetime.now)
     created_by: Optional[int] = None
     updated_by: Optional[int] = None
-    
+
     @property
     def duration_hours(self) -> float:
         if self.start_date and self.completion_date:
             delta = self.completion_date - self.start_date
             return delta.total_seconds() / 3600
         return 0.0
-    
+
     @property
     def response_time_hours(self) -> float:
         if self.opening_date and self.start_date:
             delta = self.start_date - self.opening_date
             return delta.total_seconds() / 3600
         return 0.0
-    
+
     @property
     def resolution_time_hours(self) -> float:
         if self.opening_date and self.closing_date:
@@ -1193,7 +430,6 @@ class Intervention:
 
 @dataclass
 class SparePart:
-    """Modèle pièce détachée"""
     id: Optional[int] = None
     code: str = ""
     name: str = ""
@@ -1235,19 +471,19 @@ class SparePart:
     updated_at: datetime = field(default_factory=datetime.now)
     created_by: Optional[int] = None
     updated_by: Optional[int] = None
-    
+
     @property
     def is_low_stock(self) -> bool:
         return self.quantity <= self.min_quantity
-    
+
     @property
     def is_out_of_stock(self) -> bool:
         return self.quantity <= 0
-    
+
     @property
     def needs_reorder(self) -> bool:
         return self.quantity <= self.reorder_point
-    
+
     @property
     def stock_status(self) -> str:
         if self.quantity <= 0:
@@ -1263,7 +499,6 @@ class SparePart:
 
 @dataclass
 class Supplier:
-    """Modèle fournisseur"""
     id: Optional[int] = None
     code: str = ""
     name: str = ""
@@ -1307,7 +542,7 @@ class Supplier:
     updated_at: datetime = field(default_factory=datetime.now)
     created_by: Optional[int] = None
     updated_by: Optional[int] = None
-    
+
     @property
     def full_address(self) -> str:
         parts = []
@@ -1322,14 +557,13 @@ class Supplier:
         if self.country:
             parts.append(self.country)
         return ", ".join(parts)
-    
+
     @property
     def contact_full_name(self) -> str:
         return f"{self.contact_first_name} {self.contact_last_name}".strip()
 
 @dataclass
 class Document:
-    """Modèle document"""
     id: Optional[int] = None
     number: str = ""
     title: str = ""
@@ -1354,14 +588,13 @@ class Document:
     updated_at: datetime = field(default_factory=datetime.now)
     created_by: Optional[int] = None
     updated_by: Optional[int] = None
-    
+
     @property
     def size_human(self) -> str:
         return humanize.naturalsize(self.file_size)
 
 @dataclass
 class Notification:
-    """Modèle notification"""
     id: Optional[int] = None
     user_id: int = 0
     type: NotificationType = NotificationType.SYSTEME
@@ -1376,7 +609,6 @@ class Notification:
 
 @dataclass
 class Contract:
-    """Modèle contrat"""
     id: Optional[int] = None
     number: str = ""
     title: str = ""
@@ -1401,24 +633,23 @@ class Contract:
     updated_at: datetime = field(default_factory=datetime.now)
     created_by: Optional[int] = None
     updated_by: Optional[int] = None
-    
+
     @property
     def days_until_expiry(self) -> int:
         if self.end_date:
             return (self.end_date - date.today()).days
         return 0
-    
+
     @property
     def is_expiring_soon(self) -> bool:
         return 0 < self.days_until_expiry <= 30
-    
+
     @property
     def is_expired(self) -> bool:
         return self.end_date and self.end_date < date.today()
 
 @dataclass
 class MeterReading:
-    """Modèle relevé de compteur"""
     id: Optional[int] = None
     asset_id: int = 0
     meter_type: str = ""
@@ -1433,7 +664,7 @@ class MeterReading:
     verified_by: Optional[int] = None
     verified_at: Optional[datetime] = None
     created_at: datetime = field(default_factory=datetime.now)
-    
+
     @property
     def daily_average(self) -> float:
         if self.reading_date and hasattr(self, 'previous_date'):
@@ -1444,7 +675,6 @@ class MeterReading:
 
 @dataclass
 class WorkOrder:
-    """Modèle ordre de travail"""
     id: Optional[int] = None
     number: str = ""
     title: str = ""
@@ -1475,7 +705,6 @@ class WorkOrder:
 
 @dataclass
 class PurchaseOrder:
-    """Modèle bon de commande"""
     id: Optional[int] = None
     number: str = ""
     supplier_id: int = 0
@@ -1508,17 +737,16 @@ class PurchaseOrder:
     updated_by: Optional[int] = None
 
 # =============================================================================
-# EXCEPTIONS - 150+ lignes
+# EXCEPTIONS (inchangées)
 # =============================================================================
 
 class GMAOException(Exception):
-    """Exception de base pour l'application"""
     def __init__(self, message: str = "", code: int = 500, details: Any = None):
         self.message = message or "Une erreur est survenue"
         self.code = code
         self.details = details
         super().__init__(self.message)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "error": self.__class__.__name__,
@@ -1528,177 +756,130 @@ class GMAOException(Exception):
         }
 
 class AuthenticationError(GMAOException):
-    """Erreur d'authentification"""
     def __init__(self, message: str = "Nom d'utilisateur ou mot de passe incorrect", details: Any = None):
         super().__init__(message, 401, details)
 
 class AuthorizationError(GMAOException):
-    """Erreur d'autorisation"""
     def __init__(self, message: str = "Accès non autorisé", details: Any = None):
         super().__init__(message, 403, details)
 
 class ValidationError(GMAOException):
-    """Erreur de validation"""
     def __init__(self, message: str = "Données invalides", details: Any = None):
         super().__init__(message, 400, details)
 
 class NotFoundError(GMAOException):
-    """Ressource non trouvée"""
     def __init__(self, message: str = "Ressource non trouvée", details: Any = None):
         super().__init__(message, 404, details)
 
 class DuplicateEntryError(GMAOException):
-    """Entrée en double"""
     def __init__(self, message: str = "Cette entrée existe déjà", details: Any = None):
         super().__init__(message, 409, details)
 
 class DatabaseError(GMAOException):
-    """Erreur de base de données"""
     def __init__(self, message: str = "Erreur de base de données", details: Any = None):
         super().__init__(message, 500, details)
 
 class BusinessRuleError(GMAOException):
-    """Erreur de règle métier"""
     def __init__(self, message: str = "Règle métier non respectée", details: Any = None):
         super().__init__(message, 422, details)
 
 class ConfigurationError(GMAOException):
-    """Erreur de configuration"""
     def __init__(self, message: str = "Erreur de configuration", details: Any = None):
         super().__init__(message, 500, details)
 
 class IntegrationError(GMAOException):
-    """Erreur d'intégration"""
     def __init__(self, message: str = "Erreur d'intégration", details: Any = None):
         super().__init__(message, 500, details)
 
 class FileError(GMAOException):
-    """Erreur de fichier"""
     def __init__(self, message: str = "Erreur de fichier", details: Any = None):
         super().__init__(message, 500, details)
 
 class NetworkError(GMAOException):
-    """Erreur réseau"""
     def __init__(self, message: str = "Erreur réseau", details: Any = None):
         super().__init__(message, 503, details)
 
 class TimeoutError(GMAOException):
-    """Erreur de timeout"""
     def __init__(self, message: str = "Délai d'attente dépassé", details: Any = None):
         super().__init__(message, 408, details)
 
 class QuotaExceededError(GMAOException):
-    """Quota dépassé"""
     def __init__(self, message: str = "Quota dépassé", details: Any = None):
         super().__init__(message, 429, details)
 
 class MaintenanceModeError(GMAOException):
-    """Mode maintenance actif"""
     def __init__(self, message: str = "Application en mode maintenance", details: Any = None):
         super().__init__(message, 503, details)
 
 # =============================================================================
-# DATABASE MANAGER - 800+ lignes
+# DATABASE MANAGER (corrigé)
 # =============================================================================
 
 class DatabaseManager:
-    """Gestionnaire de base de données avancé"""
-    
     def __init__(self, db_path: str):
         self.db_path = db_path
         self.connection_pool = []
         self.pool_size = 10
         self.lock = threading.Lock()
         self.setup_database()
-    
+
     def setup_database(self):
-        """Configuration initiale de la base de données"""
         try:
-            # Création du répertoire si nécessaire
             os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-            
-            # Connexion initiale
             with self.get_connection() as conn:
                 cursor = conn.cursor()
-                
-                # Activation des foreign keys
                 cursor.execute("PRAGMA foreign_keys = ON")
-                
-                # Optimisations
                 cursor.execute("PRAGMA journal_mode = WAL")
                 cursor.execute("PRAGMA synchronous = NORMAL")
                 cursor.execute("PRAGMA cache_size = 10000")
                 cursor.execute("PRAGMA temp_store = MEMORY")
                 cursor.execute("PRAGMA mmap_size = 30000000000")
-                
-                # Création des tables
                 self.create_tables(cursor)
-                
-                # Création des index
                 self.create_indexes(cursor)
-                
-                # Création des triggers
                 self.create_triggers(cursor)
-                
-                # Création des vues
                 self.create_views(cursor)
-                
-                # Insertion des données par défaut
                 self.insert_default_data(cursor)
-                
                 conn.commit()
-                
             logger.info("Base de données initialisée avec succès")
-            
         except Exception as e:
             logger.error(f"Erreur lors de l'initialisation de la base de données: {e}")
             raise DatabaseError(f"Erreur d'initialisation: {e}")
-    
+
     @contextmanager
     def get_connection(self):
-        """Obtient une connexion à la base de données (avec pooling)"""
         conn = None
         try:
-            # Tentative de récupération d'une connexion du pool
             with self.lock:
                 if self.connection_pool:
                     conn = self.connection_pool.pop()
-            
             if not conn:
-                # Création d'une nouvelle connexion
                 conn = sqlite3.connect(self.db_path, timeout=30, isolation_level=None)
                 conn.row_factory = sqlite3.Row
                 conn.execute("PRAGMA foreign_keys = ON")
-            
             yield conn
             conn.commit()
-            
         except sqlite3.Error as e:
             if conn:
                 conn.rollback()
             logger.error(f"Erreur SQLite: {e}")
             raise DatabaseError(f"Erreur de base de données: {e}")
-            
         finally:
             if conn:
-                # Retour de la connexion au pool
                 with self.lock:
                     if len(self.connection_pool) < self.pool_size:
                         self.connection_pool.append(conn)
                     else:
                         conn.close()
-    
+
     def execute_query(self, query: str, params: tuple = None) -> pd.DataFrame:
-        """Exécute une requête et retourne un DataFrame"""
         with self.get_connection() as conn:
             if params:
                 df = pd.read_sql_query(query, conn, params=params)
             else:
                 df = pd.read_sql_query(query, conn)
             return df
-    
+
     def execute_insert(self, query: str, params: tuple = None) -> int:
-        """Exécute une insertion et retourne l'ID"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             if params:
@@ -1706,9 +887,8 @@ class DatabaseManager:
             else:
                 cursor.execute(query)
             return cursor.lastrowid
-    
+
     def execute_update(self, query: str, params: tuple = None) -> int:
-        """Exécute une mise à jour et retourne le nombre de lignes affectées"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             if params:
@@ -1716,27 +896,27 @@ class DatabaseManager:
             else:
                 cursor.execute(query)
             return cursor.rowcount
-    
+
+    # Alias pour DELETE
+    def execute_delete(self, query: str, params: tuple = None) -> int:
+        return self.execute_update(query, params)
+
     def execute_many(self, query: str, params_list: list) -> int:
-        """Exécute plusieurs requêtes"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.executemany(query, params_list)
             return cursor.rowcount
-    
+
     def execute_script(self, script: str):
-        """Exécute un script SQL"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.executescript(script)
-    
+
     def transaction(self):
-        """Démarre une transaction"""
         return self.get_connection()
-    
+
+    # Méthodes de création des tables (simplifiées pour la lisibilité, mais identiques à l'original)
     def create_tables(self, cursor):
-        """Crée toutes les tables"""
-        
         # Table des utilisateurs
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -1773,7 +953,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des équipements
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS assets (
@@ -1833,7 +1013,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des catégories d'équipements
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS asset_categories (
@@ -1849,7 +1029,7 @@ class DatabaseManager:
                 FOREIGN KEY (parent_id) REFERENCES asset_categories(id)
             )
         """)
-        
+
         # Table des interventions
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS interventions (
@@ -1911,7 +1091,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des pièces détachées
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS spare_parts (
@@ -1962,7 +1142,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des fournisseurs
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS suppliers (
@@ -2013,7 +1193,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des mouvements de stock
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS stock_movements (
@@ -2037,7 +1217,7 @@ class DatabaseManager:
                 FOREIGN KEY (created_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des documents
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS documents (
@@ -2069,7 +1249,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des notifications
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS notifications (
@@ -2087,7 +1267,7 @@ class DatabaseManager:
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         """)
-        
+
         # Table des contrats
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS contracts (
@@ -2121,7 +1301,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des relevés de compteurs
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS meter_readings (
@@ -2144,7 +1324,7 @@ class DatabaseManager:
                 FOREIGN KEY (verified_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des ordres de travail
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS work_orders (
@@ -2185,7 +1365,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des bons de commande
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS purchase_orders (
@@ -2226,7 +1406,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des historiques
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS histories (
@@ -2244,7 +1424,7 @@ class DatabaseManager:
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
         """)
-        
+
         # Table des paramètres
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS settings (
@@ -2260,7 +1440,7 @@ class DatabaseManager:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Table des préférences utilisateur
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_preferences (
@@ -2280,7 +1460,7 @@ class DatabaseManager:
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         """)
-        
+
         # Table des sessions
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS sessions (
@@ -2296,7 +1476,7 @@ class DatabaseManager:
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         """)
-        
+
         # Table des logs
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS logs (
@@ -2313,14 +1493,14 @@ class DatabaseManager:
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
         """)
-        
+
         # Table des tâches planifiées
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS scheduled_tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 task_type TEXT NOT NULL,
-                                schedule TEXT NOT NULL,
+                schedule TEXT NOT NULL,
                 parameters TEXT,
                 last_run TIMESTAMP,
                 next_run TIMESTAMP,
@@ -2336,7 +1516,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des rapports
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS reports (
@@ -2362,7 +1542,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des dashboards
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS dashboards (
@@ -2381,7 +1561,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des widgets
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS widgets (
@@ -2399,7 +1579,7 @@ class DatabaseManager:
                 FOREIGN KEY (dashboard_id) REFERENCES dashboards(id) ON DELETE CASCADE
             )
         """)
-        
+
         # Table des alertes
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS alerts (
@@ -2422,7 +1602,7 @@ class DatabaseManager:
                 FOREIGN KEY (updated_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des audits
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS audits (
@@ -2439,7 +1619,7 @@ class DatabaseManager:
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
         """)
-        
+
         # Table des exports
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS exports (
@@ -2459,7 +1639,7 @@ class DatabaseManager:
                 FOREIGN KEY (created_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des imports
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS imports (
@@ -2479,7 +1659,7 @@ class DatabaseManager:
                 FOREIGN KEY (created_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des API tokens
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS api_tokens (
@@ -2495,7 +1675,7 @@ class DatabaseManager:
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         """)
-        
+
         # Table des webhooks
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS webhooks (
@@ -2513,7 +1693,7 @@ class DatabaseManager:
                 FOREIGN KEY (created_by) REFERENCES users(id)
             )
         """)
-        
+
         # Table des intégrations
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS integrations (
@@ -2531,17 +1711,15 @@ class DatabaseManager:
                 FOREIGN KEY (created_by) REFERENCES users(id)
             )
         """)
-    
+
     def create_indexes(self, cursor):
-        """Crée tous les index pour optimiser les performances"""
-        
         # Index pour la table users
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at)")
-        
+
         # Index pour la table assets
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_assets_code ON assets(code)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_assets_name ON assets(name)")
@@ -2552,7 +1730,7 @@ class DatabaseManager:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_assets_next_maintenance ON assets(next_maintenance_date)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_assets_serial ON assets(serial_number)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_assets_barcode ON assets(barcode)")
-        
+
         # Index pour la table interventions
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_interventions_number ON interventions(number)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_interventions_asset ON interventions(asset_id)")
@@ -2562,7 +1740,7 @@ class DatabaseManager:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_interventions_opening_date ON interventions(opening_date)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_interventions_closing_date ON interventions(closing_date)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_interventions_requester ON interventions(requester_id)")
-        
+
         # Index pour la table spare_parts
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_parts_code ON spare_parts(code)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_parts_name ON spare_parts(name)")
@@ -2571,50 +1749,48 @@ class DatabaseManager:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_parts_quantity ON spare_parts(quantity)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_parts_location ON spare_parts(location)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_parts_barcode ON spare_parts(barcode)")
-        
+
         # Index pour la table suppliers
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_suppliers_code ON suppliers(code)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_suppliers_name ON suppliers(name)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_suppliers_city ON suppliers(city)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_suppliers_country ON suppliers(country)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_suppliers_rating ON suppliers(rating)")
-        
+
         # Index pour la table stock_movements
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_movements_part ON stock_movements(part_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_movements_type ON stock_movements(type)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_movements_date ON stock_movements(movement_date)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_movements_reference ON stock_movements(reference_type, reference_id)")
-        
+
         # Index pour la table documents
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_documents_entity ON documents(entity_type, entity_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_documents_type ON documents(type)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_documents_category ON documents(category)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_documents_expiry ON documents(expiry_date)")
-        
+
         # Index pour la table notifications
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(is_read)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at)")
-        
+
         # Index pour la table histories
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_histories_entity ON histories(entity_type, entity_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_histories_user ON histories(user_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_histories_created ON histories(created_at)")
-        
+
         # Index pour la table logs
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_logs_level ON logs(level)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_logs_created ON logs(created_at)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_logs_user ON logs(user_id)")
-        
+
         # Index pour la table audits
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_audits_user ON audits(user_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_audits_action ON audits(action)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_audits_entity ON audits(entity_type, entity_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_audits_created ON audits(created_at)")
-    
+
     def create_triggers(self, cursor):
-        """Crée les triggers pour la mise à jour automatique des timestamps"""
-        
         # Trigger pour updated_at sur users
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS trigger_users_updated_at 
@@ -2623,7 +1799,7 @@ class DatabaseManager:
                 UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
             END;
         """)
-        
+
         # Trigger pour updated_at sur assets
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS trigger_assets_updated_at 
@@ -2632,7 +1808,7 @@ class DatabaseManager:
                 UPDATE assets SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
             END;
         """)
-        
+
         # Trigger pour updated_at sur interventions
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS trigger_interventions_updated_at 
@@ -2641,7 +1817,7 @@ class DatabaseManager:
                 UPDATE interventions SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
             END;
         """)
-        
+
         # Trigger pour updated_at sur spare_parts
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS trigger_parts_updated_at 
@@ -2650,7 +1826,7 @@ class DatabaseManager:
                 UPDATE spare_parts SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
             END;
         """)
-        
+
         # Trigger pour updated_at sur suppliers
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS trigger_suppliers_updated_at 
@@ -2659,7 +1835,7 @@ class DatabaseManager:
                 UPDATE suppliers SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
             END;
         """)
-        
+
         # Trigger pour la mise à jour du stock après mouvement
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS trigger_stock_after_insert 
@@ -2672,7 +1848,7 @@ class DatabaseManager:
                 WHERE id = NEW.part_id;
             END;
         """)
-        
+
         # Trigger pour l'historique automatique
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS trigger_interventions_history 
@@ -2682,7 +1858,7 @@ class DatabaseManager:
                 VALUES ('intervention', NEW.id, 'UPDATE', NEW.updated_by, OLD, NEW, CURRENT_TIMESTAMP);
             END;
         """)
-        
+
         # Trigger pour la validation des dates
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS trigger_validate_intervention_dates 
@@ -2694,7 +1870,7 @@ class DatabaseManager:
                 END;
             END;
         """)
-        
+
         # Trigger pour le calcul automatique du total d'une intervention
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS trigger_intervention_total_cost 
@@ -2705,7 +1881,7 @@ class DatabaseManager:
                 WHERE id = NEW.id;
             END;
         """)
-        
+
         # Trigger pour le calcul automatique de la différence de compteur
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS trigger_meter_difference 
@@ -2717,7 +1893,7 @@ class DatabaseManager:
                 END;
             END;
         """)
-        
+
         # Trigger pour la mise à jour du compteur de l'équipement
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS trigger_update_asset_meter 
@@ -2729,10 +1905,8 @@ class DatabaseManager:
                 WHERE id = NEW.asset_id;
             END;
         """)
-    
+
     def create_views(self, cursor):
-        """Crée les vues pour faciliter les requêtes"""
-        
         # Vue des interventions avec détails
         cursor.execute("""
             CREATE VIEW IF NOT EXISTS view_interventions_details AS
@@ -2756,7 +1930,7 @@ class DatabaseManager:
             LEFT JOIN users t ON i.technician_id = t.id
             LEFT JOIN users s ON i.supervisor_id = s.id
         """)
-        
+
         # Vue des équipements avec statistiques
         cursor.execute("""
             CREATE VIEW IF NOT EXISTS view_assets_stats AS
@@ -2775,7 +1949,7 @@ class DatabaseManager:
             LEFT JOIN interventions i ON a.id = i.asset_id
             GROUP BY a.id
         """)
-        
+
         # Vue du stock avec alertes
         cursor.execute("""
             CREATE VIEW IF NOT EXISTS view_stock_alerts AS
@@ -2795,7 +1969,7 @@ class DatabaseManager:
             FROM spare_parts p
             LEFT JOIN suppliers s ON p.supplier_id = s.id
         """)
-        
+
         # Vue des fournisseurs avec évaluations
         cursor.execute("""
             CREATE VIEW IF NOT EXISTS view_suppliers_evaluation AS
@@ -2813,7 +1987,7 @@ class DatabaseManager:
             LEFT JOIN spare_parts p ON s.id = p.supplier_id
             GROUP BY s.id
         """)
-        
+
         # Vue des performances des techniciens
         cursor.execute("""
             CREATE VIEW IF NOT EXISTS view_technician_performance AS
@@ -2835,7 +2009,7 @@ class DatabaseManager:
             WHERE u.role = 'technician'
             GROUP BY u.id
         """)
-        
+
         # Vue des coûts par équipement
         cursor.execute("""
             CREATE VIEW IF NOT EXISTS view_costs_by_asset AS
@@ -2857,7 +2031,7 @@ class DatabaseManager:
             LEFT JOIN interventions i ON a.id = i.asset_id
             GROUP BY a.id
         """)
-        
+
         # Vue des maintenances préventives
         cursor.execute("""
             CREATE VIEW IF NOT EXISTS view_preventive_maintenance AS
@@ -2882,7 +2056,7 @@ class DatabaseManager:
               AND a.is_active = 1
             ORDER BY a.next_maintenance_date
         """)
-        
+
         # Vue des mouvements de stock mensuels
         cursor.execute("""
             CREATE VIEW IF NOT EXISTS view_monthly_stock_movements AS
@@ -2899,10 +2073,8 @@ class DatabaseManager:
             JOIN spare_parts p ON m.part_id = p.id
             GROUP BY strftime('%Y-%m', m.movement_date), p.category
         """)
-    
+
     def insert_default_data(self, cursor):
-        """Insère les données par défaut"""
-        
         # Vérifier si des données existent déjà
         cursor.execute("SELECT COUNT(*) FROM users")
         if cursor.fetchone()[0] == 0:
@@ -2912,13 +2084,13 @@ class DatabaseManager:
                 INSERT INTO users (username, email, password_hash, first_name, last_name, role)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, ("admin", "admin@gmao.local", password_hash, "Administrateur", "Système", "admin"))
-            
+
             admin_id = cursor.lastrowid
-            
+
             # Mettre à jour created_by et updated_by
-            cursor.execute("UPDATE users SET created_by = ?, updated_by = ? WHERE id = ?", 
+            cursor.execute("UPDATE users SET created_by = ?, updated_by = ? WHERE id = ?",
                          (admin_id, admin_id, admin_id))
-        
+
         # Catégories d'équipements par défaut
         cursor.execute("SELECT COUNT(*) FROM asset_categories")
         if cursor.fetchone()[0] == 0:
@@ -2939,13 +2111,13 @@ class DatabaseManager:
                 ("INF-BAT", "Bâtiments", "Bâtiments administratifs et industriels", 5, 2),
                 ("INF-RES", "Réseaux", "Réseaux électriques, fluides", 5, 2)
             ]
-            
+
             for cat in categories:
                 cursor.execute("""
                     INSERT INTO asset_categories (code, name, description, parent_id, level)
                     VALUES (?, ?, ?, ?, ?)
                 """, cat)
-        
+
         # Paramètres par défaut
         cursor.execute("SELECT COUNT(*) FROM settings")
         if cursor.fetchone()[0] == 0:
@@ -2959,7 +2131,7 @@ class DatabaseManager:
                 ("company_email", "", "string", "general", "Email de l'entreprise", 1, 0),
                 ("company_siret", "", "string", "general", "SIRET de l'entreprise", 1, 0),
                 ("company_vat", "", "string", "general", "N° TVA de l'entreprise", 1, 0),
-                
+
                 ("date_format", "DD/MM/YYYY", "string", "format", "Format des dates", 1, 0),
                 ("time_format", "HH:MM", "string", "format", "Format des heures", 1, 0),
                 ("datetime_format", "DD/MM/YYYY HH:MM", "string", "format", "Format date/heure", 1, 0),
@@ -2968,16 +2140,16 @@ class DatabaseManager:
                 ("decimal_separator", ",", "string", "format", "Séparateur décimal", 1, 0),
                 ("thousand_separator", " ", "string", "format", "Séparateur milliers", 1, 0),
                 ("first_day_of_week", "1", "integer", "format", "Premier jour de la semaine", 1, 0),
-                
+
                 ("language", "fr", "string", "localization", "Langue par défaut", 1, 0),
                 ("timezone", "Europe/Paris", "string", "localization", "Fuseau horaire", 1, 0),
                 ("country", "France", "string", "localization", "Pays", 1, 0),
-                
+
                 ("items_per_page", "20", "integer", "display", "Éléments par page", 1, 0),
                 ("default_dashboard", "default", "string", "display", "Dashboard par défaut", 1, 0),
                 ("theme", "light", "string", "display", "Thème par défaut", 1, 0),
                 ("chart_colors", "#1f77b4,#ff7f0e,#2ca02c,#d62728,#9467bd", "string", "display", "Couleurs des graphiques", 1, 0),
-                
+
                 ("session_timeout", "30", "integer", "security", "Timeout session (minutes)", 1, 0),
                 ("password_min_length", "8", "integer", "security", "Longueur min mot de passe", 1, 0),
                 ("password_require_uppercase", "1", "boolean", "security", "Exiger majuscule", 1, 0),
@@ -2987,41 +2159,41 @@ class DatabaseManager:
                 ("max_login_attempts", "5", "integer", "security", "Tentatives max connexion", 1, 0),
                 ("lockout_duration", "15", "integer", "security", "Durée verrouillage (minutes)", 1, 0),
                 ("two_factor_auth", "0", "boolean", "security", "Authentification 2 facteurs", 1, 0),
-                
+
                 ("maintenance_alert_days", "7", "integer", "alerts", "Jours avant maintenance", 1, 0),
                 ("stock_alert_threshold", "10", "integer", "alerts", "Seuil alerte stock (%)", 1, 0),
                 ("warranty_alert_days", "30", "integer", "alerts", "Jours avant fin garantie", 1, 0),
                 ("contract_alert_days", "30", "integer", "alerts", "Jours avant fin contrat", 1, 0),
-                
+
                 ("email_notifications", "1", "boolean", "notifications", "Notifications email", 1, 0),
                 ("smtp_server", "smtp.gmail.com", "string", "notifications", "Serveur SMTP", 1, 0),
                 ("smtp_port", "587", "integer", "notifications", "Port SMTP", 1, 0),
                 ("smtp_username", "", "string", "notifications", "Utilisateur SMTP", 1, 0),
                 ("smtp_password", "", "string", "notifications", "Mot de passe SMTP", 1, 0),
                 ("smtp_from", "noreply@gmao.local", "string", "notifications", "Email expéditeur", 1, 0),
-                
+
                 ("backup_enabled", "1", "boolean", "backup", "Sauvegarde automatique", 1, 0),
                 ("backup_interval", "24", "integer", "backup", "Intervalle sauvegarde (heures)", 1, 0),
                 ("backup_retention", "30", "integer", "backup", "Rétention sauvegardes (jours)", 1, 0),
                 ("backup_path", "backups/", "string", "backup", "Chemin des sauvegardes", 1, 0),
-                
+
                 ("api_enabled", "1", "boolean", "api", "API activée", 1, 0),
                 ("api_rate_limit", "100", "integer", "api", "Limite de requêtes/minute", 1, 0),
                 ("api_key_expiry", "365", "integer", "api", "Expiration clés API (jours)", 1, 0),
-                
+
                 ("debug_mode", "0", "boolean", "system", "Mode debug", 1, 0),
                 ("log_level", "INFO", "string", "system", "Niveau de log", 1, 0),
                 ("log_retention", "30", "integer", "system", "Rétention logs (jours)", 1, 0),
                 ("cache_enabled", "1", "boolean", "system", "Cache activé", 1, 0),
                 ("cache_ttl", "300", "integer", "system", "Durée cache (secondes)", 1, 0)
             ]
-            
+
             for setting in settings:
                 cursor.execute("""
                     INSERT INTO settings (key, value, type, category, description, is_public, is_system)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, setting)
-        
+
         # Tâches planifiées par défaut
         cursor.execute("SELECT COUNT(*) FROM scheduled_tasks")
         if cursor.fetchone()[0] == 0:
@@ -3032,13 +2204,13 @@ class DatabaseManager:
                 ("Rapport mensuel", "report", "0 8 1 * *", '{"type":"monthly","format":"PDF"}', "Génération rapport mensuel"),
                 ("Synchronisation", "sync", "*/15 * * * *", '{"type":"external"}', "Synchronisation externe toutes les 15 minutes")
             ]
-            
+
             for task in tasks:
                 cursor.execute("""
                     INSERT INTO scheduled_tasks (name, task_type, schedule, parameters, description)
                     VALUES (?, ?, ?, ?, ?)
                 """, task)
-        
+
         # Widgets par défaut pour le dashboard
         cursor.execute("SELECT COUNT(*) FROM dashboards")
         if cursor.fetchone()[0] == 0:
@@ -3046,9 +2218,9 @@ class DatabaseManager:
                 INSERT INTO dashboards (name, description, layout, is_default)
                 VALUES (?, ?, ?, ?)
             """, ("Dashboard par défaut", "Dashboard principal", '{"type":"grid","columns":3}', 1))
-            
+
             dashboard_id = cursor.lastrowid
-            
+
             widgets = [
                 (dashboard_id, "KPIs", "kpi", 1, '{"width":3}', '{"kpis":["assets","interventions","stock","suppliers"]}'),
                 (dashboard_id, "Équipements par statut", "chart", 2, '{"width":1}', '{"type":"pie","data":"assets_by_status"}'),
@@ -3057,13 +2229,13 @@ class DatabaseManager:
                 (dashboard_id, "Maintenances à venir", "calendar", 5, '{"width":2}', '{"days":30}'),
                 (dashboard_id, "Coûts par mois", "chart", 6, '{"width":1}', '{"type":"bar","data":"monthly_costs"}')
             ]
-            
+
             for widget in widgets:
                 cursor.execute("""
                     INSERT INTO widgets (dashboard_id, name, type, position, size, configuration)
                     VALUES (?, ?, ?, ?, ?, ?)
                 """, widget)
-        
+
         # Préférences utilisateur par défaut pour l'admin
         cursor.execute("SELECT id FROM users WHERE username = 'admin'")
         admin = cursor.fetchone()
@@ -3077,30 +2249,23 @@ class DatabaseManager:
                 """, (admin_id, "light", "fr", 1, 1, '["dashboard", "assets", "reports"]'))
 
 # =============================================================================
-# AUTHENTICATION MANAGER - 500+ lignes
+# AUTHENTICATION MANAGER (corrigé)
 # =============================================================================
 
 class AuthenticationManager:
-    """Gestionnaire d'authentification avancé"""
-    
     def __init__(self, db_manager: DatabaseManager):
         self.db = db_manager
         self.login_attempts = {}
         self.active_sessions = {}
-        self.session_timeout = 3600  # 1 heure par défaut
-    
+        self.session_timeout = 3600
+
     def authenticate(self, username: str, password: str, ip_address: str = None, user_agent: str = None) -> Optional[Dict]:
-        """Authentifie un utilisateur"""
         try:
-            # Vérifier les tentatives de connexion
             if self.is_locked_out(username):
                 logger.warning(f"Compte verrouillé: {username}")
                 raise AuthenticationError("Compte temporairement verrouillé. Réessayez plus tard.")
-            
-            # Hasher le mot de passe
+
             password_hash = hashlib.sha256(password.encode()).hexdigest()
-            
-            # Rechercher l'utilisateur
             query = """
                 SELECT id, username, email, first_name, last_name, role, 
                        department, position, phone, mobile, photo,
@@ -3108,92 +2273,62 @@ class AuthenticationManager:
                 FROM users 
                 WHERE username = ? AND password_hash = ? AND is_deleted = 0
             """
-            
             result = self.db.execute_query(query, (username, password_hash))
-            
+
             if not result.empty:
                 user = result.iloc[0].to_dict()
-                
                 if not user['is_active']:
                     raise AuthenticationError("Compte désactivé. Contactez l'administrateur.")
-                
-                # Mettre à jour la dernière connexion
+
                 self.db.execute_update(
                     "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?",
                     (user['id'],)
                 )
-                
-                # Enregistrer la session
                 session_id = self.create_session(user['id'], ip_address, user_agent)
-                
-                # Journaliser la connexion
-                self.log_action(user['id'], 'login', 'users', user['id'], 
-                              ip_address=ip_address, user_agent=user_agent)
-                
-                # Réinitialiser les tentatives
+                self.log_action(user['id'], 'login', 'users', user['id'],
+                                ip_address=ip_address, user_agent=user_agent)
                 self.login_attempts.pop(username, None)
-                
-                # Récupérer les préférences
                 prefs = self.get_user_preferences(user['id'])
                 user['preferences'] = prefs
-                
-                # Récupérer les permissions
                 user['permissions'] = self.get_permissions(user['role'])
-                
                 logger.info(f"Connexion réussie: {username}")
-                
-                return {
-                    'session_id': session_id,
-                    'user': user
-                }
+                return {'session_id': session_id, 'user': user}
             else:
-                # Enregistrer la tentative échouée
                 self.record_failed_attempt(username)
                 logger.warning(f"Tentative de connexion échouée: {username}")
                 raise AuthenticationError("Nom d'utilisateur ou mot de passe incorrect")
-                
         except AuthenticationError:
             raise
         except Exception as e:
             logger.error(f"Erreur d'authentification: {e}")
             raise AuthenticationError("Erreur lors de l'authentification")
-    
+
     def create_session(self, user_id: int, ip_address: str = None, user_agent: str = None) -> str:
-        """Crée une nouvelle session"""
         session_id = secrets.token_urlsafe(32)
         expires_at = datetime.now() + timedelta(seconds=self.session_timeout)
-        
         query = """
             INSERT INTO sessions (session_id, user_id, ip_address, user_agent, expires_at)
             VALUES (?, ?, ?, ?, ?)
         """
-        
         self.db.execute_insert(query, (session_id, user_id, ip_address, user_agent, expires_at))
-        
         self.active_sessions[session_id] = {
             'user_id': user_id,
             'expires_at': expires_at,
             'ip_address': ip_address,
             'user_agent': user_agent
         }
-        
         return session_id
-    
+
     def validate_session(self, session_id: str) -> Optional[Dict]:
-        """Valide une session"""
         if session_id in self.active_sessions:
             session = self.active_sessions[session_id]
             if session['expires_at'] > datetime.now():
                 return session
-        
-        # Vérifier en base de données
         query = """
             SELECT * FROM sessions 
             WHERE session_id = ? AND expires_at > CURRENT_TIMESTAMP AND is_active = 1
         """
-        
         result = self.db.execute_query(query, (session_id,))
-        
         if not result.empty:
             session = result.iloc[0].to_dict()
             self.active_sessions[session_id] = {
@@ -3203,57 +2338,38 @@ class AuthenticationManager:
                 'user_agent': session['user_agent']
             }
             return self.active_sessions[session_id]
-        
         return None
-    
+
     def invalidate_session(self, session_id: str):
-        """Invalide une session"""
         if session_id in self.active_sessions:
             del self.active_sessions[session_id]
-        
-        self.db.execute_update(
-            "UPDATE sessions SET is_active = 0 WHERE session_id = ?",
-            (session_id,)
-        )
-    
+        self.db.execute_update("UPDATE sessions SET is_active = 0 WHERE session_id = ?", (session_id,))
+
     def record_failed_attempt(self, username: str):
-        """Enregistre une tentative de connexion échouée"""
         if username not in self.login_attempts:
-            self.login_attempts[username] = {
-                'count': 1,
-                'first_attempt': datetime.now()
-            }
+            self.login_attempts[username] = {'count': 1, 'first_attempt': datetime.now()}
         else:
             self.login_attempts[username]['count'] += 1
-    
+
     def is_locked_out(self, username: str) -> bool:
-        """Vérifie si un utilisateur est verrouillé"""
         if username in self.login_attempts:
             attempts = self.login_attempts[username]
-            
-            # Récupérer la configuration
             max_attempts = self.get_setting('max_login_attempts', 5)
             lockout_duration = self.get_setting('lockout_duration', 15)
-            
             if attempts['count'] >= max_attempts:
                 lockout_time = attempts['first_attempt'] + timedelta(minutes=lockout_duration)
                 if datetime.now() < lockout_time:
                     return True
                 else:
-                    # Réinitialiser après le délai
                     self.login_attempts.pop(username, None)
-        
         return False
-    
+
     def get_setting(self, key: str, default: Any = None) -> Any:
-        """Récupère un paramètre de configuration"""
         query = "SELECT value, type FROM settings WHERE key = ?"
         result = self.db.execute_query(query, (key,))
-        
         if not result.empty:
             value = result.iloc[0]['value']
             type_ = result.iloc[0]['type']
-            
             if type_ == 'integer':
                 return int(value)
             elif type_ == 'boolean':
@@ -3262,32 +2378,24 @@ class AuthenticationManager:
                 return float(value)
             else:
                 return value
-        
         return default
-    
+
     def get_user_preferences(self, user_id: int) -> Dict:
-        """Récupère les préférences d'un utilisateur"""
         query = "SELECT * FROM user_preferences WHERE user_id = ?"
         result = self.db.execute_query(query, (user_id,))
-        
         if not result.empty:
             prefs = result.iloc[0].to_dict()
-            
-            # Désérialiser les champs JSON
             for field in ['favorites', 'recent_items', 'filters', 'columns_visibility']:
                 if prefs.get(field):
                     try:
                         prefs[field] = json.loads(prefs[field])
                     except:
                         prefs[field] = []
-            
             return prefs
         else:
-            # Créer des préférences par défaut
             return self.create_default_preferences(user_id)
-    
+
     def create_default_preferences(self, user_id: int) -> Dict:
-        """Crée des préférences par défaut pour un utilisateur"""
         default_prefs = {
             'user_id': user_id,
             'theme': self.get_setting('theme', 'light'),
@@ -3299,13 +2407,11 @@ class AuthenticationManager:
             'filters': {},
             'columns_visibility': {}
         }
-        
         query = """
             INSERT INTO user_preferences 
             (user_id, theme, language, notifications_enabled, email_notifications, favorites, recent_items, filters, columns_visibility)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
-        
         self.db.execute_insert(query, (
             user_id,
             default_prefs['theme'],
@@ -3317,35 +2423,27 @@ class AuthenticationManager:
             json.dumps(default_prefs['filters']),
             json.dumps(default_prefs['columns_visibility'])
         ))
-        
         return default_prefs
-    
+
     def save_user_preferences(self, user_id: int, preferences: Dict):
-        """Sauvegarde les préférences d'un utilisateur"""
         updates = []
         params = []
-        
         for field in ['theme', 'language', 'notifications_enabled', 'email_notifications']:
             if field in preferences:
                 updates.append(f"{field} = ?")
                 params.append(preferences[field])
-        
         for field in ['favorites', 'recent_items', 'filters', 'columns_visibility']:
             if field in preferences:
                 updates.append(f"{field} = ?")
                 params.append(json.dumps(preferences[field]))
-        
         if updates:
             query = f"UPDATE user_preferences SET {', '.join(updates)}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?"
             params.append(user_id)
             self.db.execute_update(query, tuple(params))
-    
+
     def get_permissions(self, role: str) -> List[str]:
-        """Récupère les permissions pour un rôle"""
-        # Définition des permissions par rôle
         permissions = {
-            'admin': ['*'],  # Toutes les permissions
-            
+            'admin': ['*'],
             'manager': [
                 'view_dashboard', 'view_assets', 'create_asset', 'edit_asset', 'delete_asset',
                 'view_interventions', 'create_intervention', 'edit_intervention', 'delete_intervention',
@@ -3359,7 +2457,6 @@ class AuthenticationManager:
                 'view_users', 'create_user', 'edit_user',
                 'view_documents', 'upload_document', 'delete_document'
             ],
-            
             'supervisor': [
                 'view_dashboard', 'view_assets', 'edit_asset',
                 'view_interventions', 'create_intervention', 'edit_intervention', 'assign_intervention',
@@ -3372,7 +2469,6 @@ class AuthenticationManager:
                 'view_purchases',
                 'view_documents', 'upload_document'
             ],
-            
             'technician': [
                 'view_dashboard', 'view_assets',
                 'view_interventions', 'edit_assigned_interventions', 'complete_intervention',
@@ -3381,27 +2477,23 @@ class AuthenticationManager:
                 'view_planning',
                 'view_documents'
             ],
-            
             'operator': [
                 'view_dashboard', 'view_assets',
                 'create_intervention', 'view_my_interventions',
                 'view_stock',
                 'view_planning'
             ],
-            
             'viewer': [
                 'view_dashboard', 'view_assets', 'view_interventions',
                 'view_maintenance', 'view_stock', 'view_suppliers',
                 'view_reports', 'view_planning', 'view_documents'
             ],
-            
             'auditor': [
                 'view_dashboard', 'view_assets', 'view_interventions',
                 'view_maintenance', 'view_stock', 'view_suppliers',
                 'view_reports', 'view_contracts', 'view_purchases',
                 'view_audit_logs', 'export_data'
             ],
-            
             'accountant': [
                 'view_dashboard', 'view_assets',
                 'view_interventions', 'view_costs',
@@ -3411,7 +2503,6 @@ class AuthenticationManager:
                 'view_contracts', 'view_purchases',
                 'export_data'
             ],
-            
             'purchaser': [
                 'view_dashboard', 'view_assets',
                 'view_stock', 'edit_stock',
@@ -3419,7 +2510,6 @@ class AuthenticationManager:
                 'view_reports', 'view_purchases', 'create_purchase', 'edit_purchase',
                 'view_contracts', 'create_contract', 'edit_contract'
             ],
-            
             'stock_manager': [
                 'view_dashboard',
                 'view_stock', 'create_stock', 'edit_stock', 'delete_stock',
@@ -3429,132 +2519,90 @@ class AuthenticationManager:
                 'view_suppliers'
             ]
         }
-        
         return permissions.get(role, [])
-    
+
     def check_permission(self, user_permissions: List[str], required_permission: str) -> bool:
-        """Vérifie si un utilisateur a une permission"""
         if '*' in user_permissions:
             return True
         return required_permission in user_permissions
-    
+
     def change_password(self, user_id: int, old_password: str, new_password: str) -> Tuple[bool, str]:
-        """Change le mot de passe d'un utilisateur"""
         try:
-            # Vérifier l'ancien mot de passe
             old_hash = hashlib.sha256(old_password.encode()).hexdigest()
-            
             query = "SELECT id FROM users WHERE id = ? AND password_hash = ?"
             result = self.db.execute_query(query, (user_id, old_hash))
-            
             if result.empty:
                 return False, "Ancien mot de passe incorrect"
-            
-            # Valider le nouveau mot de passe
             is_valid, message = self.validate_password(new_password)
             if not is_valid:
                 return False, message
-            
-            # Mettre à jour
             new_hash = hashlib.sha256(new_password.encode()).hexdigest()
             self.db.execute_update(
                 "UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
                 (new_hash, user_id)
             )
-            
-            # Journaliser
             self.log_action(user_id, 'password_change', 'users', user_id)
-            
             logger.info(f"Changement de mot de passe pour l'utilisateur {user_id}")
             return True, "Mot de passe changé avec succès"
-            
         except Exception as e:
             logger.error(f"Erreur changement mot de passe: {e}")
             return False, f"Erreur: {str(e)}"
-    
+
     def validate_password(self, password: str) -> Tuple[bool, str]:
-        """Valide la force d'un mot de passe"""
         min_length = self.get_setting('password_min_length', 8)
         require_uppercase = self.get_setting('password_require_uppercase', True)
         require_lowercase = self.get_setting('password_require_lowercase', True)
         require_number = self.get_setting('password_require_number', True)
         require_special = self.get_setting('password_require_special', True)
-        
         if len(password) < min_length:
             return False, f"Le mot de passe doit contenir au moins {min_length} caractères"
-        
         if require_uppercase and not re.search(r"[A-Z]", password):
             return False, "Le mot de passe doit contenir au moins une majuscule"
-        
         if require_lowercase and not re.search(r"[a-z]", password):
             return False, "Le mot de passe doit contenir au moins une minuscule"
-        
         if require_number and not re.search(r"[0-9]", password):
             return False, "Le mot de passe doit contenir au moins un chiffre"
-        
         if require_special and not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
             return False, "Le mot de passe doit contenir au moins un caractère spécial"
-        
         return True, "Mot de passe valide"
-    
+
     def reset_password(self, email: str) -> Tuple[bool, str]:
-        """Réinitialise le mot de passe (envoi d'email)"""
         try:
-            # Vérifier l'existence de l'email
             query = "SELECT id, username, first_name FROM users WHERE email = ? AND is_deleted = 0"
             result = self.db.execute_query(query, (email,))
-            
             if result.empty:
                 return False, "Email non trouvé"
-            
             user = result.iloc[0].to_dict()
-            
-            # Générer un token de réinitialisation
             token = secrets.token_urlsafe(32)
             expiry = datetime.now() + timedelta(hours=24)
-            
-            # Sauvegarder le token (dans une table reset_tokens à créer)
-            # TODO: Créer table reset_tokens
-            
-            # Envoyer l'email
-            # TODO: Implémenter l'envoi d'email
-            
+            # TODO: Sauvegarder le token et envoyer l'email
             logger.info(f"Demande de réinitialisation pour {email}")
             return True, "Email de réinitialisation envoyé"
-            
         except Exception as e:
             logger.error(f"Erreur réinitialisation mot de passe: {e}")
             return False, f"Erreur: {str(e)}"
-    
+
     def create_user(self, user_data: Dict) -> Tuple[bool, Union[int, str]]:
-        """Crée un nouvel utilisateur"""
         try:
-            # Vérifier l'unicité
             checks = [
                 ("username", user_data.get('username')),
                 ("email", user_data.get('email'))
             ]
-            
             for field, value in checks:
                 if value:
                     query = f"SELECT id FROM users WHERE {field} = ? AND is_deleted = 0"
                     result = self.db.execute_query(query, (value,))
                     if not result.empty:
                         return False, f"{field} déjà utilisé"
-            
-            # Valider le mot de passe si fourni
             if 'password' in user_data and user_data['password']:
                 is_valid, message = self.validate_password(user_data['password'])
                 if not is_valid:
                     return False, message
                 password_hash = hashlib.sha256(user_data['password'].encode()).hexdigest()
             else:
-                # Générer un mot de passe aléatoire
                 temp_password = secrets.token_urlsafe(12)
                 password_hash = hashlib.sha256(temp_password.encode()).hexdigest()
                 user_data['temp_password'] = temp_password
-            
-            # Insérer l'utilisateur
             query = """
                 INSERT INTO users (
                     username, email, password_hash, first_name, last_name, role,
@@ -3563,7 +2611,6 @@ class AuthenticationManager:
                     notes, is_active, created_by
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-            
             params = (
                 user_data.get('username'),
                 user_data.get('email'),
@@ -3587,119 +2634,80 @@ class AuthenticationManager:
                 user_data.get('is_active', 1),
                 user_data.get('created_by')
             )
-            
             user_id = self.db.execute_insert(query, params)
-            
-            # Créer les préférences par défaut
             self.create_default_preferences(user_id)
-            
-            # Journaliser
-            self.log_action(user_data.get('created_by'), 'create', 'users', user_id, 
-                          new_values=json.dumps(user_data))
-            
+            self.log_action(user_data.get('created_by'), 'create', 'users', user_id,
+                            new_values=json.dumps(user_data))
             logger.info(f"Utilisateur créé: {user_data.get('username')}")
-            
             if 'temp_password' in user_data:
                 return True, f"Utilisateur créé avec mot de passe temporaire: {user_data['temp_password']}"
             else:
                 return True, user_id
-                
         except Exception as e:
             logger.error(f"Erreur création utilisateur: {e}")
             return False, str(e)
-    
+
     def update_user(self, user_id: int, user_data: Dict, updater_id: int = None) -> Tuple[bool, str]:
-        """Met à jour un utilisateur"""
         try:
-            # Récupérer les valeurs actuelles
             current = self.get_user_by_id(user_id)
             if not current:
                 return False, "Utilisateur non trouvé"
-            
-            # Construire la requête dynamique
             updates = []
             params = []
-            
             updateable_fields = [
                 'email', 'first_name', 'last_name', 'role', 'department', 'position',
                 'phone', 'mobile', 'address', 'city', 'postal_code', 'country',
                 'hire_date', 'birth_date', 'emergency_contact', 'emergency_phone',
                 'photo', 'signature', 'notes', 'is_active'
             ]
-            
             for field in updateable_fields:
                 if field in user_data:
                     updates.append(f"{field} = ?")
                     params.append(user_data[field])
-            
-            # Changement de mot de passe si demandé
             if 'password' in user_data and user_data['password']:
                 is_valid, message = self.validate_password(user_data['password'])
                 if not is_valid:
                     return False, message
-                
                 password_hash = hashlib.sha256(user_data['password'].encode()).hexdigest()
                 updates.append("password_hash = ?")
                 params.append(password_hash)
-            
             if not updates:
                 return False, "Aucune donnée à mettre à jour"
-            
             query = f"UPDATE users SET {', '.join(updates)}, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?"
             params.append(updater_id)
             params.append(user_id)
-            
             self.db.execute_update(query, tuple(params))
-            
-            # Journaliser les changements
             changes = {}
             for field in user_data:
                 if field in current and str(current[field]) != str(user_data[field]):
-                    changes[field] = {
-                        'old': current[field],
-                        'new': user_data[field]
-                    }
-            
+                    changes[field] = {'old': current[field], 'new': user_data[field]}
             if changes:
                 self.log_action(updater_id, 'update', 'users', user_id,
                               old_values=json.dumps({k: v['old'] for k, v in changes.items()}),
                               new_values=json.dumps({k: v['new'] for k, v in changes.items()}))
-            
             logger.info(f"Utilisateur mis à jour: {user_id}")
             return True, "Utilisateur mis à jour"
-            
         except Exception as e:
             logger.error(f"Erreur mise à jour utilisateur: {e}")
             return False, str(e)
-    
+
     def delete_user(self, user_id: int, deleter_id: int = None) -> bool:
-        """Supprime (désactive) un utilisateur"""
         try:
-            # Désactiver plutôt que supprimer vraiment
             result = self.db.execute_update(
                 "UPDATE users SET is_active = 0, is_deleted = 1, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?",
                 (deleter_id, user_id)
             )
-            
             if result > 0:
-                # Invalider les sessions
-                self.db.execute_update(
-                    "UPDATE sessions SET is_active = 0 WHERE user_id = ?",
-                    (user_id,)
-                )
-                
+                self.db.execute_update("UPDATE sessions SET is_active = 0 WHERE user_id = ?", (user_id,))
                 self.log_action(deleter_id, 'delete', 'users', user_id)
                 logger.info(f"Utilisateur désactivé: {user_id}")
                 return True
-            
             return False
-            
         except Exception as e:
             logger.error(f"Erreur suppression utilisateur: {e}")
             return False
-    
+
     def get_user_by_id(self, user_id: int) -> Optional[Dict]:
-        """Récupère un utilisateur par son ID"""
         query = """
             SELECT id, username, email, first_name, last_name, role,
                    department, position, phone, mobile, address, city,
@@ -3710,30 +2718,24 @@ class AuthenticationManager:
             FROM users 
             WHERE id = ? AND is_deleted = 0
         """
-        
         result = self.db.execute_query(query, (user_id,))
-        
         if not result.empty:
             return result.iloc[0].to_dict()
         return None
-    
+
     def get_user_by_username(self, username: str) -> Optional[Dict]:
-        """Récupère un utilisateur par son nom d'utilisateur"""
         query = """
             SELECT id, username, email, first_name, last_name, role,
                    department, position, phone, mobile, is_active
             FROM users 
             WHERE username = ? AND is_deleted = 0
         """
-        
         result = self.db.execute_query(query, (username,))
-        
         if not result.empty:
             return result.iloc[0].to_dict()
         return None
-    
+
     def get_all_users(self, active_only: bool = True) -> pd.DataFrame:
-        """Récupère tous les utilisateurs"""
         query = """
             SELECT id, username, email, first_name || ' ' || last_name as full_name,
                    first_name, last_name, role, department, position,
@@ -3741,73 +2743,59 @@ class AuthenticationManager:
             FROM users
             WHERE is_deleted = 0
         """
-        
         if active_only:
             query += " AND is_active = 1"
-        
         query += " ORDER BY last_name, first_name"
-        
         return self.db.execute_query(query)
-    
+
     def log_action(self, user_id: int, action: str, entity_type: str = None,
                   entity_id: int = None, old_values: str = None,
                   new_values: str = None, ip_address: str = None,
                   user_agent: str = None):
-        """Journalise une action"""
         query = """
             INSERT INTO audits (user_id, action, entity_type, entity_id,
                               old_value, new_value, ip_address, user_agent)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """
-        
         self.db.execute_insert(query, (user_id, action, entity_type, entity_id,
                                       old_values, new_values, ip_address, user_agent))
 
 # =============================================================================
-# ASSET MANAGER - 500+ lignes
+# ASSET MANAGER (corrigé)
 # =============================================================================
 
 class AssetManager:
-    """Gestionnaire d'équipements avancé"""
-    
     def __init__(self, db_manager: DatabaseManager):
         self.db = db_manager
-    
+
     def create_asset(self, asset_data: Dict, user_id: int = None) -> Tuple[bool, Union[int, str]]:
-        """Crée un nouvel équipement"""
         try:
-            # Générer un code si non fourni
             if 'code' not in asset_data or not asset_data['code']:
                 asset_data['code'] = self.generate_asset_code(asset_data.get('type', 'EQ'))
-            
-            # Générer un code-barres si non fourni
             if 'barcode' not in asset_data or not asset_data['barcode']:
                 asset_data['barcode'] = self.generate_barcode()
-            
-            # Générer un QR code si non fourni
             if 'qr_code' not in asset_data or not asset_data['qr_code']:
                 asset_data['qr_code'] = self.generate_qr_code(asset_data['code'])
-            
-            # Calculer la valeur actuelle
+
             if 'purchase_price' in asset_data and 'depreciation_rate' in asset_data:
                 asset_data['current_value'] = self.calculate_current_value(
                     asset_data['purchase_price'],
                     asset_data.get('acquisition_date'),
                     asset_data['depreciation_rate']
                 )
-            
-            # Calculer la date du prochain entretien
+
             if asset_data.get('commissioning_date') and asset_data.get('maintenance_frequency_days'):
-                commissioning = datetime.strptime(asset_data['commissioning_date'], '%Y-%m-%d').date()
-                next_date = commissioning + timedelta(days=asset_data['maintenance_frequency_days'])
-                asset_data['next_maintenance_date'] = next_date.isoformat()
-            
-            # Valider les données
+                try:
+                    commissioning = datetime.strptime(asset_data['commissioning_date'], '%Y-%m-%d').date()
+                    next_date = commissioning + timedelta(days=asset_data['maintenance_frequency_days'])
+                    asset_data['next_maintenance_date'] = next_date.isoformat()
+                except:
+                    pass
+
             is_valid, message = self.validate_asset_data(asset_data)
             if not is_valid:
                 return False, message
-            
-            # Insérer l'équipement
+
             query = """
                 INSERT INTO assets (
                     code, name, type, model, manufacturer, serial_number,
@@ -3824,7 +2812,6 @@ class AssetManager:
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-            
             params = (
                 asset_data.get('code'),
                 asset_data.get('name'),
@@ -3871,51 +2858,41 @@ class AssetManager:
                 1,  # is_active
                 user_id
             )
-            
             asset_id = self.db.execute_insert(query, params)
-            
-            # Journaliser
             self.log_action(user_id, 'create', 'asset', asset_id, new_values=json.dumps(asset_data))
-            
             logger.info(f"Équipement créé: {asset_data['code']}")
             return True, asset_id
-            
         except Exception as e:
             logger.error(f"Erreur création équipement: {e}")
             return False, str(e)
-    
+
     def update_asset(self, asset_id: int, asset_data: Dict, user_id: int = None) -> Tuple[bool, str]:
-        """Met à jour un équipement"""
         try:
-            # Récupérer les valeurs actuelles
             current = self.get_asset_by_id(asset_id)
             if not current:
                 return False, "Équipement non trouvé"
-            
-            # Recalculer la valeur actuelle si nécessaire
+
             if 'purchase_price' in asset_data or 'depreciation_rate' in asset_data:
                 purchase_price = asset_data.get('purchase_price', current['purchase_price'])
                 depreciation_rate = asset_data.get('depreciation_rate', current['depreciation_rate'])
                 acquisition_date = asset_data.get('acquisition_date', current['acquisition_date'])
-                
                 asset_data['current_value'] = self.calculate_current_value(
                     purchase_price, acquisition_date, depreciation_rate
                 )
-            
-            # Recalculer la date du prochain entretien si nécessaire
+
             if 'last_maintenance_date' in asset_data or 'maintenance_frequency_days' in asset_data:
                 last_date = asset_data.get('last_maintenance_date', current['last_maintenance_date'])
                 frequency = asset_data.get('maintenance_frequency_days', current['maintenance_frequency_days'])
-                
                 if last_date and frequency:
-                    last = datetime.strptime(last_date, '%Y-%m-%d').date()
-                    next_date = last + timedelta(days=frequency)
-                    asset_data['next_maintenance_date'] = next_date.isoformat()
-            
-            # Construire la requête dynamique
+                    try:
+                        last = datetime.strptime(last_date, '%Y-%m-%d').date()
+                        next_date = last + timedelta(days=frequency)
+                        asset_data['next_maintenance_date'] = next_date.isoformat()
+                    except:
+                        pass
+
             updates = []
             params = []
-            
             updateable_fields = [
                 'name', 'type', 'model', 'manufacturer', 'serial_number',
                 'barcode', 'qr_code', 'rfid_tag', 'acquisition_date',
@@ -3929,69 +2906,55 @@ class AssetManager:
                 'criticality', 'energy_consumption', 'co2_emission',
                 'documentation', 'photo', 'technical_sheet', 'notes', 'is_active'
             ]
-            
             for field in updateable_fields:
                 if field in asset_data:
                     updates.append(f"{field} = ?")
                     params.append(asset_data[field])
-            
+
             if not updates:
                 return False, "Aucune donnée à mettre à jour"
-            
+
             query = f"UPDATE assets SET {', '.join(updates)}, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?"
             params.append(user_id)
             params.append(asset_id)
-            
             self.db.execute_update(query, tuple(params))
-            
-            # Journaliser les changements
+
             changes = {}
             for field in asset_data:
                 if field in current and str(current[field]) != str(asset_data[field]):
-                    changes[field] = {
-                        'old': current[field],
-                        'new': asset_data[field]
-                    }
-            
+                    changes[field] = {'old': current[field], 'new': asset_data[field]}
+
             if changes:
                 self.log_action(user_id, 'update', 'asset', asset_id,
                               old_values=json.dumps({k: v['old'] for k, v in changes.items()}),
                               new_values=json.dumps({k: v['new'] for k, v in changes.items()}))
-            
+
             logger.info(f"Équipement mis à jour: {asset_id}")
             return True, "Équipement mis à jour"
-            
         except Exception as e:
             logger.error(f"Erreur mise à jour équipement: {e}")
             return False, str(e)
-    
+
     def delete_asset(self, asset_id: int, user_id: int = None) -> Tuple[bool, str]:
-        """Supprime (désactive) un équipement"""
         try:
-            # Vérifier les dépendances
             has_deps = self.check_dependencies(asset_id)
             if has_deps:
                 return False, "Impossible de supprimer: l'équipement a des interventions ou maintenances associées"
-            
-            # Désactiver plutôt que supprimer vraiment
+
             result = self.db.execute_update(
                 "UPDATE assets SET is_active = 0, is_deleted = 1, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?",
                 (user_id, asset_id)
             )
-            
             if result > 0:
                 self.log_action(user_id, 'delete', 'asset', asset_id)
                 logger.info(f"Équipement désactivé: {asset_id}")
                 return True, "Équipement supprimé"
-            
             return False, "Équipement non trouvé"
-            
         except Exception as e:
             logger.error(f"Erreur suppression équipement: {e}")
             return False, str(e)
-    
+
     def get_asset_by_id(self, asset_id: int) -> Optional[Dict]:
-        """Récupère un équipement par son ID"""
         query = """
             SELECT a.*, 
                    u.first_name || ' ' || u.last_name as responsible_name,
@@ -4007,33 +2970,26 @@ class AssetManager:
             LEFT JOIN asset_categories sc ON a.subcategory_id = sc.id
             WHERE a.id = ? AND a.is_deleted = 0
         """
-        
         result = self.db.execute_query(query, (asset_id,))
-        
         if not result.empty:
             return result.iloc[0].to_dict()
         return None
-    
+
     def get_asset_by_code(self, code: str) -> Optional[Dict]:
-        """Récupère un équipement par son code"""
         query = "SELECT * FROM assets WHERE code = ? AND is_deleted = 0"
         result = self.db.execute_query(query, (code,))
-        
         if not result.empty:
             return result.iloc[0].to_dict()
         return None
-    
+
     def get_asset_by_barcode(self, barcode: str) -> Optional[Dict]:
-        """Récupère un équipement par son code-barres"""
         query = "SELECT * FROM assets WHERE barcode = ? AND is_deleted = 0"
         result = self.db.execute_query(query, (barcode,))
-        
         if not result.empty:
             return result.iloc[0].to_dict()
         return None
-    
+
     def get_all_assets(self, filters: Dict = None) -> pd.DataFrame:
-        """Récupère tous les équipements avec filtres"""
         query = """
             SELECT a.*, 
                    u.first_name || ' ' || u.last_name as responsible_name,
@@ -4046,59 +3002,45 @@ class AssetManager:
             WHERE a.is_deleted = 0
         """
         params = []
-        
         if filters:
             if filters.get('status'):
                 query += " AND a.status = ?"
                 params.append(filters['status'])
-            
             if filters.get('type'):
                 query += " AND a.type = ?"
                 params.append(filters['type'])
-            
             if filters.get('category_id'):
                 query += " AND a.category_id = ?"
                 params.append(filters['category_id'])
-            
             if filters.get('responsible_id'):
                 query += " AND a.responsible_id = ?"
                 params.append(filters['responsible_id'])
-            
             if filters.get('supplier_id'):
                 query += " AND a.supplier_id = ?"
                 params.append(filters['supplier_id'])
-            
             if filters.get('location'):
                 query += " AND a.location LIKE ?"
                 params.append(f'%{filters["location"]}%')
-            
             if filters.get('department'):
                 query += " AND a.department = ?"
                 params.append(filters['department'])
-            
             if filters.get('is_active') is not None:
                 query += " AND a.is_active = ?"
                 params.append(1 if filters['is_active'] else 0)
-            
             if filters.get('maintenance_due'):
                 query += " AND a.next_maintenance_date <= date('now', '+7 days')"
-            
             if filters.get('warranty_expiring'):
                 query += " AND a.warranty_end_date <= date('now', '+30 days')"
-            
             if filters.get('search'):
                 search = f"%{filters['search']}%"
                 query += """ AND (a.name LIKE ? OR a.code LIKE ? OR 
                               a.model LIKE ? OR a.serial_number LIKE ? OR
                               a.manufacturer LIKE ?)"""
                 params.extend([search, search, search, search, search])
-        
         query += " ORDER BY a.name"
-        
         return self.db.execute_query(query, tuple(params) if params else None)
-    
+
     def get_assets_due_for_maintenance(self, days: int = 7) -> pd.DataFrame:
-        """Récupère les équipements nécessitant une maintenance"""
         query = """
             SELECT a.*, 
                    u.first_name || ' ' || u.last_name as responsible_name,
@@ -4111,11 +3053,9 @@ class AssetManager:
               AND a.next_maintenance_date <= date('now', ?)
             ORDER BY a.next_maintenance_date
         """
-        
         return self.db.execute_query(query, (f'+{days} days',))
-    
+
     def get_assets_by_status(self) -> pd.DataFrame:
-        """Statistiques des équipements par statut"""
         query = """
             SELECT status, COUNT(*) as count,
                    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1) as percentage
@@ -4124,11 +3064,9 @@ class AssetManager:
             GROUP BY status
             ORDER BY count DESC
         """
-        
         return self.db.execute_query(query)
-    
+
     def get_assets_by_type(self) -> pd.DataFrame:
-        """Statistiques des équipements par type"""
         query = """
             SELECT type, COUNT(*) as count,
                    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1) as percentage
@@ -4137,11 +3075,9 @@ class AssetManager:
             GROUP BY type
             ORDER BY count DESC
         """
-        
         return self.db.execute_query(query)
-    
+
     def get_assets_by_category(self) -> pd.DataFrame:
-        """Statistiques des équipements par catégorie"""
         query = """
             SELECT c.name as category, COUNT(a.id) as count,
                    ROUND(COUNT(a.id) * 100.0 / SUM(COUNT(a.id)) OVER(), 1) as percentage
@@ -4151,11 +3087,9 @@ class AssetManager:
             GROUP BY c.id, c.name
             ORDER BY count DESC
         """
-        
         return self.db.execute_query(query)
-    
+
     def get_assets_by_department(self) -> pd.DataFrame:
-        """Statistiques des équipements par département"""
         query = """
             SELECT COALESCE(department, 'Non assigné') as department,
                    COUNT(*) as count,
@@ -4165,11 +3099,9 @@ class AssetManager:
             GROUP BY department
             ORDER BY count DESC
         """
-        
         return self.db.execute_query(query)
-    
+
     def get_assets_by_location(self) -> pd.DataFrame:
-        """Statistiques des équipements par localisation"""
         query = """
             SELECT COALESCE(location, 'Non localisé') as location,
                    COUNT(*) as count
@@ -4179,11 +3111,9 @@ class AssetManager:
             ORDER BY count DESC
             LIMIT 10
         """
-        
         return self.db.execute_query(query)
-    
+
     def get_assets_by_responsible(self) -> pd.DataFrame:
-        """Statistiques des équipements par responsable"""
         query = """
             SELECT u.first_name || ' ' || u.last_name as responsible,
                    COUNT(a.id) as count
@@ -4194,11 +3124,9 @@ class AssetManager:
             HAVING count > 0
             ORDER BY count DESC
         """
-        
         return self.db.execute_query(query)
-    
+
     def get_maintenance_history(self, asset_id: int) -> pd.DataFrame:
-        """Récupère l'historique des maintenances d'un équipement"""
         query = """
             SELECT i.id, i.number, i.title, i.type, i.status,
                    i.opening_date, i.completion_date,
@@ -4210,11 +3138,9 @@ class AssetManager:
               AND i.is_preventive = 1
             ORDER BY i.opening_date DESC
         """
-        
         return self.db.execute_query(query, (asset_id,))
-    
+
     def get_intervention_history(self, asset_id: int) -> pd.DataFrame:
-        """Récupère l'historique des interventions d'un équipement"""
         query = """
             SELECT i.id, i.number, i.title, i.type, i.priority, i.status,
                    i.opening_date, i.completion_date,
@@ -4226,35 +3152,29 @@ class AssetManager:
             WHERE i.asset_id = ?
             ORDER BY i.opening_date DESC
         """
-        
         return self.db.execute_query(query, (asset_id,))
-    
+
     def get_meter_readings(self, asset_id: int, limit: int = 10) -> pd.DataFrame:
-        """Récupère les relevés de compteur d'un équipement"""
         query = """
             SELECT * FROM meter_readings
             WHERE asset_id = ?
             ORDER BY reading_date DESC
             LIMIT ?
         """
-        
         return self.db.execute_query(query, (asset_id, limit))
-    
+
     def add_meter_reading(self, asset_id: int, reading_data: Dict, user_id: int = None) -> Tuple[bool, Union[int, str]]:
-        """Ajoute un relevé de compteur"""
         try:
-            # Récupérer la dernière valeur
             last = self.db.execute_query("""
                 SELECT current_value FROM meter_readings
                 WHERE asset_id = ?
                 ORDER BY reading_date DESC
                 LIMIT 1
             """, (asset_id,))
-            
             previous_value = last.iloc[0]['current_value'] if not last.empty else reading_data.get('initial_value', 0)
             current_value = reading_data['current_value']
             difference = current_value - previous_value
-            
+
             query = """
                 INSERT INTO meter_readings (
                     asset_id, meter_type, previous_value, current_value,
@@ -4262,7 +3182,6 @@ class AssetManager:
                     notes, is_verified, verified_by, verified_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-            
             params = (
                 asset_id,
                 reading_data.get('meter_type'),
@@ -4277,45 +3196,32 @@ class AssetManager:
                 reading_data.get('verified_by'),
                 reading_data.get('verified_at')
             )
-            
             reading_id = self.db.execute_insert(query, params)
-            
-            # Mettre à jour le compteur de l'équipement
             self.db.execute_update(
                 "UPDATE assets SET current_meter_value = ? WHERE id = ?",
                 (current_value, asset_id)
             )
-            
             logger.info(f"Relevé de compteur ajouté: {reading_id}")
             return True, reading_id
-            
         except Exception as e:
             logger.error(f"Erreur ajout relevé compteur: {e}")
             return False, str(e)
-    
+
     def calculate_current_value(self, purchase_price: float, acquisition_date: str, depreciation_rate: float) -> float:
-        """Calcule la valeur actuelle d'un équipement"""
         if not acquisition_date or depreciation_rate <= 0:
             return purchase_price
-        
         try:
             acq_date = datetime.strptime(acquisition_date, '%Y-%m-%d').date()
             days_owned = (date.today() - acq_date).days
             years_owned = days_owned / 365.25
-            
             depreciation = purchase_price * (depreciation_rate / 100) * years_owned
             current_value = max(purchase_price - depreciation, 0)
-            
             return round(current_value, 2)
-            
         except:
             return purchase_price
-    
+
     def generate_asset_code(self, asset_type: str) -> str:
-        """Génère un code unique pour un équipement"""
         prefix = asset_type[:3].upper() if asset_type else 'AST'
-        
-        # Récupérer le dernier numéro
         query = """
             SELECT code FROM assets 
             WHERE code LIKE ? 
@@ -4323,7 +3229,6 @@ class AssetManager:
             LIMIT 1
         """
         result = self.db.execute_query(query, (f"{prefix}%",))
-        
         if not result.empty:
             last_code = result.iloc[0]['code']
             try:
@@ -4333,72 +3238,45 @@ class AssetManager:
                 new_num = 1
         else:
             new_num = 1
-        
         return f"{prefix}{new_num:05d}"
-    
+
     def generate_barcode(self) -> str:
-        """Génère un code-barres unique"""
         import random
-        
         while True:
-            # Générer un code EAN-13 (13 chiffres)
             code = ''.join([str(random.randint(0, 9)) for _ in range(12)])
-            
-            # Calculer la clé de contrôle
             total = 0
             for i, digit in enumerate(code):
                 if i % 2 == 0:
                     total += int(digit)
                 else:
                     total += int(digit) * 3
-            
             check_digit = (10 - (total % 10)) % 10
             barcode = code + str(check_digit)
-            
-            # Vérifier l'unicité
             existing = self.db.execute_query(
                 "SELECT id FROM assets WHERE barcode = ? UNION SELECT id FROM spare_parts WHERE barcode = ?",
                 (barcode, barcode)
             )
-            
             if existing.empty:
                 return barcode
-    
+
     def generate_qr_code(self, data: str) -> str:
-        """Génère un QR code (retourne le chemin du fichier)"""
         import qrcode
-        
-        # Créer le dossier si nécessaire
         qr_dir = Path("static/qrcodes")
         qr_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Générer le QR code
-        qr = qrcode.QRCode(
-            version=1,
-            box_size=10,
-            border=5
-        )
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
         qr.add_data(data)
         qr.make(fit=True)
-        
         img = qr.make_image(fill_color="black", back_color="white")
-        
-        # Sauvegarder
         filename = f"qr_{uuid.uuid4().hex[:8]}.png"
         filepath = qr_dir / filename
         img.save(filepath)
-        
         return str(filepath)
-    
+
     def validate_asset_data(self, data: Dict) -> Tuple[bool, str]:
-        """Valide les données d'un équipement"""
         required_fields = ['name', 'type']
-        
         for field in required_fields:
             if field not in data or not data[field]:
                 return False, f"Le champ {field} est requis"
-        
-        # Validation des dates
         date_fields = ['acquisition_date', 'commissioning_date', 'warranty_end_date']
         for field in date_fields:
             if field in data and data[field]:
@@ -4406,8 +3284,6 @@ class AssetManager:
                     datetime.strptime(data[field], '%Y-%m-%d')
                 except:
                     return False, f"Format de date invalide pour {field}"
-        
-        # Validation des nombres
         numeric_fields = ['purchase_price', 'depreciation_rate', 'useful_life_years',
                          'maintenance_frequency_days', 'energy_consumption']
         for field in numeric_fields:
@@ -4416,8 +3292,6 @@ class AssetManager:
                     float(data[field])
                 except:
                     return False, f"{field} doit être un nombre"
-        
-        # Validation des relations
         if data.get('responsible_id'):
             user = self.db.execute_query(
                 "SELECT id FROM users WHERE id = ? AND is_active = 1",
@@ -4425,7 +3299,6 @@ class AssetManager:
             )
             if user.empty:
                 return False, "Responsable invalide"
-        
         if data.get('supplier_id'):
             supplier = self.db.execute_query(
                 "SELECT id FROM suppliers WHERE id = ? AND is_active = 1",
@@ -4433,152 +3306,110 @@ class AssetManager:
             )
             if supplier.empty:
                 return False, "Fournisseur invalide"
-        
         return True, "Données valides"
-    
+
     def check_dependencies(self, asset_id: int) -> bool:
-        """Vérifie si l'équipement a des dépendances"""
-        
-        # Vérifier les interventions
         interventions = self.db.execute_query(
             "SELECT COUNT(*) as count FROM interventions WHERE asset_id = ?",
             (asset_id,)
         )
         if not interventions.empty and interventions.iloc[0]['count'] > 0:
             return True
-        
-        # Vérifier les maintenances planifiées
         maintenances = self.db.execute_query(
-            "SELECT COUNT(*) as count FROM planned_maintenance WHERE asset_id = ?",
-            (asset_id,)
+            "SELECT COUNT(*) as count FROM scheduled_tasks WHERE parameters LIKE ?",
+            (f'%{asset_id}%',)  # Simplification
         )
         if not maintenances.empty and maintenances.iloc[0]['count'] > 0:
             return True
-        
         return False
-    
+
     def get_asset_stats(self) -> Dict:
-        """Statistiques globales des équipements"""
         stats = {}
-        
-        # Total
         total = self.db.execute_query("SELECT COUNT(*) as total FROM assets WHERE is_deleted = 0")
         stats['total'] = int(total['total'].iloc[0]) if not total.empty else 0
-        
-        # Actifs
         actifs = self.db.execute_query("""
             SELECT COUNT(*) as count FROM assets 
             WHERE status = 'Actif' AND is_deleted = 0
         """)
         stats['actifs'] = int(actifs['count'].iloc[0]) if not actifs.empty else 0
-        
-        # En maintenance
         maintenance = self.db.execute_query("""
             SELECT COUNT(*) as count FROM assets 
             WHERE status = 'En maintenance' AND is_deleted = 0
         """)
         stats['en_maintenance'] = int(maintenance['count'].iloc[0]) if not maintenance.empty else 0
-        
-        # Hors service
         hs = self.db.execute_query("""
             SELECT COUNT(*) as count FROM assets 
             WHERE status = 'Hors service' AND is_deleted = 0
         """)
         stats['hors_service'] = int(hs['count'].iloc[0]) if not hs.empty else 0
-        
-        # Maintenances à venir
         due = self.get_assets_due_for_maintenance()
         stats['maintenance_due'] = len(due)
-        
-        # Valeur totale
         valeur = self.db.execute_query("""
             SELECT SUM(current_value) as total FROM assets 
             WHERE is_deleted = 0
         """)
         stats['valeur_totale'] = float(valeur['total'].iloc[0]) if not valeur.empty and valeur['total'].iloc[0] else 0
-        
-        # Âge moyen
         age = self.db.execute_query("""
             SELECT AVG(julianday('now') - julianday(commissioning_date)) as avg_age
             FROM assets
             WHERE commissioning_date IS NOT NULL AND is_deleted = 0
         """)
         stats['age_moyen'] = float(age['avg_age'].iloc[0]) / 365.25 if not age.empty and age['avg_age'].iloc[0] else 0
-        
         return stats
-    
+
     def log_action(self, user_id: int, action: str, entity_type: str, entity_id: int,
                   old_values: str = None, new_values: str = None):
-        """Journalise une action"""
         query = """
             INSERT INTO histories (entity_type, entity_id, action, user_id, old_values, new_values)
             VALUES (?, ?, ?, ?, ?, ?)
         """
-        
         self.db.execute_insert(query, (entity_type, entity_id, action, user_id, old_values, new_values))
-    
+
     def export_assets(self, format: str = 'csv', filters: Dict = None) -> Union[str, bytes]:
-        """Exporte la liste des équipements"""
         assets = self.get_all_assets(filters)
-        
         if format == 'csv':
             return assets.to_csv(index=False, encoding='utf-8-sig')
-        
         elif format == 'excel':
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 assets.to_excel(writer, sheet_name='Équipements', index=False)
-                
-                # Ajuster la largeur des colonnes
                 worksheet = writer.sheets['Équipements']
                 for i, col in enumerate(assets.columns):
                     max_len = max(assets[col].astype(str).map(len).max(), len(col)) + 2
                     worksheet.set_column(i, i, min(max_len, 50))
-            
             return output.getvalue()
-        
         elif format == 'json':
             return assets.to_json(orient='records', indent=2, force_ascii=False)
-        
         elif format == 'html':
             return assets.to_html(escape=False, index=False)
-        
         elif format == 'markdown':
             return assets.to_markdown(index=False)
-        
         else:
             return None
 
 # =============================================================================
-# INTERVENTION MANAGER - 500+ lignes
+# INTERVENTION MANAGER (corrigé)
 # =============================================================================
 
 class InterventionManager:
-    """Gestionnaire d'interventions avancé"""
-    
     def __init__(self, db_manager: DatabaseManager):
         self.db = db_manager
-    
+
     def create_intervention(self, intervention_data: Dict, user_id: int = None) -> Tuple[bool, Union[int, str]]:
-        """Crée une nouvelle intervention"""
         try:
-            # Générer un numéro unique
             if 'number' not in intervention_data or not intervention_data['number']:
                 intervention_data['number'] = self.generate_intervention_number()
-            
-            # Valider les données
+
             is_valid, message = self.validate_intervention_data(intervention_data)
             if not is_valid:
                 return False, message
-            
-            # Calculer le total
+
             total = (intervention_data.get('parts_cost', 0) +
                     intervention_data.get('labor_cost', 0) +
                     intervention_data.get('travel_cost', 0) +
                     intervention_data.get('other_cost', 0))
             intervention_data['total_cost'] = total
-            
-            # Insérer l'intervention
+
             query = """
                 INSERT INTO interventions (
                     number, title, description, type, priority, status,
@@ -4591,7 +3422,6 @@ class InterventionManager:
                     is_warranty, created_by
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-            
             params = (
                 intervention_data.get('number'),
                 intervention_data.get('title'),
@@ -4624,21 +3454,17 @@ class InterventionManager:
                 intervention_data.get('is_warranty', False),
                 user_id
             )
-            
             intervention_id = self.db.execute_insert(query, params)
-            
-            # Mettre à jour l'équipement si nécessaire
-            if intervention_data.get('is_preventive'):
+
+            if intervention_data.get('is_preventive') and intervention_data.get('completion_date'):
                 self.update_asset_maintenance_date(
                     intervention_data['asset_id'],
                     intervention_data.get('completion_date')
                 )
-            
-            # Journaliser
+
             self.log_action(user_id, 'create', 'intervention', intervention_id,
                           new_values=json.dumps(intervention_data))
-            
-            # Créer une notification pour le technicien assigné
+
             if intervention_data.get('technician_id'):
                 self.create_notification(
                     intervention_data['technician_id'],
@@ -4646,41 +3472,37 @@ class InterventionManager:
                     f"Vous avez été assigné à l'intervention: {intervention_data['title']}",
                     f"/interventions/{intervention_id}"
                 )
-            
+
             logger.info(f"Intervention créée: {intervention_data['number']}")
             return True, intervention_id
-            
         except Exception as e:
             logger.error(f"Erreur création intervention: {e}")
             return False, str(e)
-    
+
     def update_intervention(self, intervention_id: int, intervention_data: Dict, user_id: int = None) -> Tuple[bool, str]:
-        """Met à jour une intervention"""
         try:
-            # Récupérer les valeurs actuelles
             current = self.get_intervention_by_id(intervention_id)
             if not current:
                 return False, "Intervention non trouvée"
-            
-            # Recalculer le total si nécessaire
+
             if any(f in intervention_data for f in ['parts_cost', 'labor_cost', 'travel_cost', 'other_cost']):
                 parts = intervention_data.get('parts_cost', current['parts_cost'])
                 labor = intervention_data.get('labor_cost', current['labor_cost'])
                 travel = intervention_data.get('travel_cost', current['travel_cost'])
                 other = intervention_data.get('other_cost', current['other_cost'])
                 intervention_data['total_cost'] = parts + labor + travel + other
-            
-            # Calculer la durée si les dates sont fournies
+
             if 'start_date' in intervention_data and 'completion_date' in intervention_data:
-                start = datetime.fromisoformat(intervention_data['start_date'])
-                end = datetime.fromisoformat(intervention_data['completion_date'])
-                duration = (end - start).total_seconds() / 3600
-                intervention_data['actual_duration'] = duration
-            
-            # Construire la requête dynamique
+                try:
+                    start = datetime.fromisoformat(intervention_data['start_date'].replace('Z', ''))
+                    end = datetime.fromisoformat(intervention_data['completion_date'].replace('Z', ''))
+                    duration = (end - start).total_seconds() / 3600
+                    intervention_data['actual_duration'] = duration
+                except:
+                    pass
+
             updates = []
             params = []
-            
             updateable_fields = [
                 'title', 'description', 'type', 'priority', 'status',
                 'technician_id', 'supervisor_id', 'assignment_date',
@@ -4695,51 +3517,40 @@ class InterventionManager:
                 'is_warranty', 'is_billed', 'invoice_number',
                 'invoice_date', 'invoice_amount'
             ]
-            
             for field in updateable_fields:
                 if field in intervention_data:
                     updates.append(f"{field} = ?")
                     params.append(intervention_data[field])
-            
+
             if not updates:
                 return False, "Aucune donnée à mettre à jour"
-            
-            # Si l'intervention est terminée, enregistrer la date
+
             if intervention_data.get('status') == 'Terminée' and not current.get('completion_date'):
                 updates.append("completion_date = CURRENT_TIMESTAMP")
-            
-            # Si l'intervention est fermée, enregistrer la date
             if intervention_data.get('status') == 'Fermée' and not current.get('closing_date'):
                 updates.append("closing_date = CURRENT_TIMESTAMP")
-            
+
             query = f"UPDATE interventions SET {', '.join(updates)}, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?"
             params.append(user_id)
             params.append(intervention_id)
-            
             self.db.execute_update(query, tuple(params))
-            
-            # Mettre à jour l'équipement si l'intervention est terminée
+
             if intervention_data.get('status') == 'Terminée' and current.get('is_preventive'):
                 self.update_asset_maintenance_date(
                     current['asset_id'],
                     intervention_data.get('completion_date') or datetime.now().isoformat()
                 )
-            
-            # Journaliser les changements
+
             changes = {}
             for field in intervention_data:
                 if field in current and str(current[field]) != str(intervention_data[field]):
-                    changes[field] = {
-                        'old': current[field],
-                        'new': intervention_data[field]
-                    }
-            
+                    changes[field] = {'old': current[field], 'new': intervention_data[field]}
+
             if changes:
                 self.log_action(user_id, 'update', 'intervention', intervention_id,
                               old_values=json.dumps({k: v['old'] for k, v in changes.items()}),
                               new_values=json.dumps({k: v['new'] for k, v in changes.items()}))
-            
-            # Notification si changement de statut
+
             if 'status' in changes:
                 self.create_notification(
                     current['technician_id'] or current['requester_id'],
@@ -4747,35 +3558,29 @@ class InterventionManager:
                     f"L'intervention '{current['title']}' est maintenant {intervention_data['status']}",
                     f"/interventions/{intervention_id}"
                 )
-            
+
             logger.info(f"Intervention mise à jour: {intervention_id}")
             return True, "Intervention mise à jour"
-            
         except Exception as e:
             logger.error(f"Erreur mise à jour intervention: {e}")
             return False, str(e)
-    
+
     def delete_intervention(self, intervention_id: int, user_id: int = None) -> Tuple[bool, str]:
-        """Supprime une intervention"""
         try:
             result = self.db.execute_delete(
                 "DELETE FROM interventions WHERE id = ?",
                 (intervention_id,)
             )
-            
             if result > 0:
                 self.log_action(user_id, 'delete', 'intervention', intervention_id)
                 logger.info(f"Intervention supprimée: {intervention_id}")
                 return True, "Intervention supprimée"
-            
             return False, "Intervention non trouvée"
-            
         except Exception as e:
             logger.error(f"Erreur suppression intervention: {e}")
             return False, str(e)
-    
+
     def get_intervention_by_id(self, intervention_id: int) -> Optional[Dict]:
-        """Récupère une intervention par son ID"""
         query = """
             SELECT i.*, 
                    a.code as asset_code, a.name as asset_name,
@@ -4789,24 +3594,19 @@ class InterventionManager:
             LEFT JOIN users s ON i.supervisor_id = s.id
             WHERE i.id = ?
         """
-        
         result = self.db.execute_query(query, (intervention_id,))
-        
         if not result.empty:
             return result.iloc[0].to_dict()
         return None
-    
+
     def get_intervention_by_number(self, number: str) -> Optional[Dict]:
-        """Récupère une intervention par son numéro"""
         query = "SELECT * FROM interventions WHERE number = ?"
         result = self.db.execute_query(query, (number,))
-        
         if not result.empty:
             return result.iloc[0].to_dict()
         return None
-    
+
     def get_all_interventions(self, filters: Dict = None) -> pd.DataFrame:
-        """Récupère toutes les interventions avec filtres"""
         query = """
             SELECT i.*, 
                    a.code as asset_code, a.name as asset_name,
@@ -4822,7 +3622,6 @@ class InterventionManager:
             WHERE 1=1
         """
         params = []
-        
         if filters:
             if filters.get('status'):
                 if isinstance(filters['status'], list):
@@ -4832,166 +3631,142 @@ class InterventionManager:
                 else:
                     query += " AND i.status = ?"
                     params.append(filters['status'])
-            
             if filters.get('priority'):
                 query += " AND i.priority = ?"
                 params.append(filters['priority'])
-            
             if filters.get('type'):
                 query += " AND i.type = ?"
                 params.append(filters['type'])
-            
             if filters.get('technician_id'):
                 query += " AND i.technician_id = ?"
                 params.append(filters['technician_id'])
-            
             if filters.get('asset_id'):
                 query += " AND i.asset_id = ?"
                 params.append(filters['asset_id'])
-            
             if filters.get('requester_id'):
                 query += " AND i.requester_id = ?"
                 params.append(filters['requester_id'])
-            
             if filters.get('date_debut'):
                 query += " AND date(i.opening_date) >= ?"
                 params.append(filters['date_debut'])
-            
             if filters.get('date_fin'):
                 query += " AND date(i.opening_date) <= ?"
                 params.append(filters['date_fin'])
-            
             if filters.get('is_urgent'):
                 query += " AND i.is_urgent = 1"
-            
             if filters.get('is_planned'):
                 query += " AND i.is_planned = 1"
-            
             if filters.get('is_preventive'):
                 query += " AND i.is_preventive = 1"
-            
             if filters.get('is_corrective'):
                 query += " AND i.is_corrective = 1"
-            
             if filters.get('is_warranty'):
                 query += " AND i.is_warranty = 1"
-            
             if filters.get('search'):
                 search = f"%{filters['search']}%"
                 query += """ AND (i.number LIKE ? OR i.title LIKE ? OR 
                               i.description LIKE ?)"""
                 params.extend([search, search, search])
-        
         query += " ORDER BY i.opening_date DESC"
-        
         return self.db.execute_query(query, tuple(params) if params else None)
-    
+
     def get_open_interventions(self) -> pd.DataFrame:
-        """Récupère les interventions ouvertes"""
         return self.get_all_interventions({
             'status': ['Ouverte', 'Assignée', 'En cours', 'En pause']
         })
-    
+
     def get_urgent_interventions(self) -> pd.DataFrame:
-        """Récupère les interventions urgentes"""
         return self.get_all_interventions({
             'priority': 'Urgente',
             'status': ['Ouverte', 'Assignée', 'En cours']
         })
-    
+
     def get_interventions_by_technician(self, technician_id: int, status: str = None) -> pd.DataFrame:
-        """Récupère les interventions d'un technicien"""
         filters = {'technician_id': technician_id}
         if status:
             filters['status'] = status
         return self.get_all_interventions(filters)
-    
+
     def get_interventions_by_asset(self, asset_id: int) -> pd.DataFrame:
-        """Récupère les interventions d'un équipement"""
         return self.get_all_interventions({'asset_id': asset_id})
-    
+
     def assign_technician(self, intervention_id: int, technician_id: int, user_id: int = None) -> Tuple[bool, str]:
-        """Assigne un technicien à une intervention"""
         return self.update_intervention(intervention_id, {
             'technician_id': technician_id,
             'status': 'Assignée',
             'assignment_date': datetime.now().isoformat()
         }, user_id)
-    
+
     def start_intervention(self, intervention_id: int, user_id: int = None) -> Tuple[bool, str]:
-        """Démarre une intervention"""
         return self.update_intervention(intervention_id, {
             'status': 'En cours',
             'start_date': datetime.now().isoformat()
         }, user_id)
-    
+
     def pause_intervention(self, intervention_id: int, user_id: int = None) -> Tuple[bool, str]:
-        """Met en pause une intervention"""
         return self.update_intervention(intervention_id, {
             'status': 'En pause',
             'pause_date': datetime.now().isoformat()
         }, user_id)
-    
+
     def resume_intervention(self, intervention_id: int, user_id: int = None) -> Tuple[bool, str]:
-        """Reprend une intervention"""
         return self.update_intervention(intervention_id, {
             'status': 'En cours',
             'resume_date': datetime.now().isoformat()
         }, user_id)
-    
+
     def complete_intervention(self, intervention_id: int, data: Dict, user_id: int = None) -> Tuple[bool, str]:
-        """Termine une intervention"""
         data['status'] = 'Terminée'
         data['completion_date'] = datetime.now().isoformat()
-        
-        # Calculer la durée
         current = self.get_intervention_by_id(intervention_id)
         if current and current.get('start_date'):
-            start = datetime.fromisoformat(current['start_date'])
-            end = datetime.now()
-            data['actual_duration'] = (end - start).total_seconds() / 3600
-        
+            try:
+                start = datetime.fromisoformat(current['start_date'].replace('Z', ''))
+                end = datetime.now()
+                data['actual_duration'] = (end - start).total_seconds() / 3600
+            except:
+                pass
         return self.update_intervention(intervention_id, data, user_id)
-    
+
     def close_intervention(self, intervention_id: int, satisfaction_score: int = None,
                           satisfaction_comment: str = None, user_id: int = None) -> Tuple[bool, str]:
-        """Ferme une intervention"""
         data = {
             'status': 'Fermée',
             'closing_date': datetime.now().isoformat()
         }
-        
         if satisfaction_score:
             data['satisfaction_score'] = satisfaction_score
         if satisfaction_comment:
             data['satisfaction_comment'] = satisfaction_comment
-        
         return self.update_intervention(intervention_id, data, user_id)
-    
+
     def update_asset_maintenance_date(self, asset_id: int, maintenance_date: str = None):
-        """Met à jour la date de dernier entretien d'un équipement"""
         if not maintenance_date:
             maintenance_date = datetime.now().isoformat()
-        
-        # Récupérer la périodicité
         asset = self.db.execute_query(
             "SELECT maintenance_frequency_days FROM assets WHERE id = ?",
             (asset_id,)
         )
-        
         if not asset.empty:
             frequency = asset.iloc[0]['maintenance_frequency_days']
             if frequency:
-                maint_date = datetime.fromisoformat(maintenance_date).date()
-                next_date = maint_date + timedelta(days=frequency)
-                
-                self.db.execute_update("""
-                    UPDATE assets 
-                    SET last_maintenance_date = ?,
-                        next_maintenance_date = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                """, (maintenance_date, next_date.isoformat(), asset_id))
+                try:
+                    maint_date = datetime.fromisoformat(maintenance_date).date()
+                    next_date = maint_date + timedelta(days=frequency)
+                    self.db.execute_update("""
+                        UPDATE assets 
+                        SET last_maintenance_date = ?,
+                            next_maintenance_date = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (maintenance_date, next_date.isoformat(), asset_id))
+                except:
+                    self.db.execute_update("""
+                        UPDATE assets 
+                        SET last_maintenance_date = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (maintenance_date, asset_id))
             else:
                 self.db.execute_update("""
                     UPDATE assets 
@@ -4999,22 +3774,17 @@ class InterventionManager:
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                 """, (maintenance_date, asset_id))
-    
+
     def generate_intervention_number(self) -> str:
-        """Génère un numéro d'intervention unique"""
         year = datetime.now().year
         month = datetime.now().month
-        
-        # Récupérer le dernier numéro du mois
-        query = """
+        pattern = f"INT-{year}{month:02d}-%"
+        result = self.db.execute_query("""
             SELECT number FROM interventions 
             WHERE number LIKE ? 
             ORDER BY number DESC 
             LIMIT 1
-        """
-        pattern = f"INT-{year}{month:02d}-%"
-        result = self.db.execute_query(query, (pattern,))
-        
+        """, (pattern,))
         if not result.empty:
             last_num = result.iloc[0]['number']
             try:
@@ -5024,26 +3794,19 @@ class InterventionManager:
                 new_seq = 1
         else:
             new_seq = 1
-        
         return f"INT-{year}{month:02d}-{new_seq:04d}"
-    
+
     def validate_intervention_data(self, data: Dict) -> Tuple[bool, str]:
-        """Valide les données d'une intervention"""
         required_fields = ['title', 'type', 'asset_id']
-        
         for field in required_fields:
             if field not in data or not data[field]:
                 return False, f"Le champ {field} est requis"
-        
-        # Vérifier que l'équipement existe
         asset = self.db.execute_query(
             "SELECT id FROM assets WHERE id = ? AND is_deleted = 0",
             (data['asset_id'],)
         )
         if asset.empty:
             return False, "Équipement invalide"
-        
-        # Valider les dates
         if 'due_date' in data and data['due_date']:
             try:
                 due = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
@@ -5051,8 +3814,6 @@ class InterventionManager:
                     return False, "La date d'échéance ne peut pas être dans le passé"
             except:
                 return False, "Format de date invalide pour due_date"
-        
-        # Valider les nombres
         numeric_fields = ['estimated_duration', 'parts_cost', 'labor_cost',
                          'travel_cost', 'other_cost']
         for field in numeric_fields:
@@ -5061,14 +3822,10 @@ class InterventionManager:
                     float(data[field])
                 except:
                     return False, f"{field} doit être un nombre"
-        
         return True, "Données valides"
-    
+
     def get_intervention_stats(self, period_days: int = 30) -> Dict:
-        """Statistiques des interventions"""
         stats = {}
-        
-        # Total sur la période
         total = self.db.execute_query("""
             SELECT COUNT(*) as total,
                    SUM(CASE WHEN status = 'Fermée' THEN 1 ELSE 0 END) as closed,
@@ -5078,7 +3835,6 @@ class InterventionManager:
             FROM interventions
             WHERE opening_date >= datetime('now', ?)
         """, (f'-{period_days} days',))
-        
         if not total.empty:
             stats['total'] = int(total['total'].iloc[0])
             stats['closed'] = int(total['closed'].iloc[0])
@@ -5088,8 +3844,6 @@ class InterventionManager:
             stats['completion_rate'] = round(
                 (stats['closed'] / stats['total'] * 100) if stats['total'] > 0 else 0, 1
             )
-        
-        # Par priorité
         by_priority = self.db.execute_query("""
             SELECT priority, COUNT(*) as count,
                    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1) as percentage
@@ -5098,10 +3852,7 @@ class InterventionManager:
             GROUP BY priority
             ORDER BY count DESC
         """, (f'-{period_days} days',))
-        
         stats['by_priority'] = by_priority.to_dict('records') if not by_priority.empty else []
-        
-        # Par type
         by_type = self.db.execute_query("""
             SELECT type, COUNT(*) as count,
                    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1) as percentage
@@ -5110,10 +3861,7 @@ class InterventionManager:
             GROUP BY type
             ORDER BY count DESC
         """, (f'-{period_days} days',))
-        
         stats['by_type'] = by_type.to_dict('records') if not by_type.empty else []
-        
-        # Par statut
         by_status = self.db.execute_query("""
             SELECT status, COUNT(*) as count
             FROM interventions
@@ -5121,10 +3869,7 @@ class InterventionManager:
             GROUP BY status
             ORDER BY count DESC
         """, (f'-{period_days} days',))
-        
         stats['by_status'] = by_status.to_dict('records') if not by_status.empty else []
-        
-        # Évolution journalière
         daily = self.db.execute_query("""
             SELECT date(opening_date) as date,
                    COUNT(*) as count
@@ -5133,59 +3878,44 @@ class InterventionManager:
             GROUP BY date(opening_date)
             ORDER BY date
         """, (f'-{period_days} days',))
-        
         stats['daily'] = daily.to_dict('records') if not daily.empty else []
-        
         return stats
-    
+
     def create_notification(self, user_id: int, title: str, message: str, link: str = None):
-        """Crée une notification pour un utilisateur"""
         query = """
             INSERT INTO notifications (user_id, type, title, message, link)
             VALUES (?, 'intervention', ?, ?, ?)
         """
         self.db.execute_insert(query, (user_id, title, message, link))
-    
+
     def log_action(self, user_id: int, action: str, entity_type: str, entity_id: int,
                   old_values: str = None, new_values: str = None):
-        """Journalise une action"""
         query = """
             INSERT INTO histories (entity_type, entity_id, action, user_id, old_values, new_values)
             VALUES (?, ?, ?, ?, ?, ?)
         """
-        
         self.db.execute_insert(query, (entity_type, entity_id, action, user_id, old_values, new_values))
 
 # =============================================================================
-# STOCK MANAGER - 400+ lignes
+# STOCK MANAGER (corrigé)
 # =============================================================================
 
 class StockManager:
-    """Gestionnaire de stock avancé"""
-    
     def __init__(self, db_manager: DatabaseManager):
         self.db = db_manager
-    
+
     def create_part(self, part_data: Dict, user_id: int = None) -> Tuple[bool, Union[int, str]]:
-        """Crée une nouvelle pièce"""
         try:
-            # Générer un code si non fourni
             if 'code' not in part_data or not part_data['code']:
                 part_data['code'] = self.generate_part_code(part_data.get('category', 'PRT'))
-            
-            # Générer un code-barres si non fourni
             if 'barcode' not in part_data or not part_data['barcode']:
                 part_data['barcode'] = self.generate_barcode()
-            
-            # Calculer la valeur du stock
             part_data['stock_value'] = part_data.get('quantity', 0) * part_data.get('unit_price', 0)
-            
-            # Valider les données
+
             is_valid, message = self.validate_part_data(part_data)
             if not is_valid:
                 return False, message
-            
-            # Insérer la pièce
+
             query = """
                 INSERT INTO spare_parts (
                     code, name, description, category, subcategory,
@@ -5198,7 +3928,6 @@ class StockManager:
                     notes, is_active, created_by
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-            
             params = (
                 part_data.get('code'),
                 part_data.get('name'),
@@ -5237,38 +3966,27 @@ class StockManager:
                 1,  # is_active
                 user_id
             )
-            
             part_id = self.db.execute_insert(query, params)
-            
-            # Journaliser
-            self.log_action(user_id, 'create', 'spare_part', part_id,
-                          new_values=json.dumps(part_data))
-            
+            self.log_action(user_id, 'create', 'spare_part', part_id, new_values=json.dumps(part_data))
             logger.info(f"Pièce créée: {part_data['code']}")
             return True, part_id
-            
         except Exception as e:
             logger.error(f"Erreur création pièce: {e}")
             return False, str(e)
-    
+
     def update_part(self, part_id: int, part_data: Dict, user_id: int = None) -> Tuple[bool, str]:
-        """Met à jour une pièce"""
         try:
-            # Récupérer les valeurs actuelles
             current = self.get_part_by_id(part_id)
             if not current:
                 return False, "Pièce non trouvée"
-            
-            # Recalculer la valeur du stock si nécessaire
+
             if 'quantity' in part_data or 'unit_price' in part_data:
                 quantity = part_data.get('quantity', current['quantity'])
                 unit_price = part_data.get('unit_price', current['unit_price'])
                 part_data['stock_value'] = quantity * unit_price
-            
-            # Construire la requête dynamique
+
             updates = []
             params = []
-            
             updateable_fields = [
                 'name', 'description', 'category', 'subcategory',
                 'brand', 'model', 'supplier_id', 'supplier_code',
@@ -5281,76 +3999,61 @@ class StockManager:
                 'last_purchase_date', 'last_sale_date', 'last_inventory_date',
                 'notes', 'is_active'
             ]
-            
             for field in updateable_fields:
                 if field in part_data:
                     updates.append(f"{field} = ?")
                     params.append(part_data[field])
-            
+
             if not updates:
                 return False, "Aucune donnée à mettre à jour"
-            
+
             query = f"UPDATE spare_parts SET {', '.join(updates)}, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?"
             params.append(user_id)
             params.append(part_id)
-            
             self.db.execute_update(query, tuple(params))
-            
-            # Journaliser les changements
+
             changes = {}
             for field in part_data:
                 if field in current and str(current[field]) != str(part_data[field]):
-                    changes[field] = {
-                        'old': current[field],
-                        'new': part_data[field]
-                    }
-            
+                    changes[field] = {'old': current[field], 'new': part_data[field]}
+
             if changes:
                 self.log_action(user_id, 'update', 'spare_part', part_id,
                               old_values=json.dumps({k: v['old'] for k, v in changes.items()}),
                               new_values=json.dumps({k: v['new'] for k, v in changes.items()}))
-            
+
             logger.info(f"Pièce mise à jour: {part_id}")
             return True, "Pièce mise à jour"
-            
         except Exception as e:
             logger.error(f"Erreur mise à jour pièce: {e}")
             return False, str(e)
-    
+
     def delete_part(self, part_id: int, user_id: int = None) -> Tuple[bool, str]:
-        """Supprime (désactive) une pièce"""
         try:
-            # Vérifier les mouvements
             movements = self.db.execute_query(
                 "SELECT COUNT(*) as count FROM stock_movements WHERE part_id = ?",
                 (part_id,)
             )
             if not movements.empty and movements.iloc[0]['count'] > 0:
-                # Désactiver seulement
                 result = self.db.execute_update(
                     "UPDATE spare_parts SET is_active = 0, is_deleted = 1, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?",
                     (user_id, part_id)
                 )
             else:
-                # Supprimer complètement
                 result = self.db.execute_delete(
                     "DELETE FROM spare_parts WHERE id = ?",
                     (part_id,)
                 )
-            
             if result > 0:
                 self.log_action(user_id, 'delete', 'spare_part', part_id)
                 logger.info(f"Pièce supprimée: {part_id}")
                 return True, "Pièce supprimée"
-            
             return False, "Pièce non trouvée"
-            
         except Exception as e:
             logger.error(f"Erreur suppression pièce: {e}")
             return False, str(e)
-    
+
     def get_part_by_id(self, part_id: int) -> Optional[Dict]:
-        """Récupère une pièce par son ID"""
         query = """
             SELECT p.*, s.name as supplier_name, m.name as manufacturer_name
             FROM spare_parts p
@@ -5358,33 +4061,26 @@ class StockManager:
             LEFT JOIN suppliers m ON p.manufacturer_id = m.id
             WHERE p.id = ? AND p.is_deleted = 0
         """
-        
         result = self.db.execute_query(query, (part_id,))
-        
         if not result.empty:
             return result.iloc[0].to_dict()
         return None
-    
+
     def get_part_by_code(self, code: str) -> Optional[Dict]:
-        """Récupère une pièce par son code"""
         query = "SELECT * FROM spare_parts WHERE code = ? AND is_deleted = 0"
         result = self.db.execute_query(query, (code,))
-        
         if not result.empty:
             return result.iloc[0].to_dict()
         return None
-    
+
     def get_part_by_barcode(self, barcode: str) -> Optional[Dict]:
-        """Récupère une pièce par son code-barres"""
         query = "SELECT * FROM spare_parts WHERE barcode = ? AND is_deleted = 0"
         result = self.db.execute_query(query, (barcode,))
-        
         if not result.empty:
             return result.iloc[0].to_dict()
         return None
-    
+
     def get_all_parts(self, filters: Dict = None) -> pd.DataFrame:
-        """Récupère toutes les pièces avec filtres"""
         query = """
             SELECT p.*, s.name as supplier_name,
                    CASE 
@@ -5399,20 +4095,16 @@ class StockManager:
             WHERE p.is_deleted = 0
         """
         params = []
-        
         if filters:
             if filters.get('category'):
                 query += " AND p.category = ?"
                 params.append(filters['category'])
-            
             if filters.get('supplier_id'):
                 query += " AND p.supplier_id = ?"
                 params.append(filters['supplier_id'])
-            
             if filters.get('location'):
                 query += " AND p.location LIKE ?"
                 params.append(f'%{filters["location"]}%')
-            
             if filters.get('stock_status'):
                 if filters['stock_status'] == 'Rupture':
                     query += " AND p.quantity <= 0"
@@ -5422,41 +4114,32 @@ class StockManager:
                     query += " AND p.quantity <= p.reorder_point AND p.quantity > p.min_quantity"
                 elif filters['stock_status'] == 'Surcharge':
                     query += " AND p.quantity >= p.max_quantity"
-            
             if filters.get('is_active') is not None:
                 query += " AND p.is_active = ?"
                 params.append(1 if filters['is_active'] else 0)
-            
             if filters.get('search'):
                 search = f"%{filters['search']}%"
                 query += """ AND (p.name LIKE ? OR p.code LIKE ? OR 
                               p.description LIKE ? OR p.barcode LIKE ?)"""
                 params.extend([search, search, search, search])
-        
         query += " ORDER BY p.name"
-        
         return self.db.execute_query(query, tuple(params) if params else None)
-    
+
     def get_low_stock_parts(self) -> pd.DataFrame:
-        """Récupère les pièces en stock faible"""
         return self.get_all_parts({'stock_status': 'Alerte'})
-    
+
     def get_out_of_stock_parts(self) -> pd.DataFrame:
-        """Récupère les pièces en rupture"""
         return self.get_all_parts({'stock_status': 'Rupture'})
-    
+
     def add_stock_movement(self, movement_data: Dict, user_id: int = None) -> Tuple[bool, Union[int, str]]:
-        """Ajoute un mouvement de stock"""
         try:
-            # Récupérer la pièce
             part = self.get_part_by_id(movement_data['part_id'])
             if not part:
                 return False, "Pièce non trouvée"
-            
-            # Calculer les quantités avant/après
+
             before_qty = part['quantity']
             quantity = movement_data['quantity']
-            
+
             if movement_data['type'] == 'Sortie':
                 if quantity > before_qty:
                     return False, "Quantité insuffisante en stock"
@@ -5464,13 +4147,11 @@ class StockManager:
             elif movement_data['type'] == 'Entrée':
                 after_qty = before_qty + quantity
             else:
-                after_qty = quantity  # Ajustement
-            
-            # Calculer le prix total
+                after_qty = quantity
+
             unit_price = movement_data.get('unit_price', part['unit_price'])
             total_price = quantity * unit_price
-            
-            # Insérer le mouvement
+
             query = """
                 INSERT INTO stock_movements (
                     part_id, type, quantity, before_quantity, after_quantity,
@@ -5478,7 +4159,6 @@ class StockManager:
                     document_number, reason, notes, created_by
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-            
             params = (
                 movement_data['part_id'],
                 movement_data['type'],
@@ -5494,34 +4174,28 @@ class StockManager:
                 movement_data.get('notes'),
                 user_id
             )
-            
             movement_id = self.db.execute_insert(query, params)
-            
-            # Mettre à jour la pièce
+
             self.update_part(part['id'], {
                 'quantity': after_qty,
                 'last_purchase_date' if movement_data['type'] == 'Entrée' else 'last_sale_date': datetime.now().date().isoformat()
             }, user_id)
-            
-            # Journaliser
+
             self.log_action(user_id, 'create', 'stock_movement', movement_id,
                           new_values=json.dumps(movement_data))
-            
-            # Vérifier les alertes
+
             if after_qty <= part['min_quantity']:
                 self.create_stock_alert(part['id'], f"Stock critique: {part['name']}")
             elif after_qty <= part['reorder_point']:
                 self.create_stock_alert(part['id'], f"Stock faible: {part['name']}", 'warning')
-            
+
             logger.info(f"Mouvement de stock ajouté: {movement_id}")
             return True, movement_id
-            
         except Exception as e:
             logger.error(f"Erreur ajout mouvement stock: {e}")
             return False, str(e)
-    
+
     def get_stock_movements(self, part_id: int = None, limit: int = 100) -> pd.DataFrame:
-        """Récupère les mouvements de stock"""
         query = """
             SELECT m.*, p.name as part_name, p.code as part_code,
                    u.first_name || ' ' || u.last_name as created_by_name
@@ -5531,54 +4205,37 @@ class StockManager:
             WHERE 1=1
         """
         params = []
-        
         if part_id:
             query += " AND m.part_id = ?"
             params.append(part_id)
-        
         query += " ORDER BY m.movement_date DESC LIMIT ?"
         params.append(limit)
-        
         return self.db.execute_query(query, tuple(params))
-    
+
     def get_stock_value(self) -> float:
-        """Calcule la valeur totale du stock"""
         result = self.db.execute_query("SELECT SUM(stock_value) as total FROM spare_parts WHERE is_deleted = 0")
         return float(result['total'].iloc[0]) if not result.empty and result['total'].iloc[0] else 0
-    
+
     def get_stock_stats(self) -> Dict:
-        """Statistiques du stock"""
         stats = {}
-        
-        # Total articles
         total = self.db.execute_query("SELECT COUNT(*) as count FROM spare_parts WHERE is_deleted = 0")
         stats['total_articles'] = int(total['count'].iloc[0]) if not total.empty else 0
-        
-        # Valeur totale
         stats['valeur_totale'] = self.get_stock_value()
-        
-        # Articles en rupture
         rupture = self.db.execute_query("""
             SELECT COUNT(*) as count FROM spare_parts 
             WHERE quantity <= 0 AND is_deleted = 0
         """)
         stats['rupture'] = int(rupture['count'].iloc[0]) if not rupture.empty else 0
-        
-        # Articles en stock critique
         critique = self.db.execute_query("""
             SELECT COUNT(*) as count FROM spare_parts 
             WHERE quantity <= min_quantity AND quantity > 0 AND is_deleted = 0
         """)
         stats['critique'] = int(critique['count'].iloc[0]) if not critique.empty else 0
-        
-        # Articles en alerte
         alerte = self.db.execute_query("""
             SELECT COUNT(*) as count FROM spare_parts 
             WHERE quantity <= reorder_point AND quantity > min_quantity AND is_deleted = 0
         """)
         stats['alerte'] = int(alerte['count'].iloc[0]) if not alerte.empty else 0
-        
-        # Articles par catégorie
         by_category = self.db.execute_query("""
             SELECT category, COUNT(*) as count,
                    SUM(stock_value) as value
@@ -5587,37 +4244,29 @@ class StockManager:
             GROUP BY category
         """)
         stats['by_category'] = by_category.to_dict('records') if not by_category.empty else []
-        
         return stats
-    
+
     def create_stock_alert(self, part_id: int, message: str, severity: str = 'critical'):
-        """Crée une alerte de stock"""
-        # Récupérer les utilisateurs concernés (stock managers)
         users = self.db.execute_query("""
             SELECT id FROM users 
             WHERE role IN ('stock_manager', 'purchaser', 'admin') 
               AND is_active = 1
         """)
-        
         for _, user in users.iterrows():
             query = """
                 INSERT INTO notifications (user_id, type, title, message, link)
                 VALUES (?, 'stock', 'Alerte Stock', ?, ?)
             """
             self.db.execute_insert(query, (user['id'], message, f"/stock/{part_id}"))
-    
+
     def generate_part_code(self, category: str) -> str:
-        """Génère un code unique pour une pièce"""
         prefix = category[:3].upper() if category else 'PRT'
-        
-        query = """
+        result = self.db.execute_query("""
             SELECT code FROM spare_parts 
             WHERE code LIKE ? 
             ORDER BY code DESC 
             LIMIT 1
-        """
-        result = self.db.execute_query(query, (f"{prefix}%",))
-        
+        """, (f"{prefix}%",))
         if not result.empty:
             last_code = result.iloc[0]['code']
             try:
@@ -5627,13 +4276,10 @@ class StockManager:
                 new_num = 1
         else:
             new_num = 1
-        
         return f"{prefix}{new_num:05d}"
-    
+
     def generate_barcode(self) -> str:
-        """Génère un code-barres unique"""
         import random
-        
         while True:
             code = ''.join([str(random.randint(0, 9)) for _ in range(12)])
             total = 0
@@ -5644,24 +4290,18 @@ class StockManager:
                     total += int(digit) * 3
             check_digit = (10 - (total % 10)) % 10
             barcode = code + str(check_digit)
-            
             existing = self.db.execute_query(
                 "SELECT id FROM spare_parts WHERE barcode = ? UNION SELECT id FROM assets WHERE barcode = ?",
                 (barcode, barcode)
             )
-            
             if existing.empty:
                 return barcode
-    
+
     def validate_part_data(self, data: Dict) -> Tuple[bool, str]:
-        """Valide les données d'une pièce"""
         required_fields = ['name']
-        
         for field in required_fields:
             if field not in data or not data[field]:
                 return False, f"Le champ {field} est requis"
-        
-        # Validation des nombres
         numeric_fields = ['quantity', 'min_quantity', 'max_quantity',
                          'reorder_point', 'reorder_quantity', 'unit_price',
                          'purchase_price', 'selling_price', 'vat_rate']
@@ -5671,56 +4311,42 @@ class StockManager:
                     float(data[field])
                 except:
                     return False, f"{field} doit être un nombre"
-        
-        # Validation des quantités
         if data.get('min_quantity') and data.get('max_quantity'):
             if data['min_quantity'] > data['max_quantity']:
                 return False, "La quantité minimum ne peut pas être supérieure au maximum"
-        
         return True, "Données valides"
-    
+
     def log_action(self, user_id: int, action: str, entity_type: str, entity_id: int,
                   old_values: str = None, new_values: str = None):
-        """Journalise une action"""
         query = """
             INSERT INTO histories (entity_type, entity_id, action, user_id, old_values, new_values)
             VALUES (?, ?, ?, ?, ?, ?)
         """
-        
         self.db.execute_insert(query, (entity_type, entity_id, action, user_id, old_values, new_values))
-    
+
     def export_stock(self, format: str = 'csv', filters: Dict = None) -> Union[str, bytes]:
-        """Exporte la liste des pièces"""
         parts = self.get_all_parts(filters)
-        
         if format == 'csv':
             return parts.to_csv(index=False, encoding='utf-8-sig')
-        
         elif format == 'excel':
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 parts.to_excel(writer, sheet_name='Stock', index=False)
-                
                 worksheet = writer.sheets['Stock']
                 for i, col in enumerate(parts.columns):
                     max_len = max(parts[col].astype(str).map(len).max(), len(col)) + 2
                     worksheet.set_column(i, i, min(max_len, 50))
-            
             return output.getvalue()
-        
         elif format == 'json':
             return parts.to_json(orient='records', indent=2, force_ascii=False)
-        
         else:
             return None
 
 # =============================================================================
-# DASHBOARD RENDERER - 400+ lignes
+# DASHBOARD RENDERER (corrigé)
 # =============================================================================
 
 class DashboardRenderer:
-    """Gestionnaire d'affichage du dashboard"""
-    
     def __init__(self, db_manager: DatabaseManager, auth_manager: AuthenticationManager,
                  asset_manager: AssetManager, intervention_manager: InterventionManager,
                  stock_manager: StockManager):
@@ -5729,11 +4355,9 @@ class DashboardRenderer:
         self.assets = asset_manager
         self.interventions = intervention_manager
         self.stock = stock_manager
-    
+
     def render_kpi_cards(self):
-        """Affiche les cartes KPI"""
         col1, col2, col3, col4 = st.columns(4)
-        
         with col1:
             asset_stats = self.assets.get_asset_stats()
             st.metric(
@@ -5742,12 +4366,10 @@ class DashboardRenderer:
                 f"{asset_stats.get('actifs', 0)} actifs",
                 delta_color="normal"
             )
-            
             with st.expander("Détails"):
                 st.write(f"En maintenance: {asset_stats.get('en_maintenance', 0)}")
                 st.write(f"Hors service: {asset_stats.get('hors_service', 0)}")
                 st.write(f"Maintenance due: {asset_stats.get('maintenance_due', 0)}")
-        
         with col2:
             interv_stats = self.interventions.get_intervention_stats(7)
             st.metric(
@@ -5755,12 +4377,10 @@ class DashboardRenderer:
                 interv_stats.get('total', 0),
                 f"{interv_stats.get('completion_rate', 0)}% complétées"
             )
-            
             with st.expander("Détails"):
                 st.write(f"En cours: {len(self.interventions.get_open_interventions())}")
                 st.write(f"Urgentes: {len(self.interventions.get_urgent_interventions())}")
                 st.write(f"Coût total: {interv_stats.get('total_cost', 0):,.0f} €")
-        
         with col3:
             stock_stats = self.stock.get_stock_stats()
             st.metric(
@@ -5768,14 +4388,11 @@ class DashboardRenderer:
                 stock_stats.get('total_articles', 0),
                 f"{stock_stats.get('valeur_totale', 0):,.0f} €"
             )
-            
             with st.expander("Détails"):
                 st.write(f"Rupture: {stock_stats.get('rupture', 0)}")
                 st.write(f"Critique: {stock_stats.get('critique', 0)}")
                 st.write(f"Alerte: {stock_stats.get('alerte', 0)}")
-        
         with col4:
-            # Satisfaction client
             satisfaction = self.db.execute_query("""
                 SELECT AVG(satisfaction_score) as avg_satisfaction
                 FROM interventions
@@ -5783,15 +4400,12 @@ class DashboardRenderer:
                   AND closing_date >= date('now', '-30 days')
             """)
             avg_sat = float(satisfaction['avg_satisfaction'].iloc[0]) if not satisfaction.empty and satisfaction['avg_satisfaction'].iloc[0] else 0
-            
             st.metric(
                 "Satisfaction",
                 f"{avg_sat:.1f}/10" if avg_sat > 0 else "N/A",
                 "30 jours"
             )
-            
             with st.expander("Détails"):
-                # Répartition des scores
                 scores = self.db.execute_query("""
                     SELECT 
                         COUNT(CASE WHEN satisfaction_score >= 8 THEN 1 END) as satisfaits,
@@ -5804,13 +4418,10 @@ class DashboardRenderer:
                     st.write(f"Satisfaits: {scores['satisfaits'].iloc[0]}")
                     st.write(f"Neutres: {scores['neutres'].iloc[0]}")
                     st.write(f"Insatisfaits: {scores['insatisfaits'].iloc[0]}")
-    
+
     def render_charts(self):
-        """Affiche les graphiques"""
         col1, col2 = st.columns(2)
-        
         with col1:
-            # Graphique des équipements par statut
             assets_by_status = self.assets.get_assets_by_status()
             if not assets_by_status.empty:
                 fig = px.pie(
@@ -5825,16 +4436,13 @@ class DashboardRenderer:
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("Aucune donnée disponible")
-        
         with col2:
-            # Graphique des interventions par priorité
             interv_by_priority = self.db.execute_query("""
                 SELECT priority, COUNT(*) as count
                 FROM interventions
                 WHERE opening_date >= date('now', '-30 days')
                 GROUP BY priority
             """)
-            
             if not interv_by_priority.empty:
                 colors = {
                     'Basse': 'green',
@@ -5843,7 +4451,6 @@ class DashboardRenderer:
                     'Urgente': 'red',
                     'Critique': 'darkred'
                 }
-                
                 fig = px.bar(
                     interv_by_priority,
                     x='priority',
@@ -5855,11 +4462,8 @@ class DashboardRenderer:
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("Aucune donnée disponible")
-        
         col1, col2 = st.columns(2)
-        
         with col1:
-            # Évolution des interventions
             interv_timeline = self.db.execute_query("""
                 SELECT date(opening_date) as date,
                        COUNT(*) as count
@@ -5868,7 +4472,6 @@ class DashboardRenderer:
                 GROUP BY date(opening_date)
                 ORDER BY date
             """)
-            
             if not interv_timeline.empty:
                 fig = px.line(
                     interv_timeline,
@@ -5881,9 +4484,7 @@ class DashboardRenderer:
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("Aucune donnée disponible")
-        
         with col2:
-            # Stock par catégorie
             stock_by_category = self.db.execute_query("""
                 SELECT category, SUM(stock_value) as value
                 FROM spare_parts
@@ -5892,7 +4493,6 @@ class DashboardRenderer:
                 ORDER BY value DESC
                 LIMIT 10
             """)
-            
             if not stock_by_category.empty:
                 fig = px.bar(
                     stock_by_category,
@@ -5905,19 +4505,16 @@ class DashboardRenderer:
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("Aucune donnée disponible")
-    
+
     def render_tables(self):
-        """Affiche les tableaux"""
         tab1, tab2, tab3 = st.tabs(["🔧 Maintenances à venir", "⚠️ Alertes stock", "🆕 Interventions récentes"])
-        
         with tab1:
             maintenances = self.assets.get_assets_due_for_maintenance(30)
             if not maintenances.empty:
                 display_df = maintenances[['code', 'name', 'next_maintenance_date', 'responsible_name', 'days_until_due']].copy()
                 display_df['days_until_due'] = display_df['days_until_due'].round(0).astype(int)
                 display_df.columns = ['Code', 'Équipement', 'Date prévue', 'Responsable', 'Jours restants']
-                
-                # Coloration conditionnelle
+
                 def color_days(val):
                     if val <= 0:
                         return 'color: red; font-weight: bold'
@@ -5926,38 +4523,34 @@ class DashboardRenderer:
                     elif val <= 30:
                         return 'color: blue'
                     return ''
-                
-                styled_df = display_df.style.applymap(color_days, subset=['Jours restants'])
+
+                styled_df = display_df.style.map(color_days, subset=['Jours restants'])
                 st.dataframe(styled_df, use_container_width=True, hide_index=True)
             else:
                 st.info("Aucune maintenance prévue dans les 30 prochains jours")
-        
         with tab2:
             alertes = self.stock.get_low_stock_parts()
             if not alertes.empty:
                 display_df = alertes[['code', 'name', 'quantity', 'min_quantity', 'reorder_point', 'supplier_name']].copy()
                 display_df.columns = ['Code', 'Pièce', 'Quantité', 'Min', 'Seuil', 'Fournisseur']
-                
-                # Coloration conditionnelle
+
                 def color_qty(row):
                     if row['Quantité'] <= 0:
                         return ['background-color: #ffcccc'] * len(row)
                     elif row['Quantité'] <= row['Min']:
                         return ['background-color: #ffe6cc'] * len(row)
                     return [''] * len(row)
-                
+
                 styled_df = display_df.style.apply(color_qty, axis=1)
                 st.dataframe(styled_df, use_container_width=True, hide_index=True)
             else:
                 st.info("Aucune alerte stock")
-        
         with tab3:
             recent = self.interventions.get_all_interventions({'date_debut': (datetime.now() - timedelta(days=7)).date().isoformat()})
             if not recent.empty:
                 display_df = recent[['number', 'title', 'asset_name', 'priority', 'status', 'technician_name', 'opening_date']].copy()
                 display_df.columns = ['N°', 'Titre', 'Équipement', 'Priorité', 'Statut', 'Technicien', 'Date ouverture']
-                
-                # Coloration par priorité
+
                 def color_priority(val):
                     colors = {
                         'Urgente': 'color: red; font-weight: bold',
@@ -5966,31 +4559,26 @@ class DashboardRenderer:
                         'Basse': 'color: green'
                     }
                     return colors.get(val, '')
-                
-                styled_df = display_df.style.applymap(color_priority, subset=['Priorité'])
+
+                styled_df = display_df.style.map(color_priority, subset=['Priorité'])
                 st.dataframe(styled_df, use_container_width=True, hide_index=True)
             else:
                 st.info("Aucune intervention récente")
-    
+
     def render_activity_timeline(self):
-        """Affiche la timeline des activités récentes"""
         activities = self.db.execute_query("""
             SELECT 'intervention' as type, number as ref, title, status, opening_date as date
             FROM interventions
             WHERE opening_date >= datetime('now', '-7 days')
-            
             UNION ALL
-            
             SELECT 'stock' as type, code as ref, name as title, 
                    CASE WHEN quantity <= 0 THEN 'Rupture' ELSE 'Mouvement' END as status,
                    updated_at as date
             FROM spare_parts
             WHERE updated_at >= datetime('now', '-7 days')
-            
             ORDER BY date DESC
             LIMIT 20
         """)
-        
         if not activities.empty:
             for _, act in activities.iterrows():
                 icon = "🛠️" if act['type'] == 'intervention' else "📦"
@@ -6002,7 +4590,6 @@ class DashboardRenderer:
                     'Rupture': '🔴',
                     'Mouvement': '🟣'
                 }.get(act['status'], '⚪')
-                
                 with st.container():
                     col1, col2, col3 = st.columns([1, 8, 2])
                     with col1:
@@ -6018,17 +4605,13 @@ class DashboardRenderer:
             st.info("Aucune activité récente")
 
 # =============================================================================
-# MAIN APPLICATION - 300+ lignes
+# MAIN APPLICATION (corrigé)
 # =============================================================================
 
 class GMAOApplication:
-    """Application principale GMAO"""
-    
     def __init__(self):
         self.start_time = time.time()
         self.db_path = "data/gmao.db"
-        
-        # Initialiser les gestionnaires
         self.db = DatabaseManager(self.db_path)
         self.auth = AuthenticationManager(self.db)
         self.assets = AssetManager(self.db)
@@ -6038,14 +4621,10 @@ class GMAOApplication:
             self.db, self.auth, self.assets,
             self.interventions, self.stock
         )
-        
-        # Initialiser la session
         self.init_session()
-        
         logger.info(f"Application initialisée en {time.time() - self.start_time:.2f}s")
-    
+
     def init_session(self):
-        """Initialise la session Streamlit"""
         if 'authenticated' not in st.session_state:
             st.session_state.authenticated = False
             st.session_state.user = None
@@ -6053,40 +4632,30 @@ class GMAOApplication:
             st.session_state.page = "login"
             st.session_state.notifications = []
             st.session_state.last_activity = datetime.now()
-    
+
     def run(self):
-        """Lance l'application"""
         try:
-            # Barre latérale
             with st.sidebar:
                 self.render_sidebar()
-            
-            # Contenu principal
             if not st.session_state.authenticated:
                 self.render_login()
             else:
                 self.render_main_content()
-            
-            # Footer
             self.render_footer()
-            
         except Exception as e:
             logger.error(f"Erreur application: {e}")
             logger.error(traceback.format_exc())
             st.error("Une erreur est survenue")
             if st.checkbox("Afficher les détails"):
                 st.exception(e)
-    
+
     def render_sidebar(self):
-        """Affiche la barre latérale"""
         st.image("https://via.placeholder.com/200x80?text=GMAO+Enterprise", use_column_width=True)
-        
         if not st.session_state.authenticated:
             st.markdown("### GMAO Enterprise")
             st.markdown("Version 3.0.0")
             st.markdown("---")
             st.info("Veuillez vous connecter")
-            
             with st.expander("Identifiants de démo"):
                 st.markdown("""
                 **Admin:** admin / admin123
@@ -6098,8 +4667,6 @@ class GMAOApplication:
             st.markdown(f"### 👤 {user['first_name']} {user['last_name']}")
             st.caption(f"@{user['username']} - {user['role']}")
             st.markdown("---")
-            
-            # Menu
             menu_items = {
                 "🏠 Dashboard": "dashboard",
                 "🔧 Équipements": "assets",
@@ -6109,63 +4676,50 @@ class GMAOApplication:
                 "📊 Rapports": "reports",
                 "⚙️ Paramètres": "settings"
             }
-            
             for label, page in menu_items.items():
                 if st.button(label, use_container_width=True,
                            type="primary" if st.session_state.page == page else "secondary"):
                     st.session_state.page = page
                     st.rerun()
-            
             st.markdown("---")
-            
-            # Notifications
             notif_count = self.db.execute_query("""
                 SELECT COUNT(*) as count FROM notifications
                 WHERE user_id = ? AND is_read = 0
             """, (user['id'],))
-            
             if not notif_count.empty and notif_count.iloc[0]['count'] > 0:
                 st.warning(f"🔔 {notif_count.iloc[0]['count']} notification(s)")
-            
-            # Déconnexion
             if st.button("🚪 Déconnexion", use_container_width=True):
                 self.logout()
-    
+
     def render_login(self):
-        """Affiche la page de connexion"""
         col1, col2, col3 = st.columns([1, 2, 1])
-        
         with col2:
             st.title("🔐 Connexion")
             st.markdown("---")
-            
             with st.form("login_form"):
                 username = st.text_input("Nom d'utilisateur")
                 password = st.text_input("Mot de passe", type="password")
                 remember = st.checkbox("Se souvenir de moi")
-                
                 if st.form_submit_button("Se connecter", use_container_width=True):
-                    result = self.auth.authenticate(
-                        username, password,
-                        ip_address=st.context.headers.get("X-Forwarded-For", "unknown"),
-                        user_agent=st.context.headers.get("User-Agent", "unknown")
-                    )
-                    
-                    if result:
-                        st.session_state.authenticated = True
-                        st.session_state.user = result['user']
-                        st.session_state.session_id = result['session_id']
-                        st.session_state.page = "dashboard"
-                        st.success("Connexion réussie!")
-                        st.rerun()
-                    else:
-                        st.error("Nom d'utilisateur ou mot de passe incorrect")
-            
+                    ip_address = "unknown"
+                    user_agent = "unknown"
+                    try:
+                        result = self.auth.authenticate(username, password, ip_address, user_agent)
+                        if result:
+                            st.session_state.authenticated = True
+                            st.session_state.user = result['user']
+                            st.session_state.session_id = result['session_id']
+                            st.session_state.page = "dashboard"
+                            st.success("Connexion réussie!")
+                            st.rerun()
+                    except AuthenticationError as e:
+                        st.error(str(e))
+                    except Exception as e:
+                        st.error("Erreur lors de la connexion")
             st.markdown("---")
             st.markdown("© 2024 GMAO Enterprise - Tous droits réservés")
-    
+
     def render_main_content(self):
-        """Affiche le contenu principal"""
         pages = {
             "dashboard": self.render_dashboard,
             "assets": self.render_assets,
@@ -6175,75 +4729,44 @@ class GMAOApplication:
             "reports": self.render_reports,
             "settings": self.render_settings
         }
-        
         page_func = pages.get(st.session_state.page, self.render_dashboard)
         page_func()
-    
+
     def render_dashboard(self):
-        """Affiche le dashboard"""
         st.title("🏠 Tableau de bord")
-        
-        # KPIs
         self.dashboard.render_kpi_cards()
-        
         st.markdown("---")
-        
-        # Graphiques
         self.dashboard.render_charts()
-        
         st.markdown("---")
-        
-        # Tableaux
         self.dashboard.render_tables()
-        
         st.markdown("---")
-        
-        # Timeline
         with st.expander("📋 Activités récentes", expanded=True):
             self.dashboard.render_activity_timeline()
-    
+
     def render_assets(self):
-        """Affiche la page des équipements"""
         st.title("🔧 Gestion des équipements")
-        
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "📋 Liste", "➕ Ajouter", "📊 Statistiques", "📈 Maintenances"
-        ])
-        
+        tab1, tab2, tab3, tab4 = st.tabs(["📋 Liste", "➕ Ajouter", "📊 Statistiques", "📈 Maintenances"])
         with tab1:
             self.render_assets_list()
-        
         with tab2:
             self.render_asset_form()
-        
         with tab3:
             self.render_assets_stats()
-        
         with tab4:
             self.render_maintenances()
-    
+
     def render_assets_list(self):
-        """Affiche la liste des équipements"""
-        # Filtres
         with st.expander("🔍 Filtres", expanded=True):
             col1, col2, col3, col4 = st.columns(4)
-            
             with col1:
-                status_filter = st.selectbox(
-                    "Statut",
-                    ["Tous"] + [s.value for s in AssetStatus]
-                )
-            
+                status_filter = st.selectbox("Statut", ["Tous"] + [s.value for s in AssetStatus])
             with col2:
                 type_filter = st.text_input("Type", placeholder="Filtrer par type")
-            
             with col3:
                 location_filter = st.text_input("Localisation", placeholder="Filtrer par lieu")
-            
             with col4:
                 search = st.text_input("Recherche", placeholder="Nom, code, série...")
-        
-        # Construire les filtres
+
         filters = {}
         if status_filter != "Tous":
             filters['status'] = status_filter
@@ -6253,12 +4776,9 @@ class GMAOApplication:
             filters['location'] = location_filter
         if search:
             filters['search'] = search
-        
-        # Récupérer les données
+
         assets = self.assets.get_all_assets(filters)
-        
         if not assets.empty:
-            # Métriques
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("Total", len(assets))
@@ -6271,18 +4791,14 @@ class GMAOApplication:
             with col4:
                 valeur = assets['current_value'].sum()
                 st.metric("Valeur totale", f"{valeur:,.0f} €")
-            
-            # Tableau
+
             display_cols = ['code', 'name', 'type', 'model', 'location',
                            'status', 'responsible_name', 'next_maintenance_date']
-            
             display_df = assets[display_cols].copy()
             display_df.columns = ['Code', 'Nom', 'Type', 'Modèle', 'Localisation',
                                  'Statut', 'Responsable', 'Prochain entretien']
-            
             st.dataframe(display_df, use_container_width=True, hide_index=True)
-            
-            # Actions
+
             col1, col2, col3 = st.columns(3)
             with col1:
                 selected = st.selectbox(
@@ -6290,15 +4806,12 @@ class GMAOApplication:
                     options=assets['code'].tolist(),
                     format_func=lambda x: f"{x} - {assets[assets['code']==x]['name'].iloc[0]}"
                 )
-            
             if selected:
                 asset = assets[assets['code'] == selected].iloc[0]
-                
                 with col2:
                     if st.button("✏️ Modifier", use_container_width=True):
                         st.session_state['edit_asset'] = asset.to_dict()
                         st.rerun()
-                
                 with col3:
                     if st.button("🗑️ Supprimer", use_container_width=True):
                         success, msg = self.assets.delete_asset(asset['id'], st.session_state.user['id'])
@@ -6309,84 +4822,70 @@ class GMAOApplication:
                             st.error(msg)
         else:
             st.info("Aucun équipement trouvé")
-    
+
     def render_asset_form(self):
-        """Affiche le formulaire d'ajout/modification d'équipement"""
-        editing = 'edit_asset' in st.session
-                editing = 'edit_asset' in st.session_state
+        editing = 'edit_asset' in st.session_state
         asset = st.session_state.get('edit_asset', {})
-        
         with st.form("asset_form"):
             st.subheader("📝 " + ("Modifier l'équipement" if editing else "Nouvel équipement"))
-            
             col1, col2 = st.columns(2)
-            
             with col1:
-                code = st.text_input("Code *", value=asset.get('code', ''), 
-                                   disabled=editing, help="Code unique de l'équipement")
+                code = st.text_input("Code *", value=asset.get('code', ''), disabled=editing, help="Code unique de l'équipement")
                 name = st.text_input("Nom *", value=asset.get('name', ''))
                 type_ = st.selectbox("Type *", ["Machine", "Équipement", "Véhicule", "Outil", "Infrastructure"],
-                                   index=["Machine", "Équipement", "Véhicule", "Outil", "Infrastructure"].index(asset.get('type', 'Machine')) if asset.get('type') else 0)
+                                   index=["Machine", "Équipement", "Véhicule", "Outil", "Infrastructure"].index(asset.get('type', 'Machine')) if asset.get('type') in ["Machine", "Équipement", "Véhicule", "Outil", "Infrastructure"] else 0)
                 model = st.text_input("Modèle", value=asset.get('model', ''))
                 manufacturer = st.text_input("Fabricant", value=asset.get('manufacturer', ''))
                 serial_number = st.text_input("N° de série", value=asset.get('serial_number', ''))
-                
-                acquisition_date = st.date_input("Date d'acquisition",
-                                               value=datetime.strptime(asset['acquisition_date'], '%Y-%m-%d').date() if asset.get('acquisition_date') else datetime.now().date())
-                commissioning_date = st.date_input("Date de mise en service",
-                                                 value=datetime.strptime(asset['commissioning_date'], '%Y-%m-%d').date() if asset.get('commissioning_date') else datetime.now().date())
+                acq_date = None
+                if asset.get('acquisition_date'):
+                    try:
+                        acq_date = datetime.strptime(asset['acquisition_date'], '%Y-%m-%d').date()
+                    except:
+                        acq_date = datetime.now().date()
+                acquisition_date = st.date_input("Date d'acquisition", value=acq_date or datetime.now().date())
+                comm_date = None
+                if asset.get('commissioning_date'):
+                    try:
+                        comm_date = datetime.strptime(asset['commissioning_date'], '%Y-%m-%d').date()
+                    except:
+                        comm_date = datetime.now().date()
+                commissioning_date = st.date_input("Date de mise en service", value=comm_date or datetime.now().date())
                 warranty_days = st.number_input("Garantie (jours)", min_value=0, value=int(asset.get('warranty_days', 365)))
-            
             with col2:
                 location = st.text_input("Localisation", value=asset.get('location', ''))
                 department = st.text_input("Département", value=asset.get('department', ''))
-                
-                # Responsable
                 users = self.auth.get_all_users()
                 responsables = {row['id']: row['full_name'] for _, row in users.iterrows()}
-                responsable_id = st.selectbox("Responsable",
-                                            options=list(responsables.keys()),
-                                            format_func=lambda x: responsables.get(x, ""),
-                                            index=list(responsables.keys()).index(asset.get('responsible_id')) if asset.get('responsible_id') in responsables.keys() else 0)
-                
+                resp_index = 0
+                if asset.get('responsible_id') in responsables:
+                    resp_index = list(responsables.keys()).index(asset['responsible_id'])
+                responsable_id = st.selectbox("Responsable", options=list(responsables.keys()), format_func=lambda x: responsables.get(x, ""), index=resp_index)
                 status = st.selectbox("Statut", [s.value for s in AssetStatus],
-                                    index=[s.value for s in AssetStatus].index(asset.get('status', 'Actif')) if asset.get('status') else 0)
-                
+                                    index=[s.value for s in AssetStatus].index(asset.get('status', 'Actif')) if asset.get('status') in [s.value for s in AssetStatus] else 0)
                 purchase_price = st.number_input("Prix d'achat (€)", min_value=0.0, value=float(asset.get('purchase_price', 0)))
                 depreciation_rate = st.number_input("Taux d'amortissement (%)", min_value=0.0, max_value=100.0, value=float(asset.get('depreciation_rate', 0)))
                 useful_life = st.number_input("Durée de vie (ans)", min_value=1, value=int(asset.get('useful_life_years', 5)))
-                
                 maintenance_frequency = st.number_input("Fréquence maintenance (jours)", min_value=1, value=int(asset.get('maintenance_frequency_days', 90)))
-                
                 notes = st.text_area("Notes", value=asset.get('notes', ''), height=100)
-            
             st.markdown("---")
-            
             col1, col2, col3 = st.columns(3)
             with col2:
                 if editing:
                     if st.form_submit_button("✅ Mettre à jour", use_container_width=True):
                         data = {
-                            'code': code,
-                            'name': name,
-                            'type': type_,
-                            'model': model,
-                            'manufacturer': manufacturer,
-                            'serial_number': serial_number,
+                            'code': code, 'name': name, 'type': type_, 'model': model,
+                            'manufacturer': manufacturer, 'serial_number': serial_number,
                             'acquisition_date': acquisition_date.isoformat(),
                             'commissioning_date': commissioning_date.isoformat(),
-                            'warranty_days': warranty_days,
-                            'location': location,
-                            'department': department,
-                            'responsible_id': responsable_id,
-                            'status': status,
-                            'purchase_price': purchase_price,
+                            'warranty_days': warranty_days, 'location': location,
+                            'department': department, 'responsible_id': responsable_id,
+                            'status': status, 'purchase_price': purchase_price,
                             'depreciation_rate': depreciation_rate,
                             'useful_life_years': useful_life,
                             'maintenance_frequency_days': maintenance_frequency,
                             'notes': notes
                         }
-                        
                         success, msg = self.assets.update_asset(asset['id'], data, st.session_state.user['id'])
                         if success:
                             st.success(msg)
@@ -6400,26 +4899,18 @@ class GMAOApplication:
                             st.error("Veuillez remplir tous les champs obligatoires")
                         else:
                             data = {
-                                'code': code,
-                                'name': name,
-                                'type': type_,
-                                'model': model,
-                                'manufacturer': manufacturer,
-                                'serial_number': serial_number,
+                                'code': code, 'name': name, 'type': type_, 'model': model,
+                                'manufacturer': manufacturer, 'serial_number': serial_number,
                                 'acquisition_date': acquisition_date.isoformat(),
                                 'commissioning_date': commissioning_date.isoformat(),
-                                'warranty_days': warranty_days,
-                                'location': location,
-                                'department': department,
-                                'responsible_id': responsable_id,
-                                'status': status,
-                                'purchase_price': purchase_price,
+                                'warranty_days': warranty_days, 'location': location,
+                                'department': department, 'responsible_id': responsable_id,
+                                'status': status, 'purchase_price': purchase_price,
                                 'depreciation_rate': depreciation_rate,
                                 'useful_life_years': useful_life,
                                 'maintenance_frequency_days': maintenance_frequency,
                                 'notes': notes
                             }
-                            
                             success, result = self.assets.create_asset(data, st.session_state.user['id'])
                             if success:
                                 st.success("Équipement ajouté avec succès!")
@@ -6427,18 +4918,15 @@ class GMAOApplication:
                                 st.rerun()
                             else:
                                 st.error(f"Erreur: {result}")
-            
             if editing:
                 col1, col2, col3 = st.columns(3)
                 with col2:
                     if st.form_submit_button("❌ Annuler", use_container_width=True):
                         del st.session_state['edit_asset']
                         st.rerun()
-    
+
     def render_assets_stats(self):
-        """Affiche les statistiques des équipements"""
         stats = self.assets.get_asset_stats()
-        
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("Total équipements", stats.get('total', 0))
@@ -6449,55 +4937,41 @@ class GMAOApplication:
         with col4:
             maint_due = stats.get('maintenance_due', 0)
             st.metric("Maintenances dues", maint_due, delta_color="inverse")
-        
         col1, col2 = st.columns(2)
-        
         with col1:
-            # Répartition par statut
             by_status = self.assets.get_assets_by_status()
             if not by_status.empty:
                 fig = px.pie(by_status, values='count', names='status',
                            title="Répartition par statut",
                            color_discrete_sequence=px.colors.qualitative.Set3)
                 st.plotly_chart(fig, use_container_width=True)
-        
         with col2:
-            # Répartition par type
             by_type = self.assets.get_assets_by_type()
             if not by_type.empty:
                 fig = px.bar(by_type, x='type', y='count',
                            title="Répartition par type",
                            color='type')
                 st.plotly_chart(fig, use_container_width=True)
-        
         col1, col2 = st.columns(2)
-        
         with col1:
-            # Répartition par département
             by_dept = self.assets.get_assets_by_department()
             if not by_dept.empty:
                 fig = px.pie(by_dept, values='count', names='department',
                            title="Répartition par département")
                 st.plotly_chart(fig, use_container_width=True)
-        
         with col2:
-            # Top responsables
             by_resp = self.assets.get_assets_by_responsible()
             if not by_resp.empty:
                 fig = px.bar(by_resp, x='responsible', y='count',
                            title="Équipements par responsable")
                 st.plotly_chart(fig, use_container_width=True)
-    
+
     def render_maintenances(self):
-        """Affiche les maintenances préventives"""
         maintenances = self.assets.get_assets_due_for_maintenance(90)
-        
         if not maintenances.empty:
-            # Métriques
             total = len(maintenances)
             urgent = len(maintenances[maintenances['days_until_due'] <= 7])
             retard = len(maintenances[maintenances['days_until_due'] < 0])
-            
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("Total", total)
@@ -6507,27 +4981,19 @@ class GMAOApplication:
                 st.metric("En retard", retard, delta_color="inverse")
             with col4:
                 st.metric("Taux de complétion", f"{((total-retard)/total*100):.1f}%" if total > 0 else "0%")
-            
-            # Calendrier
+
             import calendar
             from calendar import monthcalendar
-            
             today = datetime.now().date()
             current_month = today.month
             current_year = today.year
-            
-            # Créer un calendrier du mois
             cal = monthcalendar(current_year, current_month)
             month_name = calendar.month_name[current_month]
-            
             st.subheader(f"📅 Calendrier des maintenances - {month_name} {current_year}")
-            
-            # Afficher le calendrier
             col_headers = st.columns(7)
             for i, day in enumerate(["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]):
                 with col_headers[i]:
                     st.markdown(f"**{day}**")
-            
             for week in cal:
                 cols = st.columns(7)
                 for i, day in enumerate(week):
@@ -6535,24 +5001,20 @@ class GMAOApplication:
                         if day != 0:
                             date_str = f"{current_year}-{current_month:02d}-{day:02d}"
                             day_maint = maintenances[maintenances['next_maintenance_date'] == date_str]
-                            
                             if day == today.day:
                                 st.markdown(f"**📅 {day}**")
                             else:
                                 st.markdown(f"**{day}**")
-                            
                             if not day_maint.empty:
                                 for _, m in day_maint.iterrows():
                                     color = "🔴" if m['days_until_due'] < 0 else "🟠" if m['days_until_due'] <= 7 else "🟡"
                                     st.caption(f"{color} {m['code']}")
-            
-            # Liste détaillée
+
             st.subheader("📋 Liste détaillée")
-            
             display_df = maintenances[['code', 'name', 'next_maintenance_date', 'responsible_name', 'days_until_due']].copy()
             display_df['days_until_due'] = display_df['days_until_due'].round(0).astype(int)
             display_df.columns = ['Code', 'Équipement', 'Date prévue', 'Responsable', 'Jours restants']
-            
+
             def color_days(val):
                 if val < 0:
                     return 'background-color: #ffcccc; color: red; font-weight: bold'
@@ -6561,67 +5023,39 @@ class GMAOApplication:
                 elif val <= 30:
                     return 'background-color: #d4edda; color: green'
                 return ''
-            
-            styled_df = display_df.style.applymap(color_days, subset=['Jours restants'])
+
+            styled_df = display_df.style.map(color_days, subset=['Jours restants'])
             st.dataframe(styled_df, use_container_width=True, hide_index=True)
-            
-            # Actions
+
             if not maintenances.empty and st.button("📧 Envoyer rappels", use_container_width=True):
                 st.success("Rappels envoyés aux responsables")
         else:
             st.info("Aucune maintenance prévue dans les 90 prochains jours")
-    
+
     def render_interventions(self):
-        """Affiche la page des interventions"""
         st.title("🛠️ Gestion des interventions")
-        
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "📋 Liste", "➕ Nouvelle", "📊 Statistiques", "⏱️ En cours"
-        ])
-        
+        tab1, tab2, tab3, tab4 = st.tabs(["📋 Liste", "➕ Nouvelle", "📊 Statistiques", "⏱️ En cours"])
         with tab1:
             self.render_interventions_list()
-        
         with tab2:
             self.render_intervention_form()
-        
         with tab3:
             self.render_interventions_stats()
-        
         with tab4:
             self.render_ongoing_interventions()
-    
+
     def render_interventions_list(self):
-        """Affiche la liste des interventions"""
-        # Filtres
         with st.expander("🔍 Filtres", expanded=True):
             col1, col2, col3, col4 = st.columns(4)
-            
             with col1:
-                status_filter = st.multiselect(
-                    "Statut",
-                    [s.value for s in InterventionStatus],
-                    default=[]
-                )
-            
+                status_filter = st.multiselect("Statut", [s.value for s in InterventionStatus], default=[])
             with col2:
-                priority_filter = st.multiselect(
-                    "Priorité",
-                    [p.value for p in PriorityLevel],
-                    default=[]
-                )
-            
+                priority_filter = st.multiselect("Priorité", [p.value for p in PriorityLevel], default=[])
             with col3:
-                date_range = st.date_input(
-                    "Période",
-                    value=(datetime.now() - timedelta(days=30), datetime.now()),
-                    key="interv_date_range"
-                )
-            
+                date_range = st.date_input("Période", value=(datetime.now() - timedelta(days=30), datetime.now()), key="interv_date_range")
             with col4:
                 search = st.text_input("Recherche", placeholder="N°, titre...")
-        
-        # Construire les filtres
+
         filters = {}
         if status_filter:
             filters['status'] = status_filter
@@ -6632,17 +5066,13 @@ class GMAOApplication:
             filters['date_fin'] = date_range[1].isoformat()
         if search:
             filters['search'] = search
-        
-        # Récupérer les données
+
         interventions = self.interventions.get_all_interventions(filters)
-        
         if not interventions.empty:
-            # Métriques
             total = len(interventions)
             ouvertes = len(interventions[interventions['status'].isin(['Ouverte', 'Assignée', 'En cours'])])
             terminees = len(interventions[interventions['status'] == 'Terminée'])
             cout_total = interventions['total_cost'].sum()
-            
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("Total", total)
@@ -6652,17 +5082,14 @@ class GMAOApplication:
                 st.metric("Terminées", terminees)
             with col4:
                 st.metric("Coût total", f"{cout_total:,.0f} €")
-            
-            # Tableau
+
             display_cols = ['number', 'title', 'asset_name', 'priority', 'status',
                            'technician_name', 'opening_date', 'days_open']
-            
             display_df = interventions[display_cols].copy()
             display_df['days_open'] = display_df['days_open'].round(1)
             display_df.columns = ['N°', 'Titre', 'Équipement', 'Priorité', 'Statut',
                                  'Technicien', 'Date ouverture', 'Jours ouverts']
-            
-            # Coloration conditionnelle
+
             def color_priority(val):
                 colors = {
                     'Urgente': 'color: red; font-weight: bold',
@@ -6671,7 +5098,7 @@ class GMAOApplication:
                     'Basse': 'color: green'
                 }
                 return colors.get(val, '')
-            
+
             def color_status(val):
                 colors = {
                     'Ouverte': 'background-color: #fff3cd',
@@ -6681,13 +5108,10 @@ class GMAOApplication:
                     'Fermée': 'background-color: #f8d7da'
                 }
                 return colors.get(val, '')
-            
-            styled_df = display_df.style.applymap(color_priority, subset=['Priorité'])
-            styled_df = styled_df.applymap(color_status, subset=['Statut'])
-            
+
+            styled_df = display_df.style.map(color_priority, subset=['Priorité']).map(color_status, subset=['Statut'])
             st.dataframe(styled_df, use_container_width=True, hide_index=True)
-            
-            # Actions
+
             col1, col2, col3 = st.columns(3)
             with col1:
                 selected = st.selectbox(
@@ -6695,15 +5119,12 @@ class GMAOApplication:
                     options=interventions['number'].tolist(),
                     format_func=lambda x: f"{x} - {interventions[interventions['number']==x]['title'].iloc[0]}"
                 )
-            
             if selected:
                 interv = interventions[interventions['number'] == selected].iloc[0]
-                
                 with col2:
                     if st.button("✏️ Modifier", use_container_width=True):
                         st.session_state['edit_intervention'] = interv.to_dict()
                         st.rerun()
-                
                 with col3:
                     if st.button("🗑️ Supprimer", use_container_width=True):
                         success, msg = self.interventions.delete_intervention(interv['id'], st.session_state.user['id'])
@@ -6714,68 +5135,52 @@ class GMAOApplication:
                             st.error(msg)
         else:
             st.info("Aucune intervention trouvée")
-    
+
     def render_intervention_form(self):
-        """Affiche le formulaire d'ajout/modification d'intervention"""
         editing = 'edit_intervention' in st.session_state
         interv = st.session_state.get('edit_intervention', {})
-        
         with st.form("intervention_form"):
             st.subheader("📝 " + ("Modifier l'intervention" if editing else "Nouvelle intervention"))
-            
             col1, col2 = st.columns(2)
-            
             with col1:
                 title = st.text_input("Titre *", value=interv.get('title', ''))
-                
-                # Sélection de l'équipement
                 assets = self.assets.get_all_assets({'is_active': True})
                 asset_options = {row['id']: f"{row['code']} - {row['name']}" for _, row in assets.iterrows()}
-                
-                asset_id = st.selectbox("Équipement *",
-                                      options=list(asset_options.keys()),
-                                      format_func=lambda x: asset_options.get(x, ""),
-                                      index=list(asset_options.keys()).index(interv.get('asset_id')) if interv.get('asset_id') in asset_options.keys() else 0)
-                
+                asset_id_index = 0
+                if interv.get('asset_id') in asset_options:
+                    asset_id_index = list(asset_options.keys()).index(interv['asset_id'])
+                asset_id = st.selectbox("Équipement *", options=list(asset_options.keys()), format_func=lambda x: asset_options.get(x, ""), index=asset_id_index)
                 type_ = st.selectbox("Type *",
                                    ["Dépannage", "Réparation", "Maintenance préventive",
                                     "Inspection", "Installation", "Modification"],
                                    index=["Dépannage", "Réparation", "Maintenance préventive",
-                                        "Inspection", "Installation", "Modification"].index(interv.get('type', 'Dépannage')) if interv.get('type') else 0)
-                
+                                        "Inspection", "Installation", "Modification"].index(interv.get('type', 'Dépannage')) if interv.get('type') in ["Dépannage", "Réparation", "Maintenance préventive", "Inspection", "Installation", "Modification"] else 0)
                 priority = st.selectbox("Priorité",
                                       [p.value for p in PriorityLevel],
-                                      index=[p.value for p in PriorityLevel].index(interv.get('priority', 'Normale')) if interv.get('priority') else 2)
-                
+                                      index=[p.value for p in PriorityLevel].index(interv.get('priority', 'Normale')) if interv.get('priority') in [p.value for p in PriorityLevel] else 2)
                 description = st.text_area("Description", value=interv.get('description', ''), height=100)
-                
                 cause = st.text_area("Cause", value=interv.get('cause', ''), height=100)
-            
             with col2:
-                # Demandeur
                 users = self.auth.get_all_users()
                 user_options = {row['id']: row['full_name'] for _, row in users.iterrows()}
-                
-                requester_id = st.selectbox("Demandeur",
-                                          options=list(user_options.keys()),
-                                          format_func=lambda x: user_options.get(x, ""),
-                                          index=list(user_options.keys()).index(interv.get('requester_id')) if interv.get('requester_id') in user_options.keys() else 0)
-                
-                # Technicien
+                requester_index = 0
+                if interv.get('requester_id') in user_options:
+                    requester_index = list(user_options.keys()).index(interv['requester_id'])
+                requester_id = st.selectbox("Demandeur", options=list(user_options.keys()), format_func=lambda x: user_options.get(x, ""), index=requester_index)
                 tech_users = users[users['role'].isin(['technician', 'supervisor'])]
                 tech_options = {row['id']: row['full_name'] for _, row in tech_users.iterrows()}
-                
-                technician_id = st.selectbox("Technicien assigné",
-                                           options=list(tech_options.keys()),
-                                           format_func=lambda x: tech_options.get(x, ""),
-                                           index=list(tech_options.keys()).index(interv.get('technician_id')) if interv.get('technician_id') in tech_options.keys() else 0 if tech_options else None)
-                
-                due_date = st.date_input("Date d'échéance",
-                                       value=datetime.strptime(interv['due_date'], '%Y-%m-%d').date() if interv.get('due_date') else datetime.now().date() + timedelta(days=7))
-                
+                tech_index = 0
+                if interv.get('technician_id') in tech_options:
+                    tech_index = list(tech_options.keys()).index(interv['technician_id'])
+                technician_id = st.selectbox("Technicien assigné", options=list(tech_options.keys()), format_func=lambda x: tech_options.get(x, ""), index=tech_index if tech_options else 0)
+                due_date = None
+                if interv.get('due_date'):
+                    try:
+                        due_date = datetime.strptime(interv['due_date'], '%Y-%m-%d').date()
+                    except:
+                        due_date = datetime.now().date() + timedelta(days=7)
+                due_date = st.date_input("Date d'échéance", value=due_date or (datetime.now().date() + timedelta(days=7)))
                 estimated_duration = st.number_input("Durée estimée (heures)", min_value=0.0, value=float(interv.get('estimated_duration', 2.0)))
-                
-                # Options
                 col_a, col_b = st.columns(2)
                 with col_a:
                     is_urgent = st.checkbox("Urgent", value=interv.get('is_urgent', False))
@@ -6783,15 +5188,10 @@ class GMAOApplication:
                 with col_b:
                     is_planned = st.checkbox("Planifiée", value=interv.get('is_planned', False))
                     is_warranty = st.checkbox("Sous garantie", value=interv.get('is_warranty', False))
-                
                 notes = st.text_area("Notes", value=interv.get('observations', ''), height=100)
-            
-            st.markdown("---")
-            
+
             if editing:
-                # Section supplémentaire pour la résolution
                 st.subheader("Résolution")
-                
                 col1, col2 = st.columns(2)
                 with col1:
                     actual_duration = st.number_input("Durée réelle (heures)", min_value=0.0, value=float(interv.get('actual_duration', 0)))
@@ -6799,14 +5199,11 @@ class GMAOApplication:
                 with col2:
                     labor_cost = st.number_input("Main d'œuvre (€)", min_value=0.0, value=float(interv.get('labor_cost', 0)))
                     other_cost = st.number_input("Autres coûts (€)", min_value=0.0, value=float(interv.get('other_cost', 0)))
-                
                 solution = st.text_area("Solution apportée", value=interv.get('solution', ''), height=100)
                 work_performed = st.text_area("Travaux réalisés", value=interv.get('work_performed', ''), height=100)
-                
                 satisfaction_score = st.slider("Satisfaction client", 0, 10, int(interv.get('satisfaction_score', 0)) if interv.get('satisfaction_score') else 0)
-                
-                st.markdown("---")
-            
+
+            st.markdown("---")
             col1, col2, col3 = st.columns(3)
             with col2:
                 if editing:
@@ -6835,7 +5232,6 @@ class GMAOApplication:
                             'work_performed': work_performed,
                             'satisfaction_score': satisfaction_score
                         }
-                        
                         success, msg = self.interventions.update_intervention(interv['id'], data, st.session_state.user['id'])
                         if success:
                             st.success(msg)
@@ -6865,7 +5261,6 @@ class GMAOApplication:
                                 'is_warranty': is_warranty,
                                 'observations': notes
                             }
-                            
                             success, result = self.interventions.create_intervention(data, st.session_state.user['id'])
                             if success:
                                 st.success("Intervention créée avec succès!")
@@ -6873,20 +5268,16 @@ class GMAOApplication:
                                 st.rerun()
                             else:
                                 st.error(f"Erreur: {result}")
-            
             if editing:
                 col1, col2, col3 = st.columns(3)
                 with col2:
                     if st.form_submit_button("❌ Annuler", use_container_width=True):
                         del st.session_state['edit_intervention']
                         st.rerun()
-    
+
     def render_interventions_stats(self):
-        """Affiche les statistiques des interventions"""
         period = st.selectbox("Période", [7, 30, 90, 365], format_func=lambda x: f"{x} jours", index=1)
-        
         stats = self.interventions.get_intervention_stats(period)
-        
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("Total", stats.get('total', 0))
@@ -6896,11 +5287,8 @@ class GMAOApplication:
             st.metric("Durée moyenne", f"{stats.get('avg_duration', 0):.1f} h")
         with col4:
             st.metric("Coût total", f"{stats.get('total_cost', 0):,.0f} €")
-        
         col1, col2 = st.columns(2)
-        
         with col1:
-            # Par priorité
             if stats.get('by_priority'):
                 df_priority = pd.DataFrame(stats['by_priority'])
                 fig = px.pie(df_priority, values='count', names='priority',
@@ -6913,25 +5301,19 @@ class GMAOApplication:
                                'Urgente': 'red'
                            })
                 st.plotly_chart(fig, use_container_width=True)
-        
         with col2:
-            # Par type
             if stats.get('by_type'):
                 df_type = pd.DataFrame(stats['by_type'])
                 fig = px.bar(df_type, x='type', y='count',
                            title="Répartition par type",
                            color='type')
                 st.plotly_chart(fig, use_container_width=True)
-        
-        # Évolution
         if stats.get('daily'):
             df_daily = pd.DataFrame(stats['daily'])
             fig = px.line(df_daily, x='date', y='count',
                         title=f"Évolution quotidienne ({period} jours)",
                         markers=True)
             st.plotly_chart(fig, use_container_width=True)
-        
-        # Satisfaction
         satisfaction = self.db.execute_query("""
             SELECT 
                 strftime('%Y-%m', closing_date) as mois,
@@ -6942,28 +5324,23 @@ class GMAOApplication:
             GROUP BY strftime('%Y-%m', closing_date)
             ORDER BY mois
         """, (f'-{period} days',))
-        
         if not satisfaction.empty:
             fig = px.line(satisfaction, x='mois', y='avg_satisfaction',
                         title="Évolution de la satisfaction",
                         range_y=[0, 10])
             st.plotly_chart(fig, use_container_width=True)
-    
+
     def render_ongoing_interventions(self):
-        """Affiche les interventions en cours"""
         ongoing = self.interventions.get_all_interventions({
             'status': ['En cours', 'Assignée']
         })
-        
         if not ongoing.empty:
             for _, interv in ongoing.iterrows():
                 with st.container():
                     col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
-                    
                     with col1:
                         st.markdown(f"**{interv['number']}** - {interv['title']}")
                         st.caption(f"Équipement: {interv['asset_name']}")
-                    
                     with col2:
                         priority_color = {
                             'Urgente': '🔴',
@@ -6973,68 +5350,50 @@ class GMAOApplication:
                         }.get(interv['priority'], '⚪')
                         st.markdown(f"{priority_color} {interv['priority']}")
                         st.caption(f"Technicien: {interv['technician_name']}")
-                    
                     with col3:
                         if interv['start_date']:
-                            start = datetime.fromisoformat(interv['start_date'].replace('Z', '+00:00'))
-                            elapsed = datetime.now() - start
-                            hours = elapsed.total_seconds() / 3600
-                            st.markdown(f"⏱️ {hours:.1f} h")
-                            if interv['estimated_duration']:
-                                progress = min(hours / interv['estimated_duration'] * 100, 100)
-                                st.progress(progress / 100, text=f"{progress:.0f}%")
-                    
+                            try:
+                                start = datetime.fromisoformat(interv['start_date'].replace('Z', '+00:00'))
+                                elapsed = datetime.now() - start
+                                hours = elapsed.total_seconds() / 3600
+                                st.markdown(f"⏱️ {hours:.1f} h")
+                                if interv['estimated_duration']:
+                                    progress = min(hours / interv['estimated_duration'] * 100, 100)
+                                    st.progress(progress / 100, text=f"{progress:.0f}%")
+                            except:
+                                pass
                     with col4:
                         if st.button("▶️", key=f"view_{interv['id']}", help="Voir détails"):
                             st.session_state['view_intervention'] = interv['id']
                             st.rerun()
-                    
                     st.divider()
         else:
             st.info("Aucune intervention en cours")
-    
+
     def render_stock(self):
-        """Affiche la page de stock"""
         st.title("📦 Gestion du stock")
-        
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "📋 Liste", "➕ Nouvelle pièce", "📊 Statistiques", "📦 Mouvements"
-        ])
-        
+        tab1, tab2, tab3, tab4 = st.tabs(["📋 Liste", "➕ Nouvelle pièce", "📊 Statistiques", "📦 Mouvements"])
         with tab1:
             self.render_stock_list()
-        
         with tab2:
             self.render_part_form()
-        
         with tab3:
             self.render_stock_stats()
-        
         with tab4:
             self.render_stock_movements()
-    
+
     def render_stock_list(self):
-        """Affiche la liste des pièces"""
-        # Filtres
         with st.expander("🔍 Filtres", expanded=True):
             col1, col2, col3, col4 = st.columns(4)
-            
             with col1:
-                status_filter = st.selectbox(
-                    "État stock",
-                    ["Tous", "Normal", "Alerte", "Critique", "Rupture"]
-                )
-            
+                status_filter = st.selectbox("État stock", ["Tous", "Normal", "Alerte", "Critique", "Rupture"])
             with col2:
                 category_filter = st.text_input("Catégorie", placeholder="Filtrer par catégorie")
-            
             with col3:
                 location_filter = st.text_input("Emplacement", placeholder="Filtrer par lieu")
-            
             with col4:
                 search = st.text_input("Recherche", placeholder="Nom, code...")
-        
-        # Construire les filtres
+
         filters = {}
         if status_filter != "Tous":
             filters['stock_status'] = status_filter
@@ -7044,15 +5403,11 @@ class GMAOApplication:
             filters['location'] = location_filter
         if search:
             filters['search'] = search
-        
-        # Récupérer les données
+
         parts = self.stock.get_all_parts(filters)
-        
         if not parts.empty:
-            # Métriques
             valeur_totale = parts['stock_value'].sum()
             articles_critiques = len(parts[parts['stock_status'].isin(['Critique', 'Rupture'])])
-            
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("Total articles", len(parts))
@@ -7063,17 +5418,14 @@ class GMAOApplication:
             with col4:
                 taux = (1 - articles_critiques/len(parts)) * 100 if len(parts) > 0 else 100
                 st.metric("Taux disponibilité", f"{taux:.1f}%")
-            
-            # Tableau
+
             display_cols = ['code', 'name', 'category', 'quantity', 'unit',
                            'min_quantity', 'reorder_point', 'location',
                            'stock_status', 'supplier_name']
-            
             display_df = parts[display_cols].copy()
             display_df.columns = ['Code', 'Nom', 'Catégorie', 'Qté', 'Unité',
                                  'Min', 'Seuil', 'Emplacement', 'Statut', 'Fournisseur']
-            
-            # Coloration conditionnelle
+
             def color_status(val):
                 colors = {
                     'Rupture': 'background-color: #f8d7da; color: #721c24',
@@ -7083,11 +5435,10 @@ class GMAOApplication:
                     'Surcharge': 'background-color: #cce5ff; color: #004085'
                 }
                 return colors.get(val, '')
-            
-            styled_df = display_df.style.applymap(color_status, subset=['Statut'])
+
+            styled_df = display_df.style.map(color_status, subset=['Statut'])
             st.dataframe(styled_df, use_container_width=True, hide_index=True)
-            
-            # Actions
+
             col1, col2, col3 = st.columns(3)
             with col1:
                 selected = st.selectbox(
@@ -7095,72 +5446,54 @@ class GMAOApplication:
                     options=parts['code'].tolist(),
                     format_func=lambda x: f"{x} - {parts[parts['code']==x]['name'].iloc[0]}"
                 )
-            
             if selected:
                 part = parts[parts['code'] == selected].iloc[0]
-                
                 with col2:
                     if st.button("✏️ Modifier", use_container_width=True):
                         st.session_state['edit_part'] = part.to_dict()
                         st.rerun()
-                
                 with col3:
                     if st.button("➕ Mouvement", use_container_width=True):
                         st.session_state['add_movement'] = part['id']
                         st.rerun()
         else:
             st.info("Aucune pièce trouvée")
-    
+
     def render_part_form(self):
-        """Affiche le formulaire d'ajout/modification de pièce"""
         editing = 'edit_part' in st.session_state
         part = st.session_state.get('edit_part', {})
-        
         with st.form("part_form"):
             st.subheader("📝 " + ("Modifier la pièce" if editing else "Nouvelle pièce"))
-            
             col1, col2 = st.columns(2)
-            
             with col1:
-                code = st.text_input("Code *", value=part.get('code', ''),
-                                   disabled=editing)
+                code = st.text_input("Code *", value=part.get('code', ''), disabled=editing)
                 name = st.text_input("Nom *", value=part.get('name', ''))
                 category = st.text_input("Catégorie", value=part.get('category', ''))
                 subcategory = st.text_input("Sous-catégorie", value=part.get('subcategory', ''))
                 brand = st.text_input("Marque", value=part.get('brand', ''))
                 model = st.text_input("Modèle", value=part.get('model', ''))
-                
                 description = st.text_area("Description", value=part.get('description', ''), height=100)
-            
             with col2:
-                # Fournisseur
                 suppliers = self.db.execute_query("SELECT id, name FROM suppliers WHERE is_active = 1")
                 supplier_options = {row['id']: row['name'] for _, row in suppliers.iterrows()}
-                
-                supplier_id = st.selectbox("Fournisseur",
-                                         options=list(supplier_options.keys()),
-                                         format_func=lambda x: supplier_options.get(x, ""),
-                                         index=list(supplier_options.keys()).index(part.get('supplier_id')) if part.get('supplier_id') in supplier_options.keys() else 0)
-                
+                supplier_index = 0
+                if part.get('supplier_id') in supplier_options:
+                    supplier_index = list(supplier_options.keys()).index(part['supplier_id'])
+                supplier_id = st.selectbox("Fournisseur", options=list(supplier_options.keys()), format_func=lambda x: supplier_options.get(x, ""), index=supplier_index)
                 unit = st.selectbox("Unité",
                                   ["pièce", "mètre", "kilogramme", "litre", "boîte", "rouleau"],
-                                  index=["pièce", "mètre", "kilogramme", "litre", "boîte", "rouleau"].index(part.get('unit', 'pièce')) if part.get('unit') else 0)
-                
+                                  index=["pièce", "mètre", "kilogramme", "litre", "boîte", "rouleau"].index(part.get('unit', 'pièce')) if part.get('unit') in ["pièce", "mètre", "kilogramme", "litre", "boîte", "rouleau"] else 0)
                 unit_price = st.number_input("Prix unitaire (€)", min_value=0.0, value=float(part.get('unit_price', 0)))
-                
                 quantity = st.number_input("Quantité", min_value=0, value=int(part.get('quantity', 0)))
                 min_quantity = st.number_input("Quantité minimum", min_value=0, value=int(part.get('min_quantity', 5)))
                 max_quantity = st.number_input("Quantité maximum", min_value=0, value=int(part.get('max_quantity', 100)))
                 reorder_point = st.number_input("Seuil de réapprovisionnement", min_value=0, value=int(part.get('reorder_point', 10)))
-                
                 location = st.text_input("Emplacement", value=part.get('location', ''))
                 warehouse = st.text_input("Entrepôt", value=part.get('warehouse', ''))
                 bin_location = st.text_input("Casier", value=part.get('bin', ''))
-                
                 notes = st.text_area("Notes", value=part.get('notes', ''), height=100)
-            
+
             st.markdown("---")
-            
             col1, col2, col3 = st.columns(3)
             with col2:
                 if editing:
@@ -7185,7 +5518,6 @@ class GMAOApplication:
                             'bin': bin_location,
                             'notes': notes
                         }
-                        
                         success, msg = self.stock.update_part(part['id'], data, st.session_state.user['id'])
                         if success:
                             st.success(msg)
@@ -7218,7 +5550,6 @@ class GMAOApplication:
                                 'bin': bin_location,
                                 'notes': notes
                             }
-                            
                             success, result = self.stock.create_part(data, st.session_state.user['id'])
                             if success:
                                 st.success("Pièce ajoutée avec succès!")
@@ -7226,18 +5557,15 @@ class GMAOApplication:
                                 st.rerun()
                             else:
                                 st.error(f"Erreur: {result}")
-            
             if editing:
                 col1, col2, col3 = st.columns(3)
                 with col2:
                     if st.form_submit_button("❌ Annuler", use_container_width=True):
                         del st.session_state['edit_part']
                         st.rerun()
-    
+
     def render_stock_stats(self):
-        """Affiche les statistiques du stock"""
         stats = self.stock.get_stock_stats()
-        
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("Total articles", stats.get('total_articles', 0))
@@ -7247,19 +5575,15 @@ class GMAOApplication:
             st.metric("Rupture", stats.get('rupture', 0))
         with col4:
             st.metric("Stock critique", stats.get('critique', 0))
-        
-        # Graphiques
+
         col1, col2 = st.columns(2)
-        
         with col1:
-            # Statut du stock
             stock_status = pd.DataFrame([
                 {'statut': 'Normal', 'count': stats.get('total_articles', 0) - stats.get('critique', 0) - stats.get('rupture', 0) - stats.get('alerte', 0)},
                 {'statut': 'Alerte', 'count': stats.get('alerte', 0)},
                 {'statut': 'Critique', 'count': stats.get('critique', 0)},
                 {'statut': 'Rupture', 'count': stats.get('rupture', 0)}
             ])
-            
             fig = px.pie(stock_status, values='count', names='statut',
                        title="État du stock",
                        color='statut',
@@ -7270,38 +5594,29 @@ class GMAOApplication:
                            'Rupture': 'darkred'
                        })
             st.plotly_chart(fig, use_container_width=True)
-        
         with col2:
-            # Valeur par catégorie
             if stats.get('by_category'):
                 df_cat = pd.DataFrame(stats['by_category'])
                 fig = px.bar(df_cat, x='category', y='value',
                            title="Valeur du stock par catégorie",
                            text_auto='.2s')
                 st.plotly_chart(fig, use_container_width=True)
-    
+
     def render_stock_movements(self):
-        """Affiche les mouvements de stock"""
         if 'add_movement' in st.session_state:
             part_id = st.session_state['add_movement']
             part = self.stock.get_part_by_id(part_id)
-            
             if part:
                 with st.form("movement_form"):
                     st.subheader(f"➕ Mouvement pour {part['name']}")
-                    
                     col1, col2 = st.columns(2)
-                    
                     with col1:
                         movement_type = st.selectbox("Type", ["Entrée", "Sortie", "Ajustement"])
                         quantity = st.number_input("Quantité", min_value=1, value=1)
-                    
                     with col2:
                         reason = st.text_input("Raison", placeholder="Ex: Réception commande, Utilisation...")
                         reference = st.text_input("Référence", placeholder="N° commande, intervention...")
-                    
                     notes = st.text_area("Notes", height=100)
-                    
                     col1, col2, col3 = st.columns(3)
                     with col2:
                         if st.form_submit_button("✅ Valider", use_container_width=True):
@@ -7313,7 +5628,6 @@ class GMAOApplication:
                                 'document_number': reference,
                                 'notes': notes
                             }
-                            
                             success, msg = self.stock.add_stock_movement(data, st.session_state.user['id'])
                             if success:
                                 st.success("Mouvement enregistré")
@@ -7321,26 +5635,21 @@ class GMAOApplication:
                                 st.rerun()
                             else:
                                 st.error(msg)
-                    
                     col1, col2, col3 = st.columns(3)
                     with col2:
                         if st.form_submit_button("❌ Annuler", use_container_width=True):
                             del st.session_state['add_movement']
                             st.rerun()
-        
-        # Historique des mouvements
+
         st.subheader("Historique des mouvements")
-        
         movements = self.stock.get_stock_movements(limit=50)
-        
         if not movements.empty:
             display_df = movements[['movement_date', 'type', 'part_name', 'part_code',
                                    'quantity', 'before_quantity', 'after_quantity',
                                    'reason', 'created_by_name']].copy()
             display_df.columns = ['Date', 'Type', 'Pièce', 'Code', 'Qté',
                                  'Avant', 'Après', 'Raison', 'Créé par']
-            
-            # Coloration par type
+
             def color_type(val):
                 colors = {
                     'Entrée': 'color: green',
@@ -7348,95 +5657,72 @@ class GMAOApplication:
                     'Ajustement': 'color: orange'
                 }
                 return colors.get(val, '')
-            
-            styled_df = display_df.style.applymap(color_type, subset=['Type'])
+
+            styled_df = display_df.style.map(color_type, subset=['Type'])
             st.dataframe(styled_df, use_container_width=True, hide_index=True)
         else:
             st.info("Aucun mouvement enregistré")
-    
+
     def render_suppliers(self):
-        """Affiche la page des fournisseurs"""
         st.title("🏭 Gestion des fournisseurs")
         st.info("Page en cours de développement...")
-    
+
     def render_reports(self):
-        """Affiche la page des rapports"""
         st.title("📊 Rapports")
-        
         report_type = st.selectbox(
             "Type de rapport",
             ["Inventaire équipements", "Interventions", "Mouvements de stock",
              "Coûts de maintenance", "Performance techniciens"]
         )
-        
         col1, col2 = st.columns(2)
         with col1:
             date_debut = st.date_input("Date début", value=datetime.now() - timedelta(days=30))
         with col2:
             date_fin = st.date_input("Date fin", value=datetime.now())
-        
         format_ = st.selectbox("Format d'export", ["Excel", "PDF", "CSV"])
-        
         if st.button("📥 Générer le rapport", use_container_width=True):
             with st.spinner("Génération du rapport..."):
-                time.sleep(2)  # Simulation
+                time.sleep(2)
                 st.success("Rapport généré avec succès!")
-                
-                # Bouton de téléchargement simulé
                 st.download_button(
                     "📥 Télécharger",
                     data="Rapport simulé".encode(),
                     file_name=f"rapport_{report_type}_{date_debut}_{date_fin}.{format_.lower()}",
                     mime="application/octet-stream"
                 )
-    
+
     def render_settings(self):
-        """Affiche la page des paramètres"""
         st.title("⚙️ Paramètres")
-        
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "👤 Profil", "🔐 Sécurité", "🎨 Apparence", "📧 Notifications"
-        ])
-        
+        tab1, tab2, tab3, tab4 = st.tabs(["👤 Profil", "🔐 Sécurité", "🎨 Apparence", "📧 Notifications"])
         with tab1:
             self.render_profile_settings()
-        
         with tab2:
             self.render_security_settings()
-        
         with tab3:
             self.render_appearance_settings()
-        
         with tab4:
             self.render_notification_settings()
-    
+
     def render_profile_settings(self):
-        """Paramètres du profil"""
         user = st.session_state.user
-        
         with st.form("profile_form"):
             col1, col2 = st.columns(2)
-            
             with col1:
                 first_name = st.text_input("Prénom", value=user['first_name'])
                 last_name = st.text_input("Nom", value=user['last_name'])
                 email = st.text_input("Email", value=user['email'])
-            
             with col2:
                 phone = st.text_input("Téléphone", value=user.get('phone', ''))
                 department = st.text_input("Département", value=user.get('department', ''))
                 position = st.text_input("Poste", value=user.get('position', ''))
-            
             if st.form_submit_button("💾 Mettre à jour le profil"):
                 st.success("Profil mis à jour")
-    
+
     def render_security_settings(self):
-        """Paramètres de sécurité"""
         with st.form("password_form"):
             old_password = st.text_input("Ancien mot de passe", type="password")
             new_password = st.text_input("Nouveau mot de passe", type="password")
             confirm_password = st.text_input("Confirmer le mot de passe", type="password")
-            
             if st.form_submit_button("🔑 Changer le mot de passe"):
                 if new_password != confirm_password:
                     st.error("Les mots de passe ne correspondent pas")
@@ -7450,56 +5736,43 @@ class GMAOApplication:
                         st.success(msg)
                     else:
                         st.error(msg)
-        
         st.divider()
-        
         st.subheader("Sessions actives")
         st.info("Aucune autre session active")
-    
+
     def render_appearance_settings(self):
-        """Paramètres d'apparence"""
         theme = st.selectbox("Thème", ["Clair", "Sombre", "Système"])
         language = st.selectbox("Langue", ["Français", "English", "Español"])
-        
         if st.button("💾 Appliquer"):
             st.success("Paramètres sauvegardés")
             st.rerun()
-    
+
     def render_notification_settings(self):
-        """Paramètres de notification"""
         email_notif = st.checkbox("Notifications par email", value=True)
         desktop_notif = st.checkbox("Notifications bureau", value=True)
-        
         st.multiselect(
             "Notifications à recevoir",
             ["Maintenances", "Interventions", "Stock", "Rapports"],
             default=["Maintenances", "Interventions", "Stock"]
         )
-        
         if st.button("💾 Sauvegarder"):
             st.success("Préférences sauvegardées")
-    
+
     def render_footer(self):
-        """Affiche le footer"""
         st.markdown("---")
         col1, col2, col3 = st.columns(3)
-        
         with col1:
-            st.caption(f"© 2024 GMAO Enterprise - Version 3.0.0")
-        
+            st.caption("© 2024 GMAO Enterprise - Version 3.0.0")
         with col2:
             if st.session_state.authenticated:
                 st.caption(f"Dernière activité: {st.session_state.last_activity.strftime('%H:%M:%S')}")
-        
         with col3:
             response_time = time.time() - self.start_time
             st.caption(f"Temps de réponse: {response_time:.2f}s")
-    
+
     def logout(self):
-        """Déconnexion"""
         if st.session_state.session_id:
             self.auth.invalidate_session(st.session_state.session_id)
-        
         st.session_state.authenticated = False
         st.session_state.user = None
         st.session_state.session_id = None
@@ -7518,20 +5791,19 @@ if __name__ == "__main__":
         logger.critical(traceback.format_exc())
         st.error("""
         ⚠️ **Erreur critique**
-        
+
         L'application n'a pas pu démarrer correctement.
-        
+
         **Causes possibles:**
         - Base de données corrompue ou inaccessible
         - Problème de permissions
         - Dépendances manquantes
-        
+
         **Solutions:**
         1. Vérifiez que le dossier `data` est accessible en écriture
         2. Supprimez le fichier `data/gmao.db` pour le recréer
         3. Réinstallez les dépendances: `pip install -r requirements.txt`
-        
+
         **Détails techniques:**
         """)
         st.exception(e)
-               
