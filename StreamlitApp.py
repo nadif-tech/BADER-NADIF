@@ -3261,18 +3261,23 @@ class AssetManager:
             if existing.empty:
                 return barcode
 
-    def generate_qr_code(self, data: str) -> str:
-        import qrcode
-        qr_dir = Path("static/qrcodes")
-        qr_dir.mkdir(parents=True, exist_ok=True)
-        qr = qrcode.QRCode(version=1, box_size=10, border=5)
-        qr.add_data(data)
-        qr.make(fit=True)
-        img = qr.make_image(fill_color="black", back_color="white")
-        filename = f"qr_{uuid.uuid4().hex[:8]}.png"
-        filepath = qr_dir / filename
-        img.save(filepath)
-        return str(filepath)
+def generate_qr_code(self, data: str) -> str:
+    # Version simplifiée sans qrcode
+    return f"QR_CODE_{data}"
+    """
+    Version originale (à décommenter quand qrcode sera installé)
+    import qrcode
+    qr_dir = Path("static/qrcodes")
+    qr_dir.mkdir(parents=True, exist_ok=True)
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    filename = f"qr_{uuid.uuid4().hex[:8]}.png"
+    filepath = qr_dir / filename
+    img.save(filepath)
+    return str(filepath)
+    """
 
     def validate_asset_data(self, data: Dict) -> Tuple[bool, str]:
         required_fields = ['name', 'type']
