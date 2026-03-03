@@ -1,13 +1,5 @@
-"""
-GMAO ENTERPRISE - Système de Gestion de Maintenance Assistée par Ordinateur
-Version: 3.0.0
-Auteur: Système Expert
-Licence: Commerciale
-Description: Application complète de gestion de maintenance
-"""
-
 # =============================================================================
-# IMPORTS (réduits aux seuls packages nécessaires)
+# IMPORTS (avec qrcode commenté)
 # =============================================================================
 
 import streamlit as st
@@ -52,7 +44,7 @@ import warnings
 import random
 import secrets
 import threading
-import qrcode
+# import qrcode  # COMMENTÉ TEMPORAIREMENT
 from PIL import Image, ImageDraw, ImageFont
 import openpyxl
 from openpyxl import Workbook, load_workbook
