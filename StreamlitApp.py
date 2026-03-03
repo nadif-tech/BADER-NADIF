@@ -51,9 +51,7 @@ from abc import ABC, abstractmethod
 import warnings
 import random
 import secrets
-# import bcrypt  <-- SUPPRIMEZ OU COMMENTEZ CETTE LIGNE
 import threading
-import humanize
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import openpyxl
@@ -591,7 +589,13 @@ class Document:
 
     @property
     def size_human(self) -> str:
-        return humanize.naturalsize(self.file_size)
+        """Convertit la taille du fichier en format lisible sans humanize"""
+        size = self.file_size
+        for unit in ['o', 'Ko', 'Mo', 'Go']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} To"
 
 @dataclass
 class Notification:
@@ -897,7 +901,6 @@ class DatabaseManager:
                 cursor.execute(query)
             return cursor.rowcount
 
-    # Alias pour DELETE
     def execute_delete(self, query: str, params: tuple = None) -> int:
         return self.execute_update(query, params)
 
@@ -915,7 +918,6 @@ class DatabaseManager:
     def transaction(self):
         return self.get_connection()
 
-    # Méthodes de création des tables (simplifiées pour la lisibilité, mais identiques à l'original)
     def create_tables(self, cursor):
         # Table des utilisateurs
         cursor.execute("""
@@ -3317,7 +3319,7 @@ class AssetManager:
             return True
         maintenances = self.db.execute_query(
             "SELECT COUNT(*) as count FROM scheduled_tasks WHERE parameters LIKE ?",
-            (f'%{asset_id}%',)  # Simplification
+            (f'%{asset_id}%',)
         )
         if not maintenances.empty and maintenances.iloc[0]['count'] > 0:
             return True
