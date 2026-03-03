@@ -10,3 +10,6 @@ qrcode==7.4.2
 bcrypt==4.0.1
 requests==2.31.0
 python-dotenv==1.0.0
+python3-dev
+build-essential
+libpq-dev
