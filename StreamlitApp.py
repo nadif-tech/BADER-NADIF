@@ -3254,11 +3254,12 @@ class AssetManager:
                 return barcode
 
 def generate_qr_code(self, data: str) -> str:
-    # Version simplifiée sans qrcode
-    return f"QR_CODE_{data}"
+    """Génère un QR code (version simplifiée sans qrcode)"""
+    # Version simplifiée qui retourne juste une chaîne
+    return f"QR_CODE_DATA_{data}"
+    
+    # Version originale (à décommenter quand qrcode sera installé)
     """
-    Version originale (à décommenter quand qrcode sera installé)
-    import qrcode
     qr_dir = Path("static/qrcodes")
     qr_dir.mkdir(parents=True, exist_ok=True)
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
