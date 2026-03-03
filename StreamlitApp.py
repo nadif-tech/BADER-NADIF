@@ -51,7 +51,7 @@ from abc import ABC, abstractmethod
 import warnings
 import random
 import secrets
-import bcrypt
+# import bcrypt  <-- SUPPRIMEZ OU COMMENTEZ CETTE LIGNE
 import threading
 import humanize
 import qrcode
