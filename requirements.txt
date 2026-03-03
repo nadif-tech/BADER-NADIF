@@ -7,4 +7,3 @@ Pillow==10.0.0
 qrcode==7.4.2
 requests==2.31.0
 humanize==4.7.0
-bcrypt==4.0.1   # <-- Ajoutez cette ligne
