@@ -1784,121 +1784,121 @@ class DatabaseManager:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_audits_entity ON audits(entity_type, entity_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_audits_created ON audits(created_at)")
 
-    def create_triggers(self, cursor):
-        # Trigger pour updated_at sur users
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS trigger_users_updated_at 
-            AFTER UPDATE ON users
-            BEGIN
-                UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-            END;
-        """)
+def create_triggers(self, cursor):
+    # Trigger pour updated_at sur users
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS trigger_users_updated_at 
+        AFTER UPDATE ON users
+        BEGIN
+            UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+        END;
+    """)
 
-        # Trigger pour updated_at sur assets
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS trigger_assets_updated_at 
-            AFTER UPDATE ON assets
-            BEGIN
-                UPDATE assets SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-            END;
-        """)
+    # Trigger pour updated_at sur assets
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS trigger_assets_updated_at 
+        AFTER UPDATE ON assets
+        BEGIN
+            UPDATE assets SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+        END;
+    """)
 
-        # Trigger pour updated_at sur interventions
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS trigger_interventions_updated_at 
-            AFTER UPDATE ON interventions
-            BEGIN
-                UPDATE interventions SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-            END;
-        """)
+    # Trigger pour updated_at sur interventions
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS trigger_interventions_updated_at 
+        AFTER UPDATE ON interventions
+        BEGIN
+            UPDATE interventions SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+        END;
+    """)
 
-        # Trigger pour updated_at sur spare_parts
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS trigger_parts_updated_at 
-            AFTER UPDATE ON spare_parts
-            BEGIN
-                UPDATE spare_parts SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-            END;
-        """)
+    # Trigger pour updated_at sur spare_parts
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS trigger_parts_updated_at 
+        AFTER UPDATE ON spare_parts
+        BEGIN
+            UPDATE spare_parts SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+        END;
+    """)
 
-        # Trigger pour updated_at sur suppliers
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS trigger_suppliers_updated_at 
-            AFTER UPDATE ON suppliers
-            BEGIN
-                UPDATE suppliers SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-            END;
-        """)
+    # Trigger pour updated_at sur suppliers
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS trigger_suppliers_updated_at 
+        AFTER UPDATE ON suppliers
+        BEGIN
+            UPDATE suppliers SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+        END;
+    """)
 
-        # Trigger pour la mise à jour du stock après mouvement
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS trigger_stock_after_insert 
-            AFTER INSERT ON stock_movements
-            BEGIN
-                UPDATE spare_parts 
-                SET quantity = quantity + NEW.quantity,
-                    stock_value = (quantity + NEW.quantity) * unit_price,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = NEW.part_id;
-            END;
-        """)
+    # Trigger pour la mise à jour du stock après mouvement
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS trigger_stock_after_insert 
+        AFTER INSERT ON stock_movements
+        BEGIN
+            UPDATE spare_parts 
+            SET quantity = quantity + NEW.quantity,
+                stock_value = (quantity + NEW.quantity) * unit_price,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = NEW.part_id;
+        END;
+    """)
 
-        # Trigger pour l'historique automatique
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS trigger_interventions_history 
-            AFTER UPDATE ON interventions
-            BEGIN
-                INSERT INTO histories (entity_type, entity_id, action, user_id, old_values, new_values, created_at)
-                VALUES ('intervention', NEW.id, 'UPDATE', NEW.updated_by, OLD, NEW, CURRENT_TIMESTAMP);
-            END;
-        """)
+    # Trigger pour l'historique automatique
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS trigger_interventions_history 
+        AFTER UPDATE ON interventions
+        BEGIN
+            INSERT INTO histories (entity_type, entity_id, action, user_id, old_values, new_values, created_at)
+            VALUES ('intervention', NEW.id, 'UPDATE', NEW.updated_by, OLD, NEW, CURRENT_TIMESTAMP);
+        END;
+    """)
 
-        # Trigger pour la validation des dates
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS trigger_validate_intervention_dates 
-            BEFORE INSERT ON interventions
-            BEGIN
-                SELECT CASE
-                    WHEN NEW.closing_date < NEW.opening_date THEN
-                        RAISE (ABORT, 'La date de clôture ne peut pas être antérieure à la date d\'ouverture')
-                END;
+    # Trigger pour la validation des dates - CORRIGÉ AVEC ÉCHAPPEMENT
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS trigger_validate_intervention_dates 
+        BEFORE INSERT ON interventions
+        BEGIN
+            SELECT CASE
+                WHEN NEW.closing_date < NEW.opening_date THEN
+                    RAISE (ABORT, 'La date de clôture ne peut pas être antérieure à la date d\'ouverture')
             END;
-        """)
+        END;
+    """)
 
-        # Trigger pour le calcul automatique du total d'une intervention
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS trigger_intervention_total_cost 
-            BEFORE UPDATE ON interventions
-            BEGIN
-                UPDATE interventions 
-                SET total_cost = NEW.parts_cost + NEW.labor_cost + NEW.travel_cost + NEW.other_cost
-                WHERE id = NEW.id;
-            END;
-        """)
+    # Trigger pour le calcul automatique du total d'une intervention
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS trigger_intervention_total_cost 
+        BEFORE UPDATE ON interventions
+        BEGIN
+            UPDATE interventions 
+            SET total_cost = NEW.parts_cost + NEW.labor_cost + NEW.travel_cost + NEW.other_cost
+            WHERE id = NEW.id;
+        END;
+    """)
 
-        # Trigger pour le calcul automatique de la différence de compteur
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS trigger_meter_difference 
-            BEFORE INSERT ON meter_readings
-            BEGIN
-                SELECT CASE
-                    WHEN NEW.previous_value IS NOT NULL THEN
-                        NEW.difference = NEW.current_value - NEW.previous_value
-                END;
+    # Trigger pour le calcul automatique de la différence de compteur
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS trigger_meter_difference 
+        BEFORE INSERT ON meter_readings
+        BEGIN
+            SELECT CASE
+                WHEN NEW.previous_value IS NOT NULL THEN
+                    NEW.difference = NEW.current_value - NEW.previous_value
             END;
-        """)
+        END;
+    """)
 
-        # Trigger pour la mise à jour du compteur de l'équipement
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS trigger_update_asset_meter 
-            AFTER INSERT ON meter_readings
-            BEGIN
-                UPDATE assets 
-                SET current_meter_value = NEW.current_value,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = NEW.asset_id;
-            END;
-        """)
+    # Trigger pour la mise à jour du compteur de l'équipement
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS trigger_update_asset_meter 
+        AFTER INSERT ON meter_readings
+        BEGIN
+            UPDATE assets 
+            SET current_meter_value = NEW.current_value,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = NEW.asset_id;
+        END;
+    """)
 
     def create_views(self, cursor):
         # Vue des interventions avec détails
