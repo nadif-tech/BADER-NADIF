@@ -1,7 +1,7 @@
 """
 Application de détection d'Équipements de Protection Individuelle (EPI)
 Auteur: Assistant IA
-Version: 2.0
+Version: 3.0 FINALE
 Description: Détection multi-couleurs en temps réel avec YOLO et Streamlit
 """
 
@@ -35,43 +35,96 @@ st.set_page_config(
 st.markdown("""
 <style>
     .stApp {
-        background-color: #f0f2f6;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
     .main-header {
         text-align: center;
-        padding: 1rem;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 10px;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+    }
+    .main-header h1 {
+        color: #333;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .main-header p {
+        color: #666;
+        font-size: 1.1rem;
     }
     .stat-card {
         background: white;
-        padding: 1rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         text-align: center;
+        transition: transform 0.3s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
     }
     .alert-success {
-        background-color: #d4edda;
+        background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
         color: #155724;
         padding: 1rem;
-        border-radius: 5px;
-        border-left: 4px solid #28a745;
+        border-radius: 10px;
+        border-left: 5px solid #28a745;
+        margin: 0.5rem 0;
     }
     .alert-warning {
-        background-color: #fff3cd;
+        background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%);
         color: #856404;
         padding: 1rem;
-        border-radius: 5px;
-        border-left: 4px solid #ffc107;
+        border-radius: 10px;
+        border-left: 5px solid #ffc107;
+        margin: 0.5rem 0;
     }
     .alert-danger {
-        background-color: #f8d7da;
+        background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
         color: #721c24;
         padding: 1rem;
-        border-radius: 5px;
-        border-left: 4px solid #dc3545;
+        border-radius: 10px;
+        border-left: 5px solid #dc3545;
+        margin: 0.5rem 0;
+    }
+    .metric-card {
+        background: white;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+    .metric-label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    .footer {
+        text-align: center;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        margin-top: 2rem;
+        box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+    }
+    .sidebar .sidebar-content {
+        background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+    }
+    .stButton button {
+        border-radius: 10px;
+        font-weight: bold;
+        transition: all 0.3s;
+    }
+    .stButton button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -89,6 +142,10 @@ if 'camera_active' not in st.session_state:
     st.session_state.camera_active = False
 if 'alertes' not in st.session_state:
     st.session_state.alertes = []
+if 'fps' not in st.session_state:
+    st.session_state.fps = 0
+if 'frame_count' not in st.session_state:
+    st.session_state.frame_count = 0
 
 # Classes d'EPI avec leurs couleurs associées
 EPI_CLASSES = {
@@ -97,63 +154,72 @@ EPI_CLASSES = {
         'importance': 'critique',
         'description': 'Protection de la tête contre les chocs',
         'securite': 'Obligatoire en zone chantier',
-        'icone': '⛑️'
+        'icone': '⛑️',
+        'norme': 'EN 397'
     },
     'gants': {
         'couleurs': ['bleu', 'vert', 'rouge', 'jaune', 'blanc', 'noir', 'marron'],
         'importance': 'critique',
         'description': 'Protection des mains contre les coupures et produits chimiques',
         'securite': 'Obligatoire pour manipulation',
-        'icone': '🧤'
+        'icone': '🧤',
+        'norme': 'EN 388'
     },
     'lunettes': {
         'couleurs': ['transparent', 'fumé', 'jaune', 'bleu', 'clair', 'miroir'],
         'importance': 'élevée',
         'description': 'Protection des yeux contre les projections',
         'securite': 'Recommandé en zone de travail',
-        'icone': '👓'
+        'icone': '👓',
+        'norme': 'EN 166'
     },
     'masque': {
-        'couleurs': ['blanc', 'bleu', 'vert', 'noir', 'FFP2', 'FFP3'],
+        'couleurs': ['blanc', 'bleu', 'vert', 'noir', 'ffp2', 'ffp3'],
         'importance': 'critique',
         'description': 'Protection respiratoire contre les poussières et particules',
         'securite': 'Obligatoire en zone polluée',
-        'icone': '😷'
+        'icone': '😷',
+        'norme': 'EN 149'
     },
     'gilet': {
         'couleurs': ['jaune fluo', 'orange fluo', 'vert fluo', 'rouge', 'bleu'],
         'importance': 'élevée',
         'description': 'Haute visibilité pour être vu',
         'securite': 'Obligatoire près des véhicules',
-        'icone': '🦺'
+        'icone': '🦺',
+        'norme': 'EN 20471'
     },
     'bottes': {
         'couleurs': ['noir', 'marron', 'vert', 'bleu', 'gris'],
         'importance': 'élevée',
         'description': 'Protection des pieds avec embout',
         'securite': 'Obligatoire au sol',
-        'icone': '👢'
+        'icone': '👢',
+        'norme': 'EN 20345'
     },
     'combinaison': {
         'couleurs': ['blanc', 'bleu', 'vert', 'jaune', 'gris'],
         'importance': 'moyenne',
         'description': 'Protection du corps contre les salissures',
         'securite': 'Recommandé pour travaux spécifiques',
-        'icone': '👕'
+        'icone': '👕',
+        'norme': 'EN 13034'
     },
     'casque_audio': {
         'couleurs': ['jaune', 'noir', 'orange', 'bleu'],
         'importance': 'moyenne',
         'description': 'Protection auditive avec communication',
         'securite': 'Zone de bruit intense',
-        'icone': '🎧'
+        'icone': '🎧',
+        'norme': 'EN 352'
     },
     'harnais': {
         'couleurs': ['bleu', 'orange', 'jaune', 'noir'],
         'importance': 'critique',
         'description': 'Protection contre les chutes en hauteur',
         'securite': 'Obligatoire en hauteur',
-        'icone': '🪢'
+        'icone': '🪢',
+        'norme': 'EN 361'
     }
 }
 
@@ -175,8 +241,8 @@ COULEURS_BGR = {
     'jaune fluo': (0, 255, 255),
     'orange fluo': (0, 128, 255),
     'miroir': (180, 180, 180),
-    'FFP2': (255, 255, 255),
-    'FFP3': (255, 255, 255)
+    'ffp2': (255, 255, 255),
+    'ffp3': (255, 255, 255)
 }
 
 # Couleurs pour les boîtes de détection
@@ -199,16 +265,26 @@ class PPEDetector:
         """Initialisation du détecteur"""
         self.model = None
         self.confidence_threshold = 0.5
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = 'cuda' if self.check_cuda() else 'cpu'
         self.load_model(model_path)
+        self.track_history = defaultdict(list)
         
+    def check_cuda(self):
+        """Vérifie si CUDA est disponible"""
+        try:
+            import torch
+            return torch.cuda.is_available()
+        except:
+            return False
+    
     def load_model(self, model_path):
         """Charge le modèle YOLO"""
         try:
-            self.model = YOLO(model_path)
-            st.success(f"✅ Modèle chargé avec succès sur {self.device}")
+            with st.spinner(f"Chargement du modèle {model_path}..."):
+                self.model = YOLO(model_path)
+                st.sidebar.success(f"✅ Modèle chargé sur {self.device}")
         except Exception as e:
-            st.error(f"❌ Erreur de chargement du modèle: {e}")
+            st.sidebar.error(f"❌ Erreur: {e}")
             self.model = None
     
     def detect_objects(self, frame):
@@ -216,18 +292,26 @@ class PPEDetector:
         if self.model is None:
             return None
         
-        results = self.model(frame, conf=self.confidence_threshold)
+        results = self.model.track(frame, 
+                                  conf=self.confidence_threshold, 
+                                  persist=True,
+                                  verbose=False)
         return results[0]
     
-    def analyze_color_hsv(self, roi):
-        """Analyse avancée des couleurs en espace HSV"""
+    def analyze_color_advanced(self, roi):
+        """Analyse avancée des couleurs"""
         if roi.size == 0:
-            return 'non_determiné'
+            return 'non_determiné', 0
         
-        # Conversion en HSV
+        # Redimensionner pour analyse plus rapide
+        roi = cv2.resize(roi, (64, 64))
+        
+        # Conversion en différents espaces colorimétriques
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+        lab = cv2.cvtColor(roi, cv2.COLOR_BGR2LAB)
+        rgb = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
         
-        # Définir les plages de couleurs
+        # Définir les plages de couleurs en HSV
         color_ranges = {
             'rouge': [(0, 50, 50), (10, 255, 255)],
             'rouge_fonce': [(160, 50, 50), (180, 255, 255)],
@@ -235,6 +319,7 @@ class PPEDetector:
             'bleu_clair': [(90, 50, 50), (100, 255, 255)],
             'vert': [(40, 40, 40), (80, 255, 255)],
             'vert_clair': [(35, 40, 40), (40, 255, 255)],
+            'vert_fluo': [(40, 100, 100), (80, 255, 255)],
             'jaune': [(20, 50, 50), (35, 255, 255)],
             'jaune_fluo': [(25, 100, 100), (35, 255, 255)],
             'orange': [(5, 50, 50), (15, 255, 255)],
@@ -247,83 +332,167 @@ class PPEDetector:
             'transparent': [(0, 0, 150), (180, 50, 255)]
         }
         
-        # Calculer les masques et compter les pixels
-        color_counts = {}
+        # Calculer les masques
+        color_scores = {}
         total_pixels = roi.shape[0] * roi.shape[1]
         
         for color_name, (lower, upper) in color_ranges.items():
             lower = np.array(lower, dtype=np.uint8)
             upper = np.array(upper, dtype=np.uint8)
             mask = cv2.inRange(hsv, lower, upper)
-            color_counts[color_name] = np.sum(mask > 0)
+            score = np.sum(mask > 0) / total_pixels
+            color_scores[color_name] = score
         
-        # Trouver la couleur dominante (min 10% de l'image)
-        if max(color_counts.values()) > total_pixels * 0.1:
-            dominant_color = max(color_counts, key=color_counts.get)
-            
-            # Fusionner les variantes de rouge
-            if dominant_color in ['rouge_fonce']:
-                dominant_color = 'rouge'
-            
-            return dominant_color
+        # Trouver la meilleure correspondance
+        best_color = max(color_scores, key=color_scores.get)
+        best_score = color_scores[best_color]
         
-        return 'couleur_non_standard'
+        # Normalisation
+        if best_color in ['rouge_fonce']:
+            best_color = 'rouge'
+        
+        # Seuil de confiance
+        if best_score < 0.1:
+            # Analyse de secours avec LAB
+            l_channel = lab[:,:,0]
+            if np.mean(l_channel) > 200:
+                return 'blanc', 0.7
+            elif np.mean(l_channel) < 50:
+                return 'noir', 0.7
+            else:
+                return 'couleur_non_standard', best_score
+        
+        return best_color, best_score
     
-    def estimate_ppe_compliance(self, detections):
-        """Estime la conformité des EPI"""
-        required_ppe = ['casque', 'gants', 'lunettes', 'masque', 'gilet', 'bottes']
+    def estimate_safety_score(self, detections):
+        """Calcule le score de sécurité"""
+        required_ppe = {
+            'casque': 10,
+            'gants': 10,
+            'lunettes': 8,
+            'masque': 10,
+            'gilet': 8,
+            'bottes': 8,
+            'harnais': 10
+        }
+        
         present_ppe = [d['type'] for d in detections]
+        total_score = 0
+        max_score = sum(required_ppe.values())
         
+        for ppe, weight in required_ppe.items():
+            if ppe in present_ppe:
+                total_score += weight
+        
+        safety_score = (total_score / max_score) * 100 if max_score > 0 else 0
         missing_ppe = [ppe for ppe in required_ppe if ppe not in present_ppe]
-        compliance_score = ((len(required_ppe) - len(missing_ppe)) / len(required_ppe)) * 100
         
-        return compliance_score, missing_ppe
+        return safety_score, missing_ppe
+    
+    def update_tracking(self, track_id, center):
+        """Met à jour le suivi des objets"""
+        if track_id is not None:
+            self.track_history[track_id].append(center)
+            if len(self.track_history[track_id]) > 30:
+                self.track_history[track_id].pop(0)
 
-def get_image_download_link(img, filename, text):
-    """Génère un lien de téléchargement pour l'image"""
-    buffered = BytesIO()
-    img.save(buffered, format="JPEG")
-    img_str = base64.b64encode(buffered.getvalue()).decode()
-    href = f'<a href="data:file/jpg;base64,{img_str}" download="{filename}">{text}</a>'
-    return href
+def create_download_link(val, filename):
+    """Crée un lien de téléchargement"""
+    b64 = base64.b64encode(val).decode()
+    return f'<a href="data:application/octet-stream;base64,{b64}" download="{filename}">Télécharger</a>'
+
+def export_stats():
+    """Exporte les statistiques en CSV"""
+    data = []
+    for epi, couleurs in st.session_state.statistiques.items():
+        for couleur, count in couleurs.items():
+            data.append({
+                'EPI': epi,
+                'Couleur': couleur,
+                'Détections': count,
+                'Timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
+    
+    if data:
+        df = pd.DataFrame(data)
+        csv = df.to_csv(index=False)
+        b64 = base64.b64encode(csv.encode()).decode()
+        href = f'<a href="data:file/csv;base64,{b64}" download="statistiques_epi.csv">📥 Télécharger CSV</a>'
+        return href
+    return None
 
 def afficher_dashboard():
-    """Affiche le dashboard des statistiques"""
-    st.sidebar.header("📊 Tableau de bord")
-    
-    if st.session_state.statistiques:
-        # Métriques globales
-        total_detections = sum(sum(couleurs.values()) for couleurs in st.session_state.statistiques.values())
-        st.sidebar.metric("Total détections", total_detections)
+    """Affiche le dashboard interactif"""
+    with st.sidebar:
+        st.markdown("## 📊 Tableau de bord")
         
-        # Graphique des détections par type
-        df_stats = []
-        for epi, couleurs in st.session_state.statistiques.items():
-            for couleur, count in couleurs.items():
-                df_stats.append({
-                    'EPI': epi,
-                    'Couleur': couleur,
-                    'Détections': count
-                })
+        if st.session_state.statistiques:
+            # Métriques globales
+            total_detections = sum(sum(c.values()) for c in st.session_state.statistiques.values())
+            total_types = len(st.session_state.statistiques)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-value">{total_detections}</div>
+                    <div class="metric-label">Détections totales</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-value">{total_types}</div>
+                    <div class="metric-label">Types d'EPI</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Graphique des détections
+            df_list = []
+            for epi, couleurs in st.session_state.statistiques.items():
+                for couleur, count in couleurs.items():
+                    df_list.append({
+                        'EPI': epi.replace('_', ' ').title(),
+                        'Couleur': couleur,
+                        'Détections': count
+                    })
+            
+            if df_list:
+                df = pd.DataFrame(df_list)
+                
+                # Graphique en barres
+                fig = px.bar(df, x='EPI', y='Détections', color='Couleur',
+                           title="Détections par type",
+                           barmode='stack',
+                           color_discrete_sequence=px.colors.qualitative.Set3)
+                fig.update_layout(height=400)
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Camembert
+                df_sum = df.groupby('EPI')['Détections'].sum().reset_index()
+                fig2 = px.pie(df_sum, values='Détections', names='EPI',
+                            title="Répartition",
+                            color_discrete_sequence=px.colors.qualitative.Pastel)
+                fig2.update_layout(height=300)
+                st.plotly_chart(fig2, use_container_width=True)
+            
+            # Export
+            if st.button("📥 Exporter les statistiques"):
+                href = export_stats()
+                if href:
+                    st.markdown(href, unsafe_allow_html=True)
         
-        if df_stats:
-            df = pd.DataFrame(df_stats)
-            
-            # Graphique en barres
-            fig = px.bar(df, x='EPI', y='Détections', color='Couleur',
-                        title="Détections par type et couleur",
-                        barmode='group')
-            st.sidebar.plotly_chart(fig, use_container_width=True)
-            
-            # Camembert des proportions
-            fig2 = px.pie(df, values='Détections', names='EPI',
-                         title="Répartition des détections")
-            st.sidebar.plotly_chart(fig2, use_container_width=True)
-    
-    # Historique
-    with st.sidebar.expander("📜 Historique"):
-        for det in st.session_state.historique_detections[-10:]:
-            st.text(det)
+        else:
+            st.info("Aucune statistique disponible")
+        
+        # Historique récent
+        with st.expander("📜 Historique récent"):
+            if st.session_state.historique_detections:
+                for det in st.session_state.historique_detections[-10:]:
+                    st.text(f"• {det}")
+            else:
+                st.text("Aucune détection")
 
 def interface_principale():
     """Interface principale de l'application"""
@@ -331,21 +500,22 @@ def interface_principale():
     # En-tête
     st.markdown("""
     <div class="main-header">
-        <h1>🛡️ Détection d'Équipements de Protection Individuelle (EPI)</h1>
+        <h1>🛡️ Détection d'Équipements de Protection Individuelle</h1>
         <p>Analyse multi-couleurs en temps réel avec intelligence artificielle</p>
+        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Version 3.0 - Sécurité augmentée</p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Barre latérale - Configuration
+    # Barre latérale
     with st.sidebar:
-        st.header("⚙️ Configuration")
+        st.markdown("## ⚙️ Configuration")
         
-        # Modèle
+        # Sélection du modèle
         model_option = st.selectbox(
             "Modèle YOLO",
             ["yolov8n.pt", "yolov8s.pt", "yolov8m.pt", "yolov8l.pt"],
             index=0,
-            help="Choisissez le modèle (n=nanos, s=small, m=medium, l=large)"
+            help="n: nano (rapide), s: small, m: medium, l: large (précis)"
         )
         
         # Seuil de confiance
@@ -355,11 +525,13 @@ def interface_principale():
             max_value=1.0,
             value=0.5,
             step=0.05,
-            help="Plus le seuil est bas, plus de détections mais plus de faux positifs"
+            help="Plus le seuil est bas, plus de détections"
         )
         
+        st.markdown("---")
+        
         # Source vidéo
-        st.subheader("📹 Source vidéo")
+        st.markdown("## 📹 Source")
         source_option = st.radio(
             "Choisir la source",
             ["Webcam", "Upload vidéo", "Image", "URL"],
@@ -380,12 +552,15 @@ def interface_principale():
                 type=['jpg', 'jpeg', 'png']
             )
         elif source_option == "URL":
-            video_url = st.text_input("Entrez l'URL de la vidéo")
+            video_url = st.text_input("URL de la vidéo")
+        
+        st.markdown("---")
         
         # Filtres
-        st.subheader("🎨 Filtres")
+        st.markdown("## 🎨 Filtres")
         
-        # Types d'EPI à détecter
+        # Types d'EPI
+        st.markdown("### Types à détecter")
         epi_selection = {}
         cols = st.columns(2)
         for i, (epi, info) in enumerate(EPI_CLASSES.items()):
@@ -395,61 +570,54 @@ def interface_principale():
                     value=True
                 )
         
-        # Filtre par couleur
+        # Filtre couleur
         couleur_filtre = st.multiselect(
-            "Couleurs à afficher",
+            "Couleurs spécifiques",
             options=list(COULEURS_BGR.keys()),
             default=[]
         )
         
+        st.markdown("---")
+        
         # Options d'affichage
-        st.subheader("🖼️ Affichage")
+        st.markdown("## 🖼️ Affichage")
         display_options = st.multiselect(
             "Options",
-            ["Boîtes", "Couleurs", "Confiance", "Labels", "Trajectoires"],
+            ["Boîtes", "Couleurs", "Confiance", "Labels", "Trajectoires", "Statistiques"],
             default=["Boîtes", "Couleurs", "Confiance"]
         )
         
-        # Contrôles
-        st.divider()
+        st.markdown("---")
         
+        # Contrôles
         col1, col2 = st.columns(2)
         with col1:
-            start_button = st.button(
-                "▶️ Démarrer",
-                type="primary",
-                use_container_width=True
-            )
+            start_button = st.button("▶️ Démarrer", type="primary", use_container_width=True)
         with col2:
-            stop_button = st.button(
-                "⏹️ Arrêter",
-                type="secondary",
-                use_container_width=True
-            )
+            stop_button = st.button("⏹️ Arrêter", type="secondary", use_container_width=True)
         
         if start_button:
             st.session_state.detection_active = True
         if stop_button:
             st.session_state.detection_active = False
         
-        # Réinitialisation
         if st.button("🔄 Réinitialiser", use_container_width=True):
             st.session_state.statistiques.clear()
             st.session_state.historique_detections.clear()
             st.session_state.alertes.clear()
             st.rerun()
         
-        st.divider()
+        st.markdown("---")
         
-        # Information sur les EPI
+        # Guide rapide
         with st.expander("ℹ️ Guide des EPI"):
             for epi, info in EPI_CLASSES.items():
                 st.markdown(f"""
                 **{info['icone']} {epi.replace('_', ' ').title()}**  
-                - 📝 {info['description']}  
-                - 🎨 Couleurs: {', '.join(info['couleurs'])}  
-                - ⚠️ Importance: {info['importance']}  
-                - 🔒 {info['securite']}
+                📝 {info['description']}  
+                🎨 {', '.join(info['couleurs'][:3])}...  
+                ⚠️ {info['importance']}  
+                📋 Norme: {info['norme']}
                 """)
                 st.divider()
     
@@ -457,85 +625,88 @@ def interface_principale():
     col_video, col_info = st.columns([2, 1])
     
     with col_video:
-        st.subheader("📹 Flux vidéo")
+        st.markdown("## 📹 Flux vidéo")
         
-        # Placeholders pour la vidéo
         video_placeholder = st.empty()
         stats_placeholder = st.empty()
         
-        # Bouton de capture
+        # Boutons d'action
         col_cap1, col_cap2, col_cap3 = st.columns(3)
         with col_cap1:
-            capture_button = st.button("📸 Capturer")
+            capture_button = st.button("📸 Capturer", use_container_width=True)
         with col_cap2:
-            record_button = st.button("⏺️ Enregistrer")
+            record_button = st.button("⏺️ Enregistrer", use_container_width=True)
         with col_cap3:
-            screenshot_button = st.button("📷 Screenshot")
+            screenshot_button = st.button("📷 Screenshot", use_container_width=True)
     
     with col_info:
-        st.subheader("📋 Détections en direct")
+        st.markdown("## 📋 Détections en direct")
         detection_placeholder = st.empty()
         alerte_placeholder = st.empty()
-        compliance_placeholder = st.empty()
+        safety_placeholder = st.empty()
     
-    # DASHBOARD
+    # Dashboard
     afficher_dashboard()
     
     # Démarrer la détection
     if st.session_state.detection_active:
         try:
-            # Initialisation de la source vidéo
+            # Initialisation source
             cap = None
             if source_option == "Webcam":
                 cap = cv2.VideoCapture(0)
                 if not cap.isOpened():
-                    st.error("❌ Impossible d'ouvrir la webcam")
+                    st.error("❌ Webcam non accessible")
                     return
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+                cap.set(cv2.CAP_PROP_FPS, 30)
+            
             elif source_option == "Upload vidéo" and uploaded_file:
-                tfile = tempfile.NamedTemporaryFile(delete=False)
+                tfile = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
                 tfile.write(uploaded_file.read())
                 cap = cv2.VideoCapture(tfile.name)
+            
             elif source_option == "Image" and uploaded_file:
                 image = Image.open(uploaded_file)
                 frame = np.array(image)
                 frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            
             elif source_option == "URL" and video_url:
                 cap = cv2.VideoCapture(video_url)
             
-            # Initialisation du détecteur
+            # Initialisation détecteur
             detector = PPEDetector(model_path=model_option)
             detector.confidence_threshold = confidence
             
-            # Variables pour le suivi
+            # Variables pour statistiques
             fps = 0
             frame_count = 0
             start_time = time.time()
             
             while st.session_state.detection_active:
                 
-                # Lecture du frame
+                # Lecture frame
                 if cap is not None:
                     ret, frame = cap.read()
                     if not ret:
                         st.warning("Fin de la vidéo")
                         break
                 else:
-                    # Pour l'image statique
-                    if 'frame' in locals():
-                        pass
-                    else:
-                        st.warning("Aucune source vidéo")
+                    if 'frame' not in locals():
+                        st.warning("Aucune source")
                         break
                 
                 # Redimensionnement
-                frame = cv2.resize(frame, (854, 480))
+                frame = cv2.resize(frame, (1024, 576))
                 
                 # Calcul FPS
                 frame_count += 1
-                if frame_count % 30 == 0:
+                if frame_count % 10 == 0:
                     end_time = time.time()
-                    fps = 30 / (end_time - start_time)
+                    fps = 10 / (end_time - start_time)
                     start_time = time.time()
+                    st.session_state.fps = fps
                 
                 # Détection
                 results = detector.detect_objects(frame)
@@ -550,84 +721,96 @@ def interface_principale():
                         conf = float(box.conf[0].cpu().numpy())
                         
                         # ROI pour analyse couleur
-                        roi = frame[y1:y2, x1:x2]
-                        roi = cv2.resize(roi, (100, 100)) if roi.size > 0 else roi
+                        roi = frame[max(0, y1):min(frame.shape[0], y2), 
+                                   max(0, x1):min(frame.shape[1], x2)]
                         
-                        # Analyse couleur
-                        couleur_detected = detector.analyze_color_hsv(roi)
-                        
-                        # Filtre par couleur
-                        if couleur_filtre and couleur_detected not in couleur_filtre:
-                            continue
-                        
-                        # Type d'EPI (simulation - à adapter selon votre modèle entraîné)
-                        class_names = list(EPI_CLASSES.keys())
-                        class_id = int(box.cls[0].cpu().numpy()) if len(box.cls) > 0 else 0
-                        epi_type = class_names[class_id % len(class_names)]
-                        
-                        # Filtre par type
-                        if not epi_selection.get(epi_type, True):
-                            continue
-                        
-                        # Mise à jour statistiques
-                        st.session_state.statistiques[epi_type][couleur_detected] += 1
-                        
-                        # Historique
-                        timestamp = datetime.now().strftime("%H:%M:%S")
-                        detection_info = f"{timestamp} - {epi_type} ({couleur_detected}) - {conf:.2f}"
-                        st.session_state.historique_detections.append(detection_info)
-                        
-                        detections_actuelles.append({
-                            'type': epi_type,
-                            'couleur': couleur_detected,
-                            'confiance': conf,
-                            'position': (x1, y1, x2, y2)
-                        })
-                        
-                        # Dessin sur l'image
-                        if "Boîtes" in display_options:
-                            box_color = COULEURS_BOX.get(epi_type, (0, 255, 0))
+                        if roi.size > 0:
+                            # Analyse couleur
+                            couleur_detected, color_conf = detector.analyze_color_advanced(roi)
                             
-                            # Boîte
-                            cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
+                            # Filtre couleur
+                            if couleur_filtre and couleur_detected not in couleur_filtre:
+                                continue
                             
-                            # Label
-                            label_parts = []
-                            if "Labels" in display_options:
-                                label_parts.append(epi_type.replace('_', ' ').upper())
-                            if "Couleurs" in display_options:
-                                label_parts.append(couleur_detected)
-                            if "Confiance" in display_options:
-                                label_parts.append(f"{conf:.2f}")
+                            # Type d'EPI (simulation)
+                            class_names = list(EPI_CLASSES.keys())
+                            class_id = int(box.cls[0].cpu().numpy()) if len(box.cls) > 0 else 0
+                            epi_type = class_names[class_id % len(class_names)]
                             
-                            label = " - ".join(label_parts)
+                            # Filtre type
+                            if not epi_selection.get(epi_type, True):
+                                continue
                             
-                            # Fond pour le texte
-                            (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
-                            cv2.rectangle(frame, (x1, y1 - h - 10), (x1 + w, y1), box_color, -1)
+                            # ID de suivi
+                            track_id = int(box.id[0].cpu().numpy()) if box.id is not None else None
                             
-                            # Texte
-                            cv2.putText(frame, label, (x1, y1 - 5),
-                                      cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-                        
-                        # Trajectoires (simplifié)
-                        if "Trajectoires" in display_options:
-                            center = ((x1 + x2) // 2, (y1 + y2) // 2)
-                            cv2.circle(frame, center, 3, (0, 255, 0), -1)
+                            # Mise à jour statistiques
+                            st.session_state.statistiques[epi_type][couleur_detected] += 1
+                            
+                            # Historique
+                            timestamp = datetime.now().strftime("%H:%M:%S")
+                            detection_info = f"{timestamp} - {epi_type} ({couleur_detected}) - {conf:.2f}"
+                            st.session_state.historique_detections.append(detection_info)
+                            
+                            detections_actuelles.append({
+                                'type': epi_type,
+                                'couleur': couleur_detected,
+                                'confiance': conf,
+                                'position': (x1, y1, x2, y2),
+                                'track_id': track_id
+                            })
+                            
+                            # Dessin
+                            if "Boîtes" in display_options:
+                                box_color = COULEURS_BOX.get(epi_type, (0, 255, 0))
+                                
+                                # Boîte
+                                cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 3)
+                                
+                                # Label
+                                label_parts = []
+                                if "Labels" in display_options:
+                                    label_parts.append(epi_type.replace('_', ' ').upper())
+                                if "Couleurs" in display_options:
+                                    label_parts.append(couleur_detected)
+                                if "Confiance" in display_options:
+                                    label_parts.append(f"{conf:.2f}")
+                                
+                                label = " - ".join(label_parts)
+                                
+                                # Fond texte
+                                (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+                                cv2.rectangle(frame, (x1, y1 - h - 10), (x1 + w, y1), box_color, -1)
+                                
+                                # Texte
+                                cv2.putText(frame, label, (x1 + 5, y1 - 5),
+                                          cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                                
+                                # Trajectoire
+                                if "Trajectoires" in display_options and track_id is not None:
+                                    center = ((x1 + x2) // 2, (y1 + y2) // 2)
+                                    detector.update_tracking(track_id, center)
+                                    
+                                    points = detector.track_history[track_id]
+                                    for i in range(1, len(points)):
+                                        if points[i-1] is not None and points[i] is not None:
+                                            cv2.line(frame, points[i-1], points[i], box_color, 2)
                 
-                # Calcul du score de conformité
-                compliance_score, missing_ppe = detector.estimate_ppe_compliance(detections_actuelles)
+                # Score de sécurité
+                safety_score, missing_ppe = detector.estimate_safety_score(detections_actuelles)
                 
-                # Ajout FPS sur l'image
-                cv2.putText(frame, f"FPS: {fps:.1f}", (10, 30),
-                          cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                # Affichage FPS
+                if "Statistiques" in display_options:
+                    cv2.putText(frame, f"FPS: {fps:.1f}", (10, 30),
+                              cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                    cv2.putText(frame, f"Score: {safety_score:.1f}%", (10, 70),
+                              cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 
-                # Mise à jour des informations
+                # Mise à jour interface
                 with detection_placeholder.container():
                     if detections_actuelles:
                         st.success(f"✅ {len(detections_actuelles)} EPI détectés")
                         
-                        # Tableau
                         df_det = pd.DataFrame(detections_actuelles)
                         st.dataframe(
                             df_det[['type', 'couleur', 'confiance']],
@@ -637,78 +820,69 @@ def interface_principale():
                     else:
                         st.info("👀 Aucun EPI détecté")
                 
-                # Alertes de conformité
-                with compliance_placeholder.container():
-                    if compliance_score >= 80:
+                # Alertes sécurité
+                with safety_placeholder.container():
+                    if safety_score >= 80:
                         st.markdown(f"""
                         <div class="alert-success">
-                            ✅ Score de conformité: {compliance_score:.1f}% - Excellent!
+                            ✅ Score sécurité: {safety_score:.1f}% - Conforme
                         </div>
                         """, unsafe_allow_html=True)
-                    elif compliance_score >= 50:
+                    elif safety_score >= 50:
                         st.markdown(f"""
                         <div class="alert-warning">
-                            ⚠️ Score de conformité: {compliance_score:.1f}% - Améliorable
+                            ⚠️ Score sécurité: {safety_score:.1f}% - Attention
                         </div>
                         """, unsafe_allow_html=True)
                     else:
                         st.markdown(f"""
                         <div class="alert-danger">
-                            ❌ Score de conformité: {compliance_score:.1f}% - Critique!
+                            ❌ Score sécurité: {safety_score:.1f}% - Danger
                         </div>
                         """, unsafe_allow_html=True)
                     
                     if missing_ppe:
-                        st.warning(f"EPI manquants: {', '.join(missing_ppe)}")
+                        st.warning(f"Manquants: {', '.join(missing_ppe)}")
                 
-                # Alertes importantes
+                # Alertes critiques
                 with alerte_placeholder.container():
-                    alertes = []
-                    for ppe in ['casque', 'gants', 'bottes']:
+                    for ppe in ['casque', 'gants', 'harnais']:
                         if ppe not in [d['type'] for d in detections_actuelles]:
-                            if EPI_CLASSES[ppe]['importance'] == 'critique':
-                                alertes.append(f"🔴 {ppe.upper()} MANQUANT!")
-                    
-                    if alertes:
-                        for alerte in alertes:
-                            st.error(alerte)
+                            st.error(f"🔴 {ppe.upper()} MANQUANT!")
                 
-                # Actions de capture
-                if capture_button:
+                # Actions capture
+                if capture_button and len(detections_actuelles) > 0:
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    filename = f"capture_epi_{timestamp}.jpg"
-                    cv2.imwrite(filename, frame)
-                    st.success(f"Capture sauvegardée: {filename}")
+                    cv2.imwrite(f"capture_{timestamp}.jpg", frame)
+                    st.success("Capture sauvegardée!")
                 
                 if screenshot_button:
                     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     img_pil = Image.fromarray(frame_rgb)
+                    buf = BytesIO()
+                    img_pil.save(buf, format="PNG")
                     
-                    # Lien de téléchargement
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    href = get_image_download_link(img_pil, f"screenshot_{timestamp}.jpg", "📥 Télécharger screenshot")
+                    href = create_download_link(buf.getvalue(), f"screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
                     st.markdown(href, unsafe_allow_html=True)
                 
-                # Affichage
+                # Affichage vidéo
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 video_placeholder.image(frame_rgb, channels="RGB", use_container_width=True)
                 
-                # Stats en temps réel
+                # Stats en direct
                 with stats_placeholder.container():
-                    col1, col2, col3, col4 = st.columns(4)
-                    with col1:
+                    cols = st.columns(4)
+                    with cols[0]:
                         st.metric("Détections", len(detections_actuelles))
-                    with col2:
+                    with cols[1]:
                         st.metric("FPS", f"{fps:.1f}")
-                    with col3:
-                        st.metric("Conformité", f"{compliance_score:.1f}%")
-                    with col4:
-                        st.metric("Alertes", len(alertes))
+                    with cols[2]:
+                        st.metric("Sécurité", f"{safety_score:.1f}%")
+                    with cols[3]:
+                        st.metric("Alertes", len([a for a in missing_ppe if a in ['casque', 'gants', 'harnais']]))
                 
-                # Petite pause
                 time.sleep(0.03)
             
-            # Libération des ressources
             if cap is not None:
                 cap.release()
                 
@@ -718,20 +892,24 @@ def interface_principale():
 
 def main():
     """Fonction principale"""
-    
     try:
-        import torch
         interface_principale()
-    except ImportError as e:
-        st.error(f"Erreur d'importation: {e}")
-        st.info("Vérifiez que toutes les dépendances sont installées")
+    except Exception as e:
+        st.error(f"Erreur: {str(e)}")
+        st.info("Redémarrage de l'application...")
+        time.sleep(2)
+        st.rerun()
     
-    # Pied de page
-    st.markdown("---")
+    # Footer
     st.markdown("""
-    <div style='text-align: center; padding: 1rem; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 10px;'>
-        <p style='margin: 0;'>🛡️ Détection EPI Multi-Couleurs v2.0 - Intelligence Artificielle pour la Sécurité au Travail</p>
-        <p style='margin: 0; font-size: 0.8em; opacity: 0.8;'>© 2024 - Tous droits réservés</p>
+    <div class="footer">
+        <p style="margin: 0; font-size: 1.1rem;">🛡️ Détection EPI Multi-Couleurs v3.0</p>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.8;">
+            Intelligence Artificielle pour la Sécurité au Travail
+        </p>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem; opacity: 0.6;">
+            © 2024 - Tous droits réservés
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
