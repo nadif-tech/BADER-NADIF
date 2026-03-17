@@ -1,27 +1,11 @@
-# Core dependencies
-streamlit==1.28.0
-opencv-python-headless==4.8.1.78
-opencv-python==4.8.1.78
-ultralytics==8.0.0
-torch==2.0.0
-torchvision==0.15.0
-numpy==1.24.0
-pillow==10.0.0
-pandas==2.0.0
-plotly==5.17.0
-
-# Utils
-python-dotenv==1.0.0
-requests==2.31.0
-tqdm==4.66.0
-
-# Visualization
-matplotlib==3.7.0
-seaborn==0.12.0
-
-# Video processing
-imageio==2.31.0
-imageio-ffmpeg==0.4.9
-
-# Deployment
-gunicorn==21.2.0
+streamlit==1.26.0
+torch>=2.0.0
+torchvision>=0.15.0
+pillow
+opencv-python
+numpy
+matplotlib
+PyYAML
+requests
+tqdm
+gitpython
