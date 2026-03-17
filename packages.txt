@@ -1,6 +1,7 @@
-streamlit==1.26.0
-ultralytics==8.1.1
-opencv-python-headless==4.8.0.74
-numpy==1.26.0
-Pillow==10.1.0
-torch==2.2.0+cpu
+libgl1-mesa-glx
+libglib2.0-0
+libsm6
+libxext6
+libxrender-dev
+libgomp1
+libgfortran5
