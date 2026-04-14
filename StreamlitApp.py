@@ -1,288 +1,327 @@
-"""
-Application simple de détection EPI - Version légère
-Sans OpenCV complexe, avec simulation pour Streamlit Cloud
-"""
-
 import streamlit as st
-import numpy as np
-import time
+import easyocr
 import pandas as pd
+import re
+import cv2
+import numpy as np
+from PIL import Image
+import io
+import time
 from datetime import datetime
-import random
-from collections import defaultdict
-import plotly.express as px
 
-# Configuration de la page
+# ==============================================
+# CONFIGURATION DE LA PAGE
+# ==============================================
 st.set_page_config(
-    page_title="Détection EPI Simple",
-    page_icon="🛡️",
-    layout="wide"
+    page_title="Extracteur OCR Pro",
+    page_icon="📸",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Style CSS simple
-st.markdown("""
-<style>
-    .main-title {
-        text-align: center;
-        padding: 1.5rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-    }
-    .epi-card {
-        background: white;
-        padding: 1rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        margin: 0.5rem 0;
-    }
-    .success-box {
-        background: #d4edda;
-        color: #155724;
-        padding: 1rem;
-        border-radius: 5px;
-        border-left: 4px solid #28a745;
-    }
-    .warning-box {
-        background: #fff3cd;
-        color: #856404;
-        padding: 1rem;
-        border-radius: 5px;
-        border-left: 4px solid #ffc107;
-    }
-    .danger-box {
-        background: #f8d7da;
-        color: #721c24;
-        padding: 1rem;
-        border-radius: 5px;
-        border-left: 4px solid #dc3545;
-    }
-</style>
-""", unsafe_allow_html=True)
+# ==============================================
+# INITIALISATION DE L'ÉTAT DE SESSION
+# ==============================================
+def init_session_state():
+    """Initialise toutes les variables de session Streamlit"""
+    if 'photos_traitees' not in st.session_state:
+        st.session_state.photos_traitees = []  # Liste des résultats
+    if 'historique' not in st.session_state:
+        st.session_state.historique = []  # Historique des actions
+    if 'compteur_photos' not in st.session_state:
+        st.session_state.compteur_photos = 0
 
-# Initialisation session
-if 'detections' not in st.session_state:
-    st.session_state.detections = []
-if 'historique' not in st.session_state:
-    st.session_state.historique = []
-if 'en_cours' not in st.session_state:
-    st.session_state.en_cours = False
+init_session_state()
 
-# Liste des EPI
-EPIS = [
-    {"nom": "Casque", "icone": "⛑️", "couleurs": ["Blanc", "Jaune", "Bleu", "Rouge"], "critique": True},
-    {"nom": "Gants", "icone": "🧤", "couleurs": ["Bleu", "Vert", "Rouge", "Noir"], "critique": True},
-    {"nom": "Lunettes", "icone": "👓", "couleurs": ["Transparent", "Fumé", "Jaune"], "critique": False},
-    {"nom": "Masque", "icone": "😷", "couleurs": ["Blanc", "Bleu", "FFP2"], "critique": True},
-    {"nom": "Gilet", "icone": "🦺", "couleurs": ["Jaune fluo", "Orange fluo"], "critique": False},
-    {"nom": "Bottes", "icone": "👢", "couleurs": ["Noir", "Marron"], "critique": False}
-]
+# ==============================================
+# CHARGEMENT DU MODÈLE OCR (avec cache)
+# ==============================================
+@st.cache_resource
+def charger_modele_ocr(langues=['fr', 'en']):
+    """Charge le modèle EasyOCR avec cache pour performance"""
+    with st.spinner("🔄 Chargement du modèle OCR en cours..."):
+        return easyocr.Reader(langues, gpu=False)
 
-def simuler_detection():
-    """Simule une détection aléatoire"""
-    epi = random.choice(EPIS)
-    couleur = random.choice(epi["couleurs"])
-    confiance = random.uniform(0.7, 0.99)
+# ==============================================
+# PRÉTRAITEMENT D'IMAGE (améliore la précision)
+# ==============================================
+def pretraiter_image(image_pil):
+    """
+    Applique des transformations pour améliorer la reconnaissance
+    - Conversion en niveaux de gris
+    - Réduction du bruit
+    - Amélioration du contraste
+    """
+    # Convertir PIL en OpenCV
+    img_cv = cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
+    
+    # Niveaux de gris
+    gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+    
+    # Réduction du bruit
+    denoised = cv2.fastNlMeansDenoising(gray, h=10)
+    
+    # Amélioration du contraste (CLAHE)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    enhanced = clahe.apply(denoised)
+    
+    # Seuillage adaptatif pour les textes sombres sur fond clair
+    binary = cv2.adaptiveThreshold(
+        enhanced, 255, 
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+        cv2.THRESH_BINARY, 11, 2
+    )
+    
+    return Image.fromarray(binary)
+
+# ==============================================
+# EXTRACTION DES NUMÉROS
+# ==============================================
+def extraire_numeros(texte, pattern_personnalise=None):
+    """
+    Extrait les nombres du texte avec différents patterns
+    """
+    if pattern_personnalise:
+        numeros = re.findall(pattern_personnalise, texte)
+    else:
+        # Pattern par défaut : nombres entiers, décimaux, avec séparateurs
+        patterns = [
+            r'\d+[\.,]?\d*',           # Nombres simples
+            r'\d+[\s]?\d*[\.,]?\d*',   # Nombres avec espaces
+            r'[\d]+[.,]?\d*\s?[€$£]',  # Montants avec devise
+        ]
+        numeros = []
+        for p in patterns:
+            numeros.extend(re.findall(p, texte))
+    
+    # Nettoyer et dédupliquer
+    numeros = list(set([n.strip() for n in numeros if n.strip()]))
+    return numeros
+
+# ==============================================
+# TRAITEMENT D'UNE PHOTO
+# ==============================================
+def traiter_photo(image, nom_fichier, lecteur, pretraitement=True):
+    """
+    Traite une photo : prétraitement optionnel + OCR + extraction
+    """
+    debut = time.time()
+    
+    # Prétraitement optionnel
+    if pretraitement:
+        image_traitee = pretraiter_image(image)
+    else:
+        image_traitee = image
+    
+    # Conversion en bytes pour OCR
+    img_bytes = io.BytesIO()
+    image_traitee.save(img_bytes, format='PNG')
+    
+    # Reconnaissance OCR
+    resultats_ocr = lecteur.readtext(img_bytes.getvalue(), detail=0, paragraph=True)
+    texte_complet = " ".join(resultats_ocr)
+    
+    # Extraction des numéros
+    numeros = extraire_numeros(texte_complet)
+    
+    temps_traitement = round(time.time() - debut, 2)
     
     return {
-        "nom": epi["nom"],
-        "icone": epi["icone"],
-        "couleur": couleur,
-        "confiance": confiance,
-        "critique": epi["critique"],
-        "timestamp": datetime.now().strftime("%H:%M:%S")
+        "nom_fichier": nom_fichier,
+        "numeros": ", ".join(numeros) if numeros else "Aucun numéro détecté",
+        "texte_brut": texte_complet,
+        "nombre_numeros": len(numeros),
+        "temps_traitement": temps_traitement,
+        "horodatage": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "image": image,
+        "image_traitee": image_traitee if pretraitement else None
     }
 
-# Titre principal
-st.markdown("""
-<div class="main-title">
-    <h1>🛡️ Détection EPI - Version Simple</h1>
-    <p>Application légère pour Streamlit Cloud</p>
-</div>
-""", unsafe_allow_html=True)
+# ==============================================
+# EXPORT EXCEL
+# ==============================================
+def exporter_excel(donnees):
+    """Crée un fichier Excel à partir des résultats"""
+    df = pd.DataFrame([{
+        "Nom du fichier": d["nom_fichier"],
+        "Numéros extraits": d["numeros"],
+        "Quantité": d["nombre_numeros"],
+        "Texte brut": d["texte_brut"],
+        "Temps (sec)": d["temps_traitement"],
+        "Horodatage": d["horodatage"]
+    } for d in donnees])
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Résultats_OCR')
+        
+        # Ajuster la largeur des colonnes
+        worksheet = writer.sheets['Résultats_OCR']
+        for column in worksheet.columns:
+            max_length = max(len(str(cell.value)) for cell in column)
+            worksheet.column_dimensions[column[0].column_letter].width = min(max_length + 2, 50)
+    
+    return output.getvalue()
 
-# Sidebar
-with st.sidebar:
-    st.header("⚙️ Contrôles")
+# ==============================================
+# INTERFACE PRINCIPALE
+# ==============================================
+def main():
+    # Chargement du modèle
+    lecteur = charger_modele_ocr()
     
-    # Boutons
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("▶️ Démarrer", type="primary", use_container_width=True):
-            st.session_state.en_cours = True
-    with col2:
-        if st.button("⏹️ Arrêter", use_container_width=True):
-            st.session_state.en_cours = False
+    # ===== BARRE LATÉRALE =====
+    with st.sidebar:
+        st.header("⚙️ Configuration")
+        
+        # Options OCR
+        st.subheader("Paramètres OCR")
+        pretraitement = st.checkbox("Activer le prétraitement d'image", value=True, 
+                                   help="Améliore la précision sur les images de mauvaise qualité")
+        
+        langue = st.selectbox("Langue principale", 
+                              ["Français + Anglais", "Anglais uniquement", "Français uniquement"],
+                              help="Langue du texte environnant")
+        
+        # Options d'affichage
+        st.subheader("Affichage")
+        afficher_images = st.checkbox("Afficher les images traitées", value=True)
+        afficher_texte_brut = st.checkbox("Afficher le texte brut OCR", value=False)
+        
+        st.divider()
+        
+        # Zone d'ajout de photos
+        st.subheader("📤 Ajouter des photos")
+        nouveaux_fichiers = st.file_uploader(
+            "Sélectionnez des images",
+            type=["png", "jpg", "jpeg", "bmp", "tiff"],
+            accept_multiple_files=True,
+            key=f"uploader_{st.session_state.compteur_photos}",
+            help="Vous pouvez ajouter plusieurs photos à la fois"
+        )
+        
+        # Bouton pour vider l'uploader (permet de réajouter les mêmes fichiers)
+        if st.button("🔄 Réinitialiser l'upload", use_container_width=True):
+            st.session_state.compteur_photos += 1
+            st.rerun()
+        
+        st.divider()
+        
+        # Actions globales
+        st.subheader("📊 Actions")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🗑️ Tout effacer", use_container_width=True):
+                st.session_state.photos_traitees = []
+                st.session_state.historique = []
+                st.success("✅ Toutes les données ont été effacées")
+                st.rerun()
+        
+        with col2:
+            if st.session_state.photos_traitees:
+                excel_data = exporter_excel(st.session_state.photos_traitees)
+                st.download_button(
+                    label="📥 Exporter Excel",
+                    data=excel_data,
+                    file_name=f"extraction_numeros_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
+        
+        # Statistiques
+        st.divider()
+        st.subheader("📈 Statistiques")
+        st.metric("Photos traitées", len(st.session_state.photos_traitees))
+        total_numeros = sum(p["nombre_numeros"] for p in st.session_state.photos_traitees)
+        st.metric("Total numéros extraits", total_numeros)
     
-    # Vitesse de simulation
-    vitesse = st.slider("Vitesse simulation", 1, 10, 5)
+    # ===== ZONE PRINCIPALE =====
+    st.title("📸 Extracteur de Numéros - Version Pro")
+    st.markdown("---")
     
-    # Réinitialisation
-    if st.button("🔄 Réinitialiser", use_container_width=True):
-        st.session_state.detections = []
-        st.session_state.historique = []
+    # Traitement des nouveaux fichiers
+    if nouveaux_fichiers:
+        with st.spinner("🔍 Traitement des photos en cours..."):
+            for fichier in nouveaux_fichiers:
+                # Vérifier si déjà traité
+                if not any(p["nom_fichier"] == fichier.name for p in st.session_state.photos_traitees):
+                    image = Image.open(fichier)
+                    resultat = traiter_photo(image, fichier.name, lecteur, pretraitement)
+                    st.session_state.photos_traitees.append(resultat)
+                    st.session_state.historique.append(f"✅ {fichier.name} traité - {resultat['nombre_numeros']} numéros trouvés")
+        
+        st.success(f"✅ {len(nouveaux_fichiers)} nouvelle(s) photo(s) traitée(s)")
         st.rerun()
     
-    st.divider()
-    
-    # Filtres
-    st.subheader("🎨 Filtres")
-    types_filter = st.multiselect(
-        "Types d'EPI",
-        options=[epi["nom"] for epi in EPIS],
-        default=[epi["nom"] for epi in EPIS]
-    )
-    
-    couleurs_filter = st.multiselect(
-        "Couleurs",
-        options=["Blanc", "Jaune", "Bleu", "Rouge", "Vert", "Noir", "Transparent"],
-        default=[]
-    )
-
-# Zone principale
-col1, col2 = st.columns([2, 1])
-
-with col1:
-    st.subheader("📹 Simulation Webcam")
-    
-    # Placeholder pour la "vidéo"
-    video_placeholder = st.empty()
-    
-    # Image simulée
-    frame_placeholder = st.empty()
-    
-    # Zone de simulation
-    if st.session_state.en_cours:
-        # Afficher une "caméra" simulée
-        with video_placeholder.container():
-            st.markdown("""
-            <div style="background: #2d2d2d; padding: 2rem; border-radius: 10px; text-align: center;">
-                <h3 style="color: #00ff00;">📹 CAMERA ACTIVE</h3>
-                <p style="color: white;">Simulation en cours...</p>
-                <div style="font-size: 3rem;">🎥</div>
-            </div>
-            """, unsafe_allow_html=True)
+    # ===== AFFICHAGE DES RÉSULTATS =====
+    if st.session_state.photos_traitees:
+        # Onglets pour différentes vues
+        tab1, tab2, tab3 = st.tabs(["📋 Tableau des résultats", "🖼️ Galerie", "📜 Historique"])
         
-        # Simulation de détections
-        if random.random() < 0.3:  # 30% de chance de détection
-            detection = simuler_detection()
+        with tab1:
+            # Tableau récapitulatif
+            df_affichage = pd.DataFrame([{
+                "Fichier": p["nom_fichier"],
+                "Numéros extraits": p["numeros"],
+                "Qté": p["nombre_numeros"],
+                "Temps": f"{p['temps_traitement']}s"
+            } for p in st.session_state.photos_traitees])
             
-            # Appliquer les filtres
-            if detection["nom"] in types_filter:
-                if not couleurs_filter or detection["couleur"] in couleurs_filter:
-                    st.session_state.detections.append(detection)
-                    st.session_state.historique.append(f"{detection['timestamp']} - {detection['icone']} {detection['nom']} ({detection['couleur']})")
+            st.dataframe(df_affichage, use_container_width=True, hide_index=True)
+            
+            # Détail par photo
+            st.markdown("### 📝 Détail par photo")
+            for i, photo in enumerate(st.session_state.photos_traitees):
+                with st.expander(f"📷 {photo['nom_fichier']} - {photo['nombre_numeros']} numéro(s)"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.image(photo["image"], caption="Original", use_container_width=True)
+                    with col2:
+                        if photo["image_traitee"] and afficher_images:
+                            st.image(photo["image_traitee"], caption="Prétraitée", use_container_width=True)
+                    
+                    st.markdown(f"**Numéros extraits :** `{photo['numeros']}`")
+                    if afficher_texte_brut:
+                        st.markdown(f"**Texte brut :** _{photo['texte_brut']}_")
+                    
+                    # Bouton suppression individuelle
+                    if st.button(f"🗑️ Supprimer", key=f"del_{i}"):
+                        st.session_state.photos_traitees.pop(i)
+                        st.rerun()
         
-        # Rafraîchissement
-        time.sleep(1/vitesse)
-        st.rerun()
-
-with col2:
-    st.subheader("📊 Détections actuelles")
+        with tab2:
+            # Galerie d'images
+            cols = st.columns(3)
+            for i, photo in enumerate(st.session_state.photos_traitees):
+                with cols[i % 3]:
+                    st.image(photo["image"], caption=photo["nom_fichier"], use_container_width=True)
+                    st.caption(f"📊 {photo['nombre_numeros']} numéro(s)")
+        
+        with tab3:
+            # Historique
+            for log in st.session_state.historique:
+                st.text(log)
     
-    # Dernières détections
-    if st.session_state.detections:
-        dernieres = st.session_state.detections[-5:]
-        
-        for det in reversed(dernieres):
-            if det["critique"]:
-                st.markdown(f"""
-                <div class="danger-box">
-                    {det['icone']} <strong>{det['nom']}</strong> - {det['couleur']}<br>
-                    <small>{det['timestamp']} | Confiance: {det['confiance']:.1%}</small>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div class="success-box">
-                    {det['icone']} <strong>{det['nom']}</strong> - {det['couleur']}<br>
-                    <small>{det['timestamp']} | Confiance: {det['confiance']:.1%}</small>
-                </div>
-                """, unsafe_allow_html=True)
     else:
-        st.info("Aucune détection")
-
-# Statistiques
-st.divider()
-st.subheader("📈 Statistiques")
-
-col_stats1, col_stats2, col_stats3, col_stats4 = st.columns(4)
-
-with col_stats1:
-    st.metric("Total détections", len(st.session_state.detections))
-
-with col_stats2:
-    epis_detectes = len(set([d["nom"] for d in st.session_state.detections]))
-    st.metric("Types d'EPI", epis_detectes)
-
-with col_stats3:
-    critiques = len([d for d in st.session_state.detections if d["critique"]])
-    st.metric("EPI critiques", critiques)
-
-with col_stats4:
-    if st.session_state.detections:
-        conf_moyenne = sum([d["confiance"] for d in st.session_state.detections]) / len(st.session_state.detections)
-        st.metric("Confiance moyenne", f"{conf_moyenne:.1%}")
-    else:
-        st.metric("Confiance moyenne", "0%")
-
-# Graphiques
-if st.session_state.detections:
-    col_graph1, col_graph2 = st.columns(2)
-    
-    with col_graph1:
-        # Compter par type
-        types_count = {}
-        for d in st.session_state.detections:
-            types_count[d["nom"]] = types_count.get(d["nom"], 0) + 1
+        # Message d'accueil quand aucune photo
+        st.info("👈 Utilisez le panneau de gauche pour ajouter des photos à analyser")
         
-        df_types = pd.DataFrame({
-            "EPI": list(types_count.keys()),
-            "Nombre": list(types_count.values())
-        })
-        
-        fig = px.bar(df_types, x="EPI", y="Nombre", title="Détections par type",
-                    color="EPI", color_discrete_sequence=px.colors.qualitative.Set3)
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col_graph2:
-        # Compter par couleur
-        couleurs_count = {}
-        for d in st.session_state.detections:
-            couleurs_count[d["couleur"]] = couleurs_count.get(d["couleur"], 0) + 1
-        
-        df_couleurs = pd.DataFrame({
-            "Couleur": list(couleurs_count.keys()),
-            "Nombre": list(couleurs_count.values())
-        })
-        
-        fig2 = px.pie(df_couleurs, values="Nombre", names="Couleur", 
-                     title="Répartition par couleur")
-        st.plotly_chart(fig2, use_container_width=True)
+        # Démonstration
+        with st.expander("📖 Comment ça marche ?"):
+            st.markdown("""
+            1. **Ajoutez des photos** via l'uploader dans la barre latérale
+            2. **L'OCR analyse** automatiquement chaque image
+            3. **Les numéros sont extraits** et affichés dans le tableau
+            4. **Exportez en Excel** avec un seul clic
+            
+            **Astuces :**
+            - Activez le prétraitement pour les photos de mauvaise qualité
+            - Vous pouvez ajouter plusieurs photos en une fois
+            - L'historique garde une trace de toutes les actions
+            """)
 
-# Historique
-with st.expander("📜 Historique complet"):
-    if st.session_state.historique:
-        for item in reversed(st.session_state.historique[-50:]):
-            st.text(item)
-    else:
-        st.text("Aucun historique")
-
-# Liste des EPI
-with st.expander("ℹ️ Liste des EPI"):
-    for epi in EPIS:
-        st.markdown(f"""
-        **{epi['icone']} {epi['nom']}**  
-        - Couleurs: {', '.join(epi['couleurs'])}  
-        - Critique: {'Oui' if epi['critique'] else 'Non'}
-        """)
-
-# Footer
-st.markdown("---")
-st.markdown("""
-<div style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 10px;">
-    <p>🛡️ Détection EPI - Version Simulée pour Streamlit Cloud</p>
-    <p style="font-size: 0.8rem; color: gray;">Sans OpenCV - 100% compatible</p>
-</div>
-""", unsafe_allow_html=True)
+# ==============================================
+# LANCEMENT DE L'APPLICATION
+# ==============================================
+if __name__ == "__main__":
+    main()
