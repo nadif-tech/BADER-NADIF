@@ -1,8 +1,10 @@
-libgl1-mesa-glx
+libgl1
 libglib2.0-0
 libsm6
 libxext6
-libxrender-dev
+libxrender1
 libgomp1
-libxcb-xinerama0
+libxcb1
 libxcb-util1
+tesseract-ocr
+tesseract-ocr-fra
