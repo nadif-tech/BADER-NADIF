@@ -5,7 +5,46 @@ import io
 import time
 from datetime import datetime
 from PIL import Image
-import pytesseract
+import subprocess
+import sys
+import os
+
+# ==============================================
+# INSTALLATION AUTOMATIQUE DE TESSERACT
+# ==============================================
+@st.cache_resource
+def installer_tesseract():
+    """Installe Tesseract automatiquement dans l'environnement Streamlit Cloud"""
+    try:
+        # Vérifier si Tesseract est déjà installé
+        subprocess.run(['tesseract', '--version'], capture_output=True, check=True)
+        return True
+    except:
+        try:
+            # Télécharger et installer Tesseract portable
+            st.info("⏳ Installation de Tesseract OCR (première fois uniquement)...")
+            
+            # Créer un dossier local pour Tesseract
+            os.makedirs('/tmp/tesseract', exist_ok=True)
+            
+            # Télécharger le binaire statique de Tesseract
+            subprocess.run([
+                'wget', '-q', 
+                'https://github.com/tesseract-ocr/tesseract/releases/download/5.3.3/tesseract-5.3.3.tar.gz',
+                '-O', '/tmp/tesseract.tar.gz'
+            ], check=True)
+            
+            # Extraire
+            subprocess.run(['tar', '-xzf', '/tmp/tesseract.tar.gz', '-C', '/tmp/tesseract'], check=True)
+            
+            # Ajouter au PATH
+            os.environ['PATH'] += ':/tmp/tesseract'
+            
+            st.success("✅ Tesseract installé avec succès")
+            return True
+        except Exception as e:
+            st.error(f"❌ Impossible d'installer Tesseract: {str(e)}")
+            return False
 
 # ==============================================
 # CONFIGURATION DE LA PAGE
@@ -28,6 +67,51 @@ def init_session():
 init_session()
 
 # ==============================================
+# OCR AVEC TESSERACT
+# ==============================================
+def ocr_image(image):
+    """Effectue l'OCR sur une image avec pytesseract"""
+    try:
+        import pytesseract
+        
+        # Configuration pour les chiffres
+        custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789.,'
+        
+        # Essayer d'abord avec la config système
+        texte = pytesseract.image_to_string(image, lang='fra', config=custom_config)
+        
+        # Si vide, essayer sans langue spécifique
+        if not texte.strip():
+            texte = pytesseract.image_to_string(image, config=custom_config)
+        
+        return texte
+    
+    except Exception as e:
+        # Fallback: utiliser Tesseract directement via subprocess
+        try:
+            import tempfile
+            
+            # Sauvegarder l'image temporairement
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+                image.save(tmp.name)
+                tmp_path = tmp.name
+            
+            # Appeler Tesseract directement
+            result = subprocess.run(
+                ['tesseract', tmp_path, 'stdout', '--psm', '6', '-c', 'tessedit_char_whitelist=0123456789.,'],
+                capture_output=True, text=True
+            )
+            
+            # Nettoyer
+            os.unlink(tmp_path)
+            
+            return result.stdout
+        
+        except Exception as e2:
+            st.error(f"Erreur OCR: {str(e2)}")
+            return ""
+
+# ==============================================
 # EXTRACTION DES NUMÉROS
 # ==============================================
 def extraire_numeros(texte):
@@ -35,9 +119,10 @@ def extraire_numeros(texte):
     if not texte:
         return []
     
+    # Patterns pour différents formats de nombres
     patterns = [
-        r'\d+[.,]\d+',           # Nombres décimaux (12.34 ou 12,34)
-        r'\d+',                  # Nombres entiers
+        r'\d+[.,]\d+',  # 12.34 ou 12,34
+        r'\d+',         # 123
     ]
     
     numeros = []
@@ -48,7 +133,7 @@ def extraire_numeros(texte):
     numeros_propres = []
     for n in numeros:
         n = n.strip()
-        if n and n not in numeros_propres:
+        if n and n not in numeros_propres and len(n) > 0:
             numeros_propres.append(n)
     
     return numeros_propres
@@ -57,22 +142,14 @@ def extraire_numeros(texte):
 # TRAITEMENT D'UNE PHOTO
 # ==============================================
 def traiter_photo(image, nom_fichier):
-    """Traite une photo avec Tesseract OCR"""
+    """Traite une photo"""
     debut = time.time()
     
-    try:
-        # Configuration Tesseract pour meilleure reconnaissance des chiffres
-        custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789.,'
-        
-        # OCR
-        texte_complet = pytesseract.image_to_string(image, lang='fra', config=custom_config)
-        
-        # Extraction des numéros
-        numeros = extraire_numeros(texte_complet)
-        
-    except Exception as e:
-        texte_complet = f"Erreur: {str(e)}"
-        numeros = []
+    # OCR
+    texte_complet = ocr_image(image)
+    
+    # Extraction des numéros
+    numeros = extraire_numeros(texte_complet)
     
     temps_traitement = round(time.time() - debut, 2)
     
@@ -107,11 +184,11 @@ def exporter_excel(donnees):
     return output.getvalue()
 
 # ==============================================
-# INTERFACE
+# INTERFACE PRINCIPALE
 # ==============================================
 def main():
     st.title("📸 Extracteur de Numéros")
-    st.caption("Téléchargez des photos pour extraire les chiffres")
+    st.caption("Extraction des chiffres depuis vos photos")
     
     # Sidebar
     with st.sidebar:
@@ -161,10 +238,16 @@ def main():
         status = st.empty()
         
         for i, f in enumerate(fichiers):
-            # Éviter doublons
             if not any(p["nom_fichier"] == f.name for p in st.session_state.photos_traitees):
                 status.text(f"🔍 {f.name}...")
                 img = Image.open(f)
+                
+                # Redimensionner si trop grande
+                if img.width > 1500:
+                    ratio = 1500 / img.width
+                    new_height = int(img.height * ratio)
+                    img = img.resize((1500, new_height), Image.Resampling.LANCZOS)
+                
                 resultat = traiter_photo(img, f.name)
                 st.session_state.photos_traitees.append(resultat)
             
@@ -180,7 +263,6 @@ def main():
     if st.session_state.photos_traitees:
         st.subheader("📋 Résultats")
         
-        # Tableau
         df = pd.DataFrame([{
             "Fichier": p["nom_fichier"],
             "Numéros": p["numeros"],
@@ -189,7 +271,6 @@ def main():
         
         st.dataframe(df, use_container_width=True, hide_index=True)
         
-        # Détail
         st.divider()
         st.subheader("🖼️ Détail par photo")
         
@@ -199,9 +280,9 @@ def main():
                 with col1:
                     st.image(photo["image"], use_container_width=True)
                 with col2:
-                    st.markdown(f"**Numéros extraits :**")
+                    st.markdown("**Numéros extraits :**")
                     st.code(photo["numeros"] if photo["numeros"] != "Aucun" else "Aucun numéro trouvé")
-                    st.caption(f"Temps: {photo['temps']}s | {photo['date']}")
+                    st.caption(f"⏱️ {photo['temps']}s | 🕐 {photo['date']}")
                 
                 if st.button("🗑️ Supprimer", key=f"del_{i}"):
                     st.session_state.photos_traitees.pop(i)
